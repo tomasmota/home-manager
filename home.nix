@@ -21,6 +21,7 @@ rec {
     kubectl
     exa
     ffmpeg
+    eza
   ];
 
   programs.zsh = {
@@ -31,7 +32,40 @@ rec {
     history = {
       path = "${config.xdg.cacheHome}/zsh_history";
       save = 1000000;
+      extended = true;
+      ignoreDups = true;
+      share = true;
     };
+
+    sessionVariables = {
+      XDG_CONFIG_HOME = "${xdg.configHome}";
+      EDITOR = "nvim";
+    };
+  
+    shellAliases = {
+      l = "eza --color auto";
+      ls = "eza -G --color auto -a -s type";
+      ll = "eza -l --color always -a -s type";
+  
+      hm = "home-manager";
+      nv = "nvim";
+      k = "kubectl";
+
+      # git aliases
+      g = "git";
+      ga = "git add";
+      gaa = "git add .";
+      gb = "git branch";
+      gbd = "git branch -d";
+      gba = "git branch -a";
+      gc = "git commit --verbose";
+      gcm = "git commit --message";
+      gco = "git checkout";
+      gd = "git diff";
+      gl = "git pull";
+      gp = "git push -u";
+      gst = "git status";
+     };
   };
 
   programs.fzf = {
@@ -122,21 +156,6 @@ rec {
     configHome = "${home.homeDirectory}/.config";
     dataHome = "${home.homeDirectory}/.local/share";
     cacheHome = "${home.homeDirectory}/.cache";
-  };
-
-  # You can also manage environment variables but you will have to manually
-  # source
-  #
-  #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #
-  #  /etc/profiles/per-user/tomas/etc/profile.d/hm-session-vars.sh
-  #
-  # if you don't want to manage your shell through Home Manager.
-  home.sessionVariables = {
-    XDG_CONFIG_HOME = "${xdg.configHome}";
-    EDITOR = "nvim";
   };
 
   # Let Home Manager install and manage itself.
