@@ -1,6 +1,6 @@
 { config, pkgs, ... }:
 
-{
+rec {
   home.username = "tomas";
   home.homeDirectory = "/home/tomas";
 
@@ -50,8 +50,15 @@
     keyMode = "vi";
     baseIndex = 1;
     prefix = "C-Space";
+    disableConfirmationPrompt = true;
     extraConfig = ''
+      set-option -g default-terminal "screen-256color"
+      set-option -ga terminal-overrides ",xterm-256color:Tc"
       set -g mouse on
+      set-option -sg escape-time 0
+
+      # hide status on the right (hostname, time and date)
+      set-option -g status-right ""
 
       # split with "v" and "s"
       bind v split-window -h -c "#{pane_current_path}"
@@ -65,6 +72,10 @@
       unbind x
       bind q kill-pane
       bind C-q kill-window
+
+      # dont use current window name as default when renaming
+      unbind ,
+      bind-key , command-prompt -p (rename-window) "rename-window '%%'"
 
       # reload with "r"
       bind r source-file $XDG_CONFIG_HOME/tmux/tmux.conf \; display "Reloaded!"
@@ -105,6 +116,14 @@
     # '';
   };
 
+  xdg = {
+    enable = true;
+
+    configHome = "${home.homeDirectory}/.config";
+    dataHome = "${home.homeDirectory}/.local/share";
+    cacheHome = "${home.homeDirectory}/.cache";
+  };
+
   # You can also manage environment variables but you will have to manually
   # source
   #
@@ -116,7 +135,8 @@
   #
   # if you don't want to manage your shell through Home Manager.
   home.sessionVariables = {
-    # EDITOR = "emacs";
+    XDG_CONFIG_HOME = "${xdg.configHome}";
+    EDITOR = "nvim";
   };
 
   # Let Home Manager install and manage itself.
