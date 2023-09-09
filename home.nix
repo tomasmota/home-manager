@@ -85,11 +85,12 @@ rec {
     baseIndex = 1;
     prefix = "C-Space";
     disableConfirmationPrompt = true;
+    escapeTime = 0;
+    mouse = true;
     extraConfig = ''
       set-option -g default-terminal "screen-256color"
       set-option -ga terminal-overrides ",xterm-256color:Tc"
       set -g mouse on
-      set-option -sg escape-time 0
 
       # hide status on the right (hostname, time and date)
       set-option -g status-right ""
@@ -101,6 +102,17 @@ rec {
       bind j select-pane -D
       bind k select-pane -U
       bind l select-pane -R
+
+      # Resize in bigger units, using vim keys
+      bind -r C-j resize-pane -D 5
+      bind -r C-k resize-pane -U 5
+      bind -r C-h resize-pane -L 15
+      bind -r C-l resize-pane -R 15
+
+      bind Space last-window
+
+      bind -T copy-mode-vi v send -X begin-selection
+      bind -T copy-mode-vi y send -X copy-pipe-and-cancel "reattach-to-user-namespace pbcopy"
 
       # kill pane with "q"
       unbind x
