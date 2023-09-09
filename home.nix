@@ -17,10 +17,11 @@
     neovim
     fd
     ripgrep
-
+    openssh
+    kubectl
+    exa
+    ffmpeg
   ];
-
-  programs.alacritty.enable = true;
 
   programs.zsh = {
     enable = true;
