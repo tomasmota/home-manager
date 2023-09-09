@@ -58,8 +58,8 @@ rec {
       gb = "git branch";
       gbd = "git branch -d";
       gba = "git branch -a";
-      gc = "git commit --verbose";
-      gcm = "git commit --message";
+      gc = "git commit --message";
+      gsw = "git switch";
       gco = "git checkout";
       gd = "git diff";
       gl = "git pull";
