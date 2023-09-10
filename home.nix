@@ -4,14 +4,6 @@ rec {
   home.username = "tomas";
   home.homeDirectory = "/home/tomas";
 
-  # This value determines the Home Manager release that your configuration is
-  # compatible with. This helps avoid breakage when a new Home Manager release
-  # introduces backwards incompatible changes.
-  #
-  # You should not change this value, even if you update Home Manager. If you do
-  # want to update the value, then make sure to first check the Home Manager
-  # release notes.
-  home.stateVersion = "23.05"; # Please read the comment before changing.
 
   home.packages = with pkgs; [
     neovim
@@ -19,9 +11,9 @@ rec {
     ripgrep
     openssh
     kubectl
-    exa
     ffmpeg
     eza
+    gnumake
   ];
 
   programs.zsh = {
@@ -49,6 +41,7 @@ rec {
       ll = "eza -l --color always -a -s type";
   
       hm = "home-manager";
+      hms = "home-manager switch";
       nv = "nvim";
       k = "kubectl";
 
@@ -84,12 +77,12 @@ rec {
     enable = true;
     keyMode = "vi";
     baseIndex = 1;
+    terminal = "screen-256color";
     prefix = "C-Space";
     disableConfirmationPrompt = true;
     escapeTime = 0;
     mouse = true;
     extraConfig = ''
-      set-option -g default-terminal "screen-256color"
       set-option -ga terminal-overrides ",xterm-256color:Tc"
       set -g mouse on
 
@@ -141,15 +134,16 @@ rec {
 
   programs.git = {
     enable = true;
+    difftastic.enable = true;
     package = pkgs.gitFull;
     userEmail = "tomasrebelomota@gmail.com";
     userName = "tomasmota";
     extraConfig = {
       init.defaultBranch = "main";
+      push.autoSetupRemote = true;
     };
     ignores = [ "/.direnv" ];
   };
-
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.
@@ -174,6 +168,6 @@ rec {
     cacheHome = "${home.homeDirectory}/.cache";
   };
 
-  # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
+  home.stateVersion = "23.05"; # Don't change this
 }
