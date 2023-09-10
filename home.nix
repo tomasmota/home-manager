@@ -35,11 +35,12 @@ rec {
       extended = true;
       ignoreDups = true;
       share = true;
+      ignorePatterns = [ "l*" ];
     };
 
     sessionVariables = {
       XDG_CONFIG_HOME = "${xdg.configHome}";
-      EDITOR = "nvim";
+      #EDITOR = "nvim";
     };
   
     shellAliases = {
@@ -124,7 +125,10 @@ rec {
       bind-key , command-prompt -p (rename-window) "rename-window '%%'"
 
       # reload with "r"
-      bind r source-file $XDG_CONFIG_HOME/tmux/tmux.conf \; display "Reloaded!"
+      bind r source-file ${xdg.configHome}/tmux/tmux.conf \; display "Reloaded!"
+
+      # TODO
+      # - Add Plugins
     '';
     historyLimit = 1000000;
   };
