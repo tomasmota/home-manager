@@ -44,21 +44,6 @@ rec {
       hms = "home-manager switch";
       nv = "nvim";
       k = "kubectl";
-
-      # git aliases
-      g = "git";
-      ga = "git add";
-      gaa = "git add .";
-      gb = "git branch";
-      gbd = "git branch -d";
-      gba = "git branch -a";
-      gc = "git commit --message";
-      gsw = "git switch";
-      gco = "git checkout";
-      gd = "git diff";
-      gl = "git pull";
-      gp = "git push -u";
-      gst = "git status";
      };
   };
 
@@ -143,6 +128,20 @@ rec {
       push.autoSetupRemote = true;
     };
     ignores = [ "/.direnv" ];
+    aliases = {
+     a = "git add";
+     aa = "git add .";
+     b = "git branch";
+     bd = "git branch -d";
+     ba = "git branch -a";
+     c = "git commit --message";
+     sw = "git switch";
+     co = "git checkout";
+     d = "git diff";
+     l = "git pull";
+     p = "git push -u";
+     st = "git status";
+    };
   };
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
