@@ -45,9 +45,34 @@ rec {
       custom = "$HOME/.config/zsh_nix/custom";
     };
 
+    # TODO: Test if these are necessary
+    plugins = [
+      {
+        name = "zsh-nix-shell";
+        file = "nix-shell.plugin.zsh";
+        src = pkgs.fetchFromGitHub {
+          owner = "chisui";
+          repo = "zsh-nix-shell";
+          rev = "v0.7.0";
+          sha256 = "149zh2rm59blr2q458a5irkfh82y3dwdich60s9670kl3cl5h2m1";
+        };
+      }
+      # TODO: Make this work
+      {
+        name = "zsh-syntax-highlighting";
+        src = pkgs.fetchFromGitHub {
+          owner = "zsh-users";
+          repo = "zsh-syntax-highlighting";
+          rev = "0.7.0";
+          sha256 = "sha256-eRTk0o35QbPB9kOIV0iDwd0j5P/yewFFISVS/iEfP2g=";
+        };
+      }
+    ];
+
 		sessionVariables = {
       XDG_CONFIG_HOME = "${xdg.configHome}";
       EDITOR = "nvim";
+      MANPAGER = "nvim +Man!"; # TODO: check if this works
     };
   
     shellAliases = {
@@ -79,6 +104,7 @@ rec {
     enable = true;
     enableZshIntegration = true;
     tmux.enableShellIntegration = true;
+    # TODO: add default compgen path and compgen dir
   };
 
   programs.starship = {
