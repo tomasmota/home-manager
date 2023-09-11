@@ -4,7 +4,6 @@ rec {
   home.username = "tomas";
   home.homeDirectory = "/home/tomas";
 
-
   home.packages = with pkgs; [
     neovim
     fd
@@ -56,6 +55,11 @@ rec {
   programs.starship = {
     enable = true;
     enableZshIntegration = true;
+    settings = {
+      gcloud.disabled = true;
+      aws.disabled = true;
+      cmd_duration.disabled = true;
+    };
   };
 
   programs.tmux = {
