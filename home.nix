@@ -7,6 +7,8 @@ rec {
   home.packages = with pkgs; [
     neovim
     fd
+    dua
+    jq
     ripgrep
     openssh
     kubectl
@@ -31,33 +33,45 @@ rec {
       ignorePatterns = [ "l*" ];
     };
 
-    sessionVariables = {
+    oh-my-zsh = {
+      enable = true;
+      plugins = [ 
+        "git"
+        "z"
+        "kubectl"
+        "docker"
+        "history"
+      ];
+      custom = "$HOME/.config/zsh_nix/custom";
+    };
+
+		sessionVariables = {
       XDG_CONFIG_HOME = "${xdg.configHome}";
       EDITOR = "nvim";
     };
   
     shellAliases = {
-      l = "eza --color auto";
       ls = "eza -G --color auto -a -s type";
-      ll = "eza -l --color always -a -s type";
+      la = "eza -l --color always -a -s type";
   
       hm = "home-manager";
       hms = "home-manager switch";
       nv = "nvim";
       k = "kubectl";
 
-      ga = "git add";
-      gaa = "git add .";
-      gb = "git branch";
-      gbd = "git branch -d";
-      gba = "git branch -a";
-      gc = "git commit --message";
-      gsw = "git switch";
-      gco = "git checkout";
-      gd = "git diff";
-      gl = "git pull";
-      gp = "git push -u";
-      gst = "git status";
+      #ga = "git add";
+      #gaa = "git add .";
+      #gb = "git branch";
+      #gbd = "git branch -d";
+      #gba = "git branch -a";
+      #gc = "git commit";
+      #gcm = "git commit --message";
+      #gsw = "git switch";
+      #gco = "git checkout";
+      #gd = "git diff";
+      #gl = "git pull";
+      #gp = "git push -u";
+      #gst = "git status";
      };
   };
 
