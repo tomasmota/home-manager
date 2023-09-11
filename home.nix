@@ -17,6 +17,8 @@ rec {
     gnumake
   ];
 
+  # TODO: add programs.atuin
+
   programs.zsh = {
     enable = true;
     enableAutosuggestions = true;
@@ -45,19 +47,7 @@ rec {
       custom = "$HOME/.config/zsh_nix/custom";
     };
 
-    # TODO: Test if these are necessary
     plugins = [
-      {
-        name = "zsh-nix-shell";
-        file = "nix-shell.plugin.zsh";
-        src = pkgs.fetchFromGitHub {
-          owner = "chisui";
-          repo = "zsh-nix-shell";
-          rev = "v0.7.0";
-          sha256 = "149zh2rm59blr2q458a5irkfh82y3dwdich60s9670kl3cl5h2m1";
-        };
-      }
-      # TODO: Make this work
       {
         name = "zsh-syntax-highlighting";
         src = pkgs.fetchFromGitHub {
@@ -69,10 +59,10 @@ rec {
       }
     ];
 
-		sessionVariables = {
+    sessionVariables = {
       XDG_CONFIG_HOME = "${xdg.configHome}";
       EDITOR = "nvim";
-      MANPAGER = "nvim +Man!"; # TODO: check if this works
+      MANPAGER = "nvim +Man!";
     };
   
     shellAliases = {
@@ -82,22 +72,7 @@ rec {
       hm = "home-manager";
       hms = "home-manager switch";
       nv = "nvim";
-      k = "kubectl";
-
-      #ga = "git add";
-      #gaa = "git add .";
-      #gb = "git branch";
-      #gbd = "git branch -d";
-      #gba = "git branch -a";
-      #gc = "git commit";
-      #gcm = "git commit --message";
-      #gsw = "git switch";
-      #gco = "git checkout";
-      #gd = "git diff";
-      #gl = "git pull";
-      #gp = "git push -u";
-      #gst = "git status";
-     };
+    };
   };
 
   programs.fzf = {
@@ -126,6 +101,7 @@ rec {
     disableConfirmationPrompt = true;
     escapeTime = 0;
     mouse = true;
+    plugins = [ pkgs.tmuxPlugins.catppuccin ];
     extraConfig = ''
       set-option -ga terminal-overrides ",xterm-256color:Tc"
       set -g mouse on
@@ -164,8 +140,7 @@ rec {
       # reload with "r"
       bind r source-file ${xdg.configHome}/tmux/tmux.conf \; display "Reloaded!"
 
-      # TODO
-      # - Add Plugins
+      set -g @catppuccin_window_tabs_enabled on
     '';
     historyLimit = 1000000;
   };
