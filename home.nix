@@ -17,8 +17,6 @@ rec {
     gnumake
   ];
 
-  # TODO: add programs.atuin
-
   programs.zsh = {
     enable = true;
     enableAutosuggestions = true;
@@ -75,11 +73,12 @@ rec {
     };
   };
 
-  programs.fzf = {
+  programs.fzf.enable = true;
+
+  programs.atuin = {
     enable = true;
+    flags = ["--disable-up-arrow"];
     enableZshIntegration = true;
-    tmux.enableShellIntegration = true;
-    # TODO: add default compgen path and compgen dir
   };
 
   programs.starship = {
