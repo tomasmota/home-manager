@@ -70,10 +70,42 @@ rec {
       hm = "home-manager";
       hms = "home-manager switch";
       nv = "nvim";
+
+      # Git
+      gpt="git push --tags";
+      gld="git log -p --oneline --ext-diff";
+      gD="git diff HEAD~1";
+      gprune=''git remote prune origin && git for-each-ref --format "%(refname:short)" refs/heads | grep -v "master\|main" | xargs git branch -D'';
+
+      # Terraform
+      tfi="terraform init";
+      tfp="terraform plan";
+      tfa="terraform apply";
+      tfd="terraform destroy";
+      tfs="terraform show";
+      tfv="terraform validate";
+
+      # Yarn
+      yd="yarn dev";
+      yi="yarn install";
+      yf="yarn prettier --write .";
+
+      # Files
+      # Fuzzy find tree and cd into folder
+      cdf=''cd $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")''; 
+
+      # Fuzzy find over all repos under ~/dev
+      cdr=''cd $(fd --search-path ~/dev --type directory --hidden "^\.git$" | xargs -I {} dirname {} | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")''; 
+
+      # Fuzzy find tree and open folder in neovim
+      nvd=''nv $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
     };
   };
 
-  programs.fzf.enable = true;
+  programs.fzf = {
+    enable = true;
+    defaultOptions = [ "--layout=reverse" "--height=40" ];
+  };
 
   programs.atuin = {
     enable = true;
