@@ -5,7 +5,6 @@ rec {
   home.homeDirectory = "/home/tomas";
 
   home.packages = with pkgs; [
-    neovim
     fd
     dua
     jq
@@ -18,6 +17,37 @@ rec {
     gh
     dive
   ];
+
+  programs.neovim = {
+    enable = true;
+    extraLuaConfig = ''
+      local o = vim.o
+
+      o.scrolloff = 8
+      o.relativenumber = true
+      o.number = true
+      o.expandtab = true
+      o.tabstop = 2 -- change to 4 after full setup
+      o.softtabstop = 2 -- change to 4 after full setup
+      o.shiftwidth = 2 -- change to 4 after full setup
+      o.expandtab = true
+      o.autoindent = true
+      o.undofile = true
+      o.swapfile = false
+
+      local opt = vim.opt
+      -- set termguicolors to enable highlight groups
+      opt.termguicolors = true
+      opt.updatetime = 50
+
+      -- WSL ONLY: Use system clipboard: https://github.com/neovim/neovim/wiki/FAQ#how-to-use-the-windows-clipboard-from-wsl
+      -- Install win32yank.exe, put this in, and nothing else
+      opt.clipboard = "unnamedplus"
+      opt.signcolumn="yes"
+      opt.splitright=true
+      opt.cmdheight=0
+    '';
+  };
 
   programs.zsh = {
     enable = true;
@@ -68,6 +98,7 @@ rec {
     shellAliases = {
       ls = "eza -G --color auto -a -s type";
       la = "eza -l --color always -a -s type";
+      l = "eza -l --color always -a -s type";
   
       hm = "home-manager";
       hms = "home-manager switch";
@@ -141,6 +172,12 @@ rec {
 
       # hide status on the right (hostname, time and date)
       set-option -g status-right ""
+
+      # Renumber windows to match positions
+      set -g renumber-windows on
+
+      # Create windows in current path, instead of path where session was created. Create with empty name
+      bind c new-window -c "#{pane_current_path}" -n ""
 
       # split with "v" and "s"
       bind v split-window -h -c "#{pane_current_path}"
