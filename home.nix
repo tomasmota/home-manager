@@ -15,6 +15,8 @@ rec {
     ffmpeg
     eza
     gnumake
+    gh
+    dive
   ];
 
   programs.zsh = {
