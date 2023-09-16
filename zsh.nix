@@ -126,6 +126,7 @@
       gcloud.disabled = true;
       aws.disabled = true;
       cmd_duration.disabled = true;
+      helm.disabled = true;
     };
   };
 }
