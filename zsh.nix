@@ -4,6 +4,7 @@
     enable = true;
     enableAutosuggestions = true;
     enableCompletion = true;
+    syntaxHighlighting.enable = true;
     dotDir = ".config/zsh";
     autocd = true;
     defaultKeymap = "emacs";
@@ -27,18 +28,6 @@
       ];
       custom = "$HOME/.config/zsh_nix/custom";
     };
-
-    plugins = [
-      {
-        name = "zsh-syntax-highlighting";
-        src = pkgs.fetchFromGitHub {
-          owner = "zsh-users";
-          repo = "zsh-syntax-highlighting";
-          rev = "0.7.0";
-          sha256 = "sha256-eRTk0o35QbPB9kOIV0iDwd0j5P/yewFFISVS/iEfP2g=";
-        };
-      }
-    ];
 
     sessionVariables = {
       XDG_CONFIG_HOME = "${config.xdg.configHome}";

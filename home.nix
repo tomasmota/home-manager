@@ -21,6 +21,9 @@ rec {
     gnumake
     gh
     dive
+    wget
+    curl
+    go_1_21
   ];
 
   programs.neovim = {
