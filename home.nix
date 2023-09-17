@@ -24,6 +24,7 @@ rec {
     wget
     curl
     go_1_21
+    gcc
   ];
 
   programs.neovim = {
