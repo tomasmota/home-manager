@@ -5,7 +5,6 @@ rec {
   home.homeDirectory = "/home/tomas";
 
   imports = [
-    #./neovim.nix
     ./zsh.nix 
   ];
 
@@ -25,14 +24,13 @@ rec {
     curl
     go_1_21
     gcc
+    cargo
+    nodejs
   ];
 
   programs.neovim = {
     enable = true;
     extraLuaConfig = ''
-      o.tabstop = 2 -- change to 4 after full setup
-      o.softtabstop = 2 -- change to 4 after full setup
-      o.shiftwidth = 2 -- change to 4 after full setup
       :luafile ~/nvim/init.lua
     '';
   };
