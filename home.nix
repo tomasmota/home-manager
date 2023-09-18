@@ -52,6 +52,7 @@ rec {
     plugins = [ pkgs.tmuxPlugins.catppuccin ];
     extraConfig = ''
       set-option -ga terminal-overrides ",xterm-256color:Tc"
+
       set -g mouse on
 
       # hide status on the right (hostname, time and date)
