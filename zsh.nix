@@ -51,6 +51,32 @@
       _fzf_compgen_dir() {
         fd --type d --hidden --follow --exclude ".git" . "$1"
       }
+
+      # delete a tag from local and origin
+      function delete_tag(){
+          git tag -d $1
+          git push --delete origin $1
+      }
+
+      # open files based on ripgrep search
+      function nvg(){
+          file=$(rg $1 -l | fzf --preview "bat --color=always {}")
+          if [[ -n $file ]]; then
+              nv $file -c "/$1"
+          fi
+      }
+
+      function nvf(){
+          file=$(fd --type file $1 | fzf --preview "bat --color=always {}")
+          if [[ -n $file ]]; then
+              nv $file
+          fi
+      }
+
+      function nixrun(){
+          nix run nixpkgs#$1
+      }
+
     '';
   
     shellAliases = {
