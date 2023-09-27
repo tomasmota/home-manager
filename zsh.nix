@@ -77,7 +77,7 @@
       function hmpush(){
           cd ${config.xdg.configHome}/home-manager
           git add .
-          git commit -m "$\{1:-auto}"
+          git commit -m "$${1:-auto}"
           git push
           cd -
       }
