@@ -82,6 +82,14 @@
           cd -
       }
 
+      # sync dotfiles
+      function hmpush(){
+          cd ${config.xdg.configHome}/home-manager
+          git pull
+          home-manager switch
+          cd -
+      }
+
       function nixrun(){
           nix run nixpkgs#$1
       }
