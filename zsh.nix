@@ -76,14 +76,19 @@
       function nixrun(){
           nix run nixpkgs#$1
       }
+    '';
 
+    initExtra = ''
+      if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
+        source ${config.xdg.configHome}/home-manager/secrets.env
+      fi
     '';
   
     shellAliases = {
       # home-manager
       hm = "home-manager";
       hms = "home-manager switch";
-      hme = "nvim ${config.xdg.configHome}/home-manager/home.nix";
+      hme = "nvim ${config.xdg.configHome}/home-manager";
 
       # Misc
       ls = "eza -G --color auto -a -s type";
