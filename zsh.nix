@@ -62,15 +62,24 @@
       function nvg(){
           file=$(rg $1 -l | fzf --preview "bat --color=always {}")
           if [[ -n $file ]]; then
-              nv $file -c "/$1"
+              nvim $file -c "/$1"
           fi
       }
 
       function nvf(){
           file=$(fd --type file $1 | fzf --preview "bat --color=always {}")
           if [[ -n $file ]]; then
-              nv $file
+              nvim $file
           fi
+      }
+
+      # push dotfiles
+      function hmpush(){
+          cd ${config.xdg.configHome}/home-manager
+          git add .
+          git commit -m "$\{1:-auto}"
+          git push
+          cd -
       }
 
       function nixrun(){
