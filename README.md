@@ -6,7 +6,7 @@
 `curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install`
 
 ### Clone this repo into .config
-`git clone git@github.com:tomasmota/home-manager.git .config/home-manager`
+`git clone git@github.com:tomasmota/home-manager.git ~/.config/home-manager`
 
 ### Init home-manager
 `nix run home-manager/master -- init --switch`
