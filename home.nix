@@ -44,14 +44,14 @@ rec {
     enable = true;
     keyMode = "vi";
     baseIndex = 1;
-    terminal = "screen-256color";
+    terminal = "tmux-256color";
     prefix = "C-Space";
     disableConfirmationPrompt = true;
     escapeTime = 0;
     mouse = true;
     plugins = [ pkgs.tmuxPlugins.catppuccin ];
     extraConfig = ''
-      set-option -ga terminal-overrides ",xterm-256color:Tc"
+      set -ag terminal-overrides ",xterm-256color:RGB"
 
       set -g mouse on
 

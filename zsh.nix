@@ -83,7 +83,7 @@
       }
 
       # sync dotfiles
-      function hmpush(){
+      function hmsync(){
           cd ${config.xdg.configHome}/home-manager
           git pull
           home-manager switch
