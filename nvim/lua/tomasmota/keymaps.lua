@@ -63,5 +63,5 @@ vim.keymap.set('n', '<leader>gb', function () gs.toggle_current_line_blame() end
 vim.keymap.set('n', '<leader>cma', ":! chezmoi apply<CR><CR>")
 
 -- quickfix list
-vim.keymap.set('n', '<leader>qn', ":cnext<cr>")
-vim.keymap.set('n', '<leader>qp', ":cprev<cr>")
+vim.keymap.set('n', '<leader>cn', ":cnext<cr>")
+vim.keymap.set('n', '<leader>cp', ":cprev<cr>")

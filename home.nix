@@ -26,6 +26,7 @@ rec {
     gcc
     cargo
     nodejs
+    glow
   ];
 
   programs.neovim = {
