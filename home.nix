@@ -27,6 +27,7 @@ rec {
     cargo
     nodejs
     glow
+    nodePackages.prettier
   ];
 
   programs.neovim = {
