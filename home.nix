@@ -28,6 +28,7 @@ rec {
     nodejs
     glow
     unzip
+    tree
     nodePackages.prettier
   ];
 
