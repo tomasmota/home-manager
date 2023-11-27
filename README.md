@@ -29,4 +29,6 @@ cat ~/.ssh/id_ed25519
 ## TODO:
 - add alacritty config
 - use lazy.nvim
+- alias for cd to home-manager dir
+- fix auto commit message
 
