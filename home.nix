@@ -27,6 +27,7 @@ rec {
     cargo
     nodejs
     glow
+    unzip
     nodePackages.prettier
   ];
 
