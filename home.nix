@@ -60,6 +60,8 @@ rec {
 
       set -g mouse on
 
+      set-option -g escape-time 50
+
       # hide status on the right (hostname, time and date)
       set-option -g status-right ""
 
