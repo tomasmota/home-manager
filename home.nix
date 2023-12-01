@@ -21,7 +21,6 @@ rec {
     gh
     dive
     wget
-    curl
     go_1_21
     gcc
     cargo
@@ -30,6 +29,7 @@ rec {
     unzip
     tree
     findutils
+    bat
     nodePackages.prettier
   ];
 
