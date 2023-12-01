@@ -30,6 +30,7 @@ rec {
     tree
     findutils
     bat
+    openshift
     nodePackages.prettier
   ];
 
