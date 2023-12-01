@@ -31,6 +31,7 @@ rec {
     findutils
     bat
     openshift
+    tree-sitter
     nodePackages.prettier
   ];
 
