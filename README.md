@@ -22,6 +22,7 @@ cat ~/.ssh/id_ed25519
 
 ### Set zsh as shell
 `echo ~/.nix-profile/bin/zsh | sudo tee -a /etc/shells`
+
 `chsh -s (which zsh)`  
 
 ## Add secrets to secrets.env, at the root of this repo
