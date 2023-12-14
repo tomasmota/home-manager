@@ -14,7 +14,6 @@ rec {
     jq
     ripgrep
     openssh
-    kubectl
     ffmpeg
     eza
     gnumake
@@ -32,7 +31,9 @@ rec {
     tree
     findutils
     bat
+    kubectl
     openshift
+    tektoncd-cli
     tree-sitter
     nodePackages.prettier
     pinniped
