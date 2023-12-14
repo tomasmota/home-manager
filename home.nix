@@ -36,6 +36,8 @@ rec {
     tree-sitter
     nodePackages.prettier
     pinniped
+    xclip
+    lazygit
   ];
 
   programs.neovim = {
