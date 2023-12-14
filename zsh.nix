@@ -118,6 +118,7 @@
       lg = "fd --type=d --max-depth=1";
 
       # Git
+      gc = "git commit --message";
       gpt = "git push --tags";
       gld = "git log -p --oneline --ext-diff";
       gD = "git diff HEAD~1";

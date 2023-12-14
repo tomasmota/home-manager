@@ -19,6 +19,7 @@ rec {
     eza
     gnumake
     gh
+    tldr
     dive
     wget
     go_1_21
