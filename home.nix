@@ -22,6 +22,7 @@ rec {
     tldr
     dive
     wget
+    wslu
     go_1_21
     gcc
     cargo
@@ -34,6 +35,7 @@ rec {
     openshift
     tree-sitter
     nodePackages.prettier
+    pinniped
   ];
 
   programs.neovim = {
