@@ -127,7 +127,7 @@ return require('packer').startup(function(use)
 
     use {'windwp/nvim-ts-autotag'}
 
-    -- use { 'sourcegraph/sg.nvim', run = 'nvim -l build/init.lua' }
+    use { 'sourcegraph/sg.nvim', run = 'nvim -l build/init.lua' }
 
     use {
         'lvimuser/lsp-inlayhints.nvim',

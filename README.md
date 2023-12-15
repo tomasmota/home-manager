@@ -28,7 +28,6 @@ cat ~/.ssh/id_ed25519
 ## Add secrets to secrets.env, at the root of this repo
 
 ## TODO:
-- alias for cd to home-manager dir
 - fix auto commit message
 - add alacritty config
 - use lazy.nvim

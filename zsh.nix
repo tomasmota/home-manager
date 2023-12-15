@@ -106,7 +106,8 @@
       # home-manager
       hm = "home-manager";
       hms = "home-manager switch";
-      hme = "nvim ${config.xdg.configHome}/home-manager";
+      hmcd = "cd ~/.config/home-manager";
+      hme = "cd ~/.config/home-manager && nvim .";
 
       # Misc
       ls = "eza -G --color auto -a -s type";
