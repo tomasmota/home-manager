@@ -31,4 +31,5 @@ cat ~/.ssh/id_ed25519
 - fix auto commit message
 - add alacritty config
 - use lazy.nvim
+- fix Cody
 
