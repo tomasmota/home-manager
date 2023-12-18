@@ -21,6 +21,7 @@ o.expandtab = true
 o.autoindent = true
 o.undofile = true
 o.swapfile = false
+o.selection = 'exclusive'
 
 -- set termguicolors to enable highlight groups
 opt.termguicolors = true
