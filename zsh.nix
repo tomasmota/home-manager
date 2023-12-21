@@ -142,7 +142,7 @@
       # Fuzzy find tree and cd into folder
       cdf = ''cd $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")''; 
       # Fuzzy find over all repos under ~/dev
-      cdr = ''cd $(fd --search-path ~/dev --type directory --hidden "^\.git$" | xargs -I {} dirname {} | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")''; 
+      cdr = ''cd $(fd --search-path ~/dev --type directory --hidden --no-ignore-vcs "^\.git$" | xargs -I {} dirname {} | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")''; 
       # Fuzzy find tree and open folder in neovim
       nvd = ''nv $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
     };
