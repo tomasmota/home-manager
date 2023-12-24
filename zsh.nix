@@ -26,7 +26,7 @@
         "docker"
         "history"
       ];
-      custom = "$HOME/.config/zsh_nix/custom";
+      custom = "${config.xdg.configHome}/zsh_nix/custom";
     };
 
     sessionVariables = {
@@ -106,8 +106,12 @@
       # home-manager
       hm = "home-manager";
       hms = "home-manager switch";
-      hmcd = "cd ~/.config/home-manager";
-      hme = "cd ~/.config/home-manager && nvim .";
+      hmcd = "cd ${config.xdg.configHome}/home-manager";
+      hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && popd";
+
+      # nixos
+      nos = "sudo nixos-rebuild switch --flake ${config.xdg.configHome}/nixos-config";
+      noe = "pushd ${config.xdg.configHome}/nixos-config && nvim . && popd";
 
       # Misc
       ls = "eza -G --color auto -a -s type";
