@@ -123,7 +123,7 @@ lsp.configure('tsserver', {
         vim.o.softtabstop = 2
         vim.o.shiftwidth = 2
         vim.o.expandtab = true
-        vim.keymap.set("n", "<leader>ff", "<cmd>!yarn prettier --write %<cr><cr>", { noremap = true })
+        vim.keymap.set("n", "<leader>ff", "<cmd>!prettier --write %<cr><cr>", { noremap = true })
     end,
 })
 

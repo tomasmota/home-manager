@@ -135,10 +135,7 @@ rec {
   };
 
   home.file = {
-    ".config/alacritty/alacritty.yml".text = ''
-      env:
-        TERM: xterm-256color
-    '';
+    ".config/alacritty/alacritty.yml".source = ./alacritty.yml;
   };
 
   xdg = {
