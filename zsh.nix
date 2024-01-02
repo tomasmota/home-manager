@@ -119,6 +119,7 @@
       l = "eza -l --color always -a -s type";
       nv = "nvim";
       tree = "tree -I 'node_modules|dist|coverage'";
+      t = "tree -I 'node_modules|dist|coverage'";
       dra = "direnv allow";
       lg = "fd --type=d --max-depth=1";
 
