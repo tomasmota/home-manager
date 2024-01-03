@@ -107,7 +107,7 @@
       hm = "home-manager";
       hms = "home-manager switch";
       hmcd = "cd ${config.xdg.configHome}/home-manager";
-      hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && popd";
+      hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && home-manager switch && popd";
 
       # nixos
       nos = "sudo nixos-rebuild switch --flake ${config.xdg.configHome}/nixos-config";
@@ -122,6 +122,7 @@
       t = "tree -I 'node_modules|dist|coverage'";
       dra = "direnv allow";
       lg = "fd --type=d --max-depth=1";
+      devflake = "nix flake init -t 'github:tomasmota/flake-templates#devshell'";
 
       # Git
       gc = "git commit --message";
