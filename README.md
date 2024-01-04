@@ -9,6 +9,7 @@
 ### If this is a new machine, set up github authentication
 ```
 ssh-keygen -t ed25519 -C "mail@example.com"
+eval "$(ssh-agent -s)"
 ssh-add ~/.ssh/id_ed25519
 cat ~/.ssh/id_ed25519
 *add key to github*
