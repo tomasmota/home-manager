@@ -30,8 +30,6 @@ return require('packer').startup(function(use)
     use 'EdenEast/nightfox.nvim'
 
     -- Telescope
-    -- requires https://github.com/BurntSushi/ripgrep
-    -- requires https://github.com/sharkdp/fd (sudo apt install fd-find)
     use {
         'nvim-telescope/telescope.nvim', branch = '0.1.x',
         requires = {
@@ -135,6 +133,13 @@ return require('packer').startup(function(use)
             require('lsp-inlayhints').setup()
         end
     }
+
+    use({
+        "stevearc/oil.nvim",
+        config = function()
+          require("oil").setup()
+        end,
+      })
 
     -- Automatically set up your configuration after cloning packer.nvim
     -- Put this at the end after all plugins

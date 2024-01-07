@@ -1,5 +1,16 @@
 import = [
-    "~/.config/alacritty/themes/themes/catppuccin-mocha.toml"
+    "~/.config/alacritty/catppuccin-mocha.toml"
 ]
 [env]
 TERM = "xterm-256color"
+
+[font]
+size = 12
+
+builtin_box_drawing = true
+
+normal = { family = "GeistMono Nerd Font", style = "Regular" }
+bold = { family = "GeistMono Nerd Font", style = "Bold" }
+italic = { family = "GeistMono Nerd Font", style = "Italic" }
+bold_italic = { family = "GeistMono Nerd Font", style = "Bold Italic" }
+
