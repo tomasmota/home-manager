@@ -2,7 +2,7 @@ local o = vim.o
 local opt = vim.opt
 
 -- set theme
-vim.cmd("colorscheme nightfox")
+vim.cmd.colorscheme('nightfox')
 
 -- disable netrw at the very start of your init.lua (strongly advised)
 vim.g.loaded_netrw = 1
