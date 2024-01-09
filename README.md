@@ -30,7 +30,7 @@ cat ~/.ssh/id_ed25519.pub
 
 ## TODO:
 - fix auto commit message
-- add alacritty config
 - use lazy.nvim
 - fix Cody
+- add fonts to repo
 
