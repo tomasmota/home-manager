@@ -34,3 +34,6 @@ cat ~/.ssh/id_ed25519.pub
 - fix Cody
 - add fonts to repo
 
+try plugins
+- https://github.com/pmizio/typescript-tools.nvim
+- https://github.com/folke/neodev.nvim
