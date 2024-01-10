@@ -1,6 +1,5 @@
-require("tomasmota.packer")
-require("tomasmota.settings")
-require("tomasmota.keymaps")
+require("config.settings")
+require("config.keymaps")
 
 vim.api.nvim_create_autocmd('TextYankPost', {
   group = vim.api.nvim_create_augroup('highlight_yank', {}),
