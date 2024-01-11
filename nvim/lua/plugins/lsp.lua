@@ -14,7 +14,6 @@ return {
         "nil_ls",
         "terraformls",
         "yamlls",
-        "stylua"
       }
     }
   },

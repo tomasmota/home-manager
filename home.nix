@@ -1,9 +1,17 @@
-{ config, pkgs, ... }:
+{config, pkgs, ... }:
 
 rec {
   home.username = "tomas";
   home.homeDirectory = "/home/tomas";
 
+  xdg = {
+    enable = true;
+
+    configHome = "${home.homeDirectory}/.config";
+    dataHome = "${home.homeDirectory}/.local/share";
+    cacheHome = "${home.homeDirectory}/.cache";
+  };
+  
   imports = [
     ./zsh.nix 
   ];
@@ -21,7 +29,6 @@ rec {
     tldr
     dive
     wget
-    wslu
     go_1_21
     gcc
     cargo
@@ -39,18 +46,16 @@ rec {
     pinniped
     xclip
     lazygit
+    neovim
   ];
 
-  programs.neovim = {
-    enable = true;
-    extraLuaConfig = ''
-      :luafile ~/nvim/init.lua
-    '';
-  };
-
-  xdg.configFile.nvim = {  
-    source = ./nvim;  
-    recursive = true;  
+  xdg.configFile = {
+    nvim = {
+      source =
+        config.lib.file.mkOutOfStoreSymlink
+          "${xdg.configHome}/home-manager/nvim";
+      recursive = true;
+    };
   };
 
   programs.tmux = {
@@ -134,18 +139,7 @@ rec {
     ignores = [ "/.direnv" ];
   };
 
-  home.file = {
-    ".config/alacritty/alacritty.toml".source = ./alacritty/alacritty.toml;
-    ".config/alacritty/catppuccin-mocha.toml".source = ./alacritty/catppuccin_mocha.toml;
-  };
-
-  xdg = {
-    enable = true;
-
-    configHome = "${home.homeDirectory}/.config";
-    dataHome = "${home.homeDirectory}/.local/share";
-    cacheHome = "${home.homeDirectory}/.cache";
-  };
+  home.file.".config/alacritty".source = ./alacritty;
 
   programs.home-manager.enable = true;
   home.stateVersion = "23.05"; # Don't change this
