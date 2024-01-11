@@ -69,7 +69,7 @@ return {
     -- keymaps
     local builtin = require('telescope.builtin')
     vim.keymap.set('n', '<leader>p', builtin.find_files)
-    vim.keymap.set('n', '<leader>fk', builtin.keymaps)
+    vim.keymap.set('n', '<leader>k', builtin.keymaps)
     vim.keymap.set('n', '<leader>fs', builtin.lsp_document_symbols)
     vim.keymap.set('n', '<leader>fa', require('telescope').extensions.live_grep_args.live_grep_args)
     vim.keymap.set('n', '<leader>fb', require('telescope').extensions.file_browser.file_browser)

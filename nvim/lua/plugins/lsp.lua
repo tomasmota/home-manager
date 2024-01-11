@@ -49,36 +49,9 @@ return {
         }
       }
 
-
       -- Typescript
       lspconfig.tsserver.setup {
         capabilities = capabilities,
-        settings = {
-          typescript = {
-            inlayHints = {
-              includeInlayParameterNameHints = 'all',
-              includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-              includeInlayFunctionParameterTypeHints = true,
-              includeInlayVariableTypeHints = true,
-              includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-              includeInlayPropertyDeclarationTypeHints = true,
-              includeInlayFunctionLikeReturnTypeHints = true,
-              includeInlayEnumMemberValueHints = true,
-            }
-          },
-          javascript = {
-            inlayHints = {
-              includeInlayParameterNameHints = 'all',
-              includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-              includeInlayFunctionParameterTypeHints = true,
-              includeInlayVariableTypeHints = true,
-              includeInlayVariableTypeHintsWhenTypeMatchesName = false,
-              includeInlayPropertyDeclarationTypeHints = true,
-              includeInlayFunctionLikeReturnTypeHints = true,
-              includeInlayEnumMemberValueHints = true,
-            }
-          }
-        },
         on_attach = twospaces
       }
 
@@ -116,7 +89,7 @@ return {
       }
 
       vim.keymap.set("n", "K", vim.lsp.buf.hover)
-      vim.keymap.set("n", "H", vim.lsp.buf.signature_help)
+      vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help)
       vim.keymap.set("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>zz") -- TODO: change this to a function, using vim.api.nvim_win_set_cursor
       vim.keymap.set("n", "gi", vim.lsp.buf.implementation)
       vim.keymap.set("n", "ga", function() vim.lsp.buf.code_action() end)
