@@ -32,26 +32,6 @@ vim.keymap.set('n', 'gv', ":vsplit<cr>gd")
 -- Go to definition in new split
 vim.keymap.set('n', '<C-n>', ":bnext<cr>")
 
--- TELESCOPE
-local builtin = require('telescope.builtin')
-vim.keymap.set('n', '<leader>p', builtin.find_files)
-vim.keymap.set('n', '<leader>fk', builtin.keymaps)
-vim.keymap.set('n', '<leader>fs', builtin.lsp_document_symbols)
-vim.keymap.set('n', '<leader>fa', require('telescope').extensions.live_grep_args.live_grep_args)
-vim.keymap.set('n', '<leader>fb', require('telescope').extensions.file_browser.file_browser)
-vim.keymap.set("n", "<leader>le", "<cmd>Telescope diagnostics<cr>")
-vim.keymap.set('n', '<leader>h', builtin.help_tags) -- grep help docs
-vim.keymap.set('n', '<leader>gst', builtin.git_status)
-vim.keymap.set('n', '<leader>b', builtin.buffers)
-vim.keymap.set('n', '<c-f>', builtin.current_buffer_fuzzy_find)
-
--- GIT
-local gs = require("gitsigns")
-vim.keymap.set('n', '<leader>gd', ":DiffviewOpen <CR>")
-vim.keymap.set('n', '<leader>gD', ":DiffviewOpen HEAD~1<CR>")
-vim.keymap.set('n', '<leader>gc', ":DiffviewClose <CR>")
-vim.keymap.set('n', '<leader>gb', function () gs.toggle_current_line_blame() end)
-
 -- quickfix list
 vim.keymap.set('n', '<leader>cn', ":cnext<cr>")
 vim.keymap.set('n', '<leader>cp', ":cprev<cr>")
