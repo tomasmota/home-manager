@@ -14,6 +14,7 @@ return {
         "nil_ls",
         "terraformls",
         "yamlls",
+        "helm_ls"
       }
     }
   },
@@ -113,9 +114,11 @@ return {
         sources = {
           -- sources: https://github.com/nvimtools/none-ls.nvim/blob/main/doc/BUILTINS.md
           null_ls.builtins.formatting.prettier,
-          null_ls.builtins.formatting.hclfmt,  -- hcl
-          null_ls.builtins.code_actions.xo,    -- ts and js
-          null_ls.builtins.code_actions.statix -- nix
+          null_ls.builtins.formatting.hclfmt,   -- hcl
+          null_ls.builtins.code_actions.xo,     -- ts and js
+          null_ls.builtins.code_actions.statix, -- nix
+          null_ls.builtins.code_actions.gitsigns,
+          null_ls.builtins.code_actions.templ
         }
       })
 
@@ -127,5 +130,39 @@ return {
   {
     "j-hui/fidget.nvim",
     config = true
+  },
+  {
+    "towolf/vim-helm",
+    ft = 'helm',
+    config = function()
+      local lspconfig = require('lspconfig')
+      -- Helm
+      lspconfig.helm_ls.setup {
+        on_attach = function()
+          vim.o.tabstop = 2
+          vim.o.softtabstop = 2
+          vim.o.shiftwidth = 2
+          vim.o.expandtab = true
+        end,
+        capabilities = require('cmp_nvim_lsp').default_capabilities(),
+        settings = {
+          ['helm-ls'] = {
+            yamlls = {
+              enabled = true,
+              diagnosticsLimit = 50,
+              showDiagnosticsDirectly = false,
+              path = "yaml-language-server",
+              config = {
+                schemas = {
+                  kubernetes = "**",
+                },
+                completion = true,
+                hover = true,
+              }
+            }
+          }
+        }
+      }
+    end
   }
 }
