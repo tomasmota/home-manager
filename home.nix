@@ -29,6 +29,7 @@ rec {
     tldr
     dive
     wget
+    wslu
     go_1_21
     gcc
     cargo
