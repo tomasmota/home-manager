@@ -31,7 +31,7 @@ return {
         vim.o.expandtab = true
       end
 
-      -- Go 
+      -- Go
       lspconfig.gopls.setup {
         capabilities = capabilities,
         settings = {
@@ -50,7 +50,7 @@ return {
       }
 
 
-      -- Typescript 
+      -- Typescript
       lspconfig.tsserver.setup {
         capabilities = capabilities,
         settings = {
@@ -82,13 +82,13 @@ return {
         on_attach = twospaces
       }
 
-      -- Lua 
+      -- Lua
       lspconfig.lua_ls.setup {
         capabilities = capabilities,
         on_attach = twospaces
       }
 
-      -- Yaml 
+      -- Yaml
       lspconfig.yamlls.setup {
         settings = {
           yaml = {
@@ -120,6 +120,8 @@ return {
       vim.keymap.set("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>zz") -- TODO: change this to a function, using vim.api.nvim_win_set_cursor
       vim.keymap.set("n", "gi", vim.lsp.buf.implementation)
       vim.keymap.set("n", "ga", function() vim.lsp.buf.code_action() end)
+      vim.keymap.set('n', 'gv', ":vsplit<cr>gd") -- Go to definition in new split
+
 
       local telescope = require("telescope.builtin")
       vim.keymap.set("n", "gt", telescope.lsp_type_definitions)

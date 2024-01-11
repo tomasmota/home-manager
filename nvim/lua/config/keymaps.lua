@@ -26,10 +26,7 @@ vim.keymap.set("x", "p", "\"_dP")
 vim.keymap.set("v", ">", ">gv")
 vim.keymap.set("v", "<", "<gv")
 
--- Go to definition in new split
-vim.keymap.set('n', 'gv', ":vsplit<cr>gd")
-
--- Go to definition in new split
+-- Cycle buffers
 vim.keymap.set('n', '<C-n>', ":bnext<cr>")
 
 -- quickfix list
