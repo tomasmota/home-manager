@@ -1,8 +1,8 @@
 local opt = vim.opt
 
--- disable netrw at the very start of your init.lua (strongly advised)
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
+-- -- disable netrw at the very start of your init.lua (strongly advised)
+-- vim.g.loaded_netrw = 1
+-- vim.g.loaded_netrwPlugin = 1
 
 -- Number of screen lines to keep above and below the cursor
 opt.scrolloff = 8
