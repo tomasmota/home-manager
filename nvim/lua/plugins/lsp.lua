@@ -14,7 +14,8 @@ return {
         "nil_ls",
         "terraformls",
         "yamlls",
-        "helm_ls"
+        "helm_ls",
+        "dockerls"
       }
     }
   },
@@ -87,6 +88,11 @@ return {
       lspconfig.terraformls.setup {
         capabilities = capabilities,
         on_attach = twospaces
+      }
+
+      -- Terraform
+      lspconfig.dockerls.setup {
+        capabilities = capabilities,
       }
 
       vim.keymap.set("n", "K", vim.lsp.buf.hover)
