@@ -30,10 +30,9 @@ cat ~/.ssh/id_ed25519.pub
 
 ## TODO:
 - fix auto commit message
-- use lazy.nvim
-- fix Cody
 - add fonts to repo
 
 try plugins
 - https://github.com/pmizio/typescript-tools.nvim
 - https://github.com/folke/neodev.nvim
+- noice.nvim
