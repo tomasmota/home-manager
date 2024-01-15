@@ -123,8 +123,7 @@ return {
           null_ls.builtins.formatting.hclfmt,   -- hcl
           null_ls.builtins.code_actions.xo,     -- ts and js
           null_ls.builtins.code_actions.statix, -- nix
-          null_ls.builtins.code_actions.gitsigns,
-          null_ls.builtins.code_actions.templ
+          null_ls.builtins.code_actions.gitsigns
         }
       })
 
