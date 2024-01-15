@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, ... }:
 {
   programs.zsh = {
     enable = true;
@@ -8,6 +8,14 @@
     dotDir = ".config/zsh";
     autocd = true;
     defaultKeymap = "emacs";
+    history = {
+      path = "${config.xdg.cacheHome}/zsh_history";
+      save = 1000000;
+      extended = true;
+      ignoreDups = true;
+      share = true;
+      ignorePatterns = [ "l*" ];
+    };
 
     oh-my-zsh = {
       enable = true;
@@ -56,6 +64,13 @@
 
       function nvf(){
           file=$(fd --type file $1 | fzf --preview "bat --color=always {}")
+          if [[ -n $file ]]; then
+              nvim $file
+          fi
+      }
+
+      function nvfh(){
+          file=$(fd --hidden --type file $1 | fzf --preview "bat --color=always {}")
           if [[ -n $file ]]; then
               nvim $file
           fi
