@@ -94,6 +94,8 @@
       function nixrun(){
           nix run nixpkgs#$1
       }
+
+      PATH=$PATH:~/.cargo/bin
     '';
 
     initExtra = ''
