@@ -8,25 +8,12 @@
     dotDir = ".config/zsh";
     autocd = true;
     defaultKeymap = "emacs";
-    history = {
-      path = "${config.xdg.cacheHome}/zsh_history";
-      save = 1000000;
-      extended = true;
-      ignoreDups = true;
-      share = true;
-      ignorePatterns = [ "l*" ];
-    };
 
     oh-my-zsh = {
       enable = true;
       plugins = [ 
         "git"
-        "z"
-        "kubectl"
-        "docker"
-        "history"
       ];
-      custom = "${config.xdg.configHome}/zsh_nix/custom";
     };
 
     sessionVariables = {
