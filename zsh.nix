@@ -128,6 +128,7 @@
       lg = "fd --type=d --max-depth=1";
       devflake = "nix flake init -t 'github:tomasmota/flake-templates#devshell'";
       k = "kubectl";
+      ks = "kubectl config get-contexts -o name | fzf | xargs kubectl config use-context";
       wclip = "/mnt/c/Windows/System32/clip.exe";
 
       # Git
