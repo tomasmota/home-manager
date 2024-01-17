@@ -17,13 +17,6 @@
       ignorePatterns = [ "l*" ];
     };
 
-    oh-my-zsh = {
-      enable = true;
-      plugins = [ 
-        "git"
-      ];
-    };
-
     sessionVariables = {
       XDG_CONFIG_HOME = "${config.xdg.configHome}";
       EDITOR = "nvim";
@@ -135,8 +128,18 @@
       gc = "git commit --message";
       gpt = "git push --tags";
       gld = "git log -p --oneline --ext-diff";
+      gd = "git diff";
       gD = "git diff HEAD~1";
+      glo = "git log --oneline --decorate";
+      gst = "git status";
+      ga = "git add";
+      gaa = "git add --all";
+      gp = "git push";
+      gl = "git pull";
       gprune = ''git remote prune origin && git for-each-ref --format "%(refname:short)" refs/heads | grep -v "master\|main" | xargs git branch -D'';
+
+      # Git
+      dprune = "docker image prune --all";
 
       # Terraform
       tfi = "terraform init";
