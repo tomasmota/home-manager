@@ -30,6 +30,9 @@ require("lazy").setup("plugins", {
       task = "📌",
     },
   },
+  change_detection = {
+    notify = false,
+  }
 })
 
 require("config")

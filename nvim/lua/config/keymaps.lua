@@ -26,9 +26,6 @@ vim.keymap.set("x", "p", "\"_dP")
 vim.keymap.set("v", ">", ">gv")
 vim.keymap.set("v", "<", "<gv")
 
--- Cycle buffers
-vim.keymap.set('n', '<C-n>', ":bnext<cr>")
-
 -- quickfix list
 vim.keymap.set('n', '<leader>cn', ":cnext<cr>")
 vim.keymap.set('n', '<leader>cp', ":cprev<cr>")
