@@ -37,15 +37,19 @@ rec {
     tree
     findutils
     bat
-    kubectl
-    openshift
-    tektoncd-cli
     tree-sitter
     nodePackages.prettier
-    pinniped
     xclip
     lazygit
     neovim
+
+    # k8s stuff
+    tektoncd-cli
+    openshift
+    pinniped
+    kubectl
+    krew
+    k9s
   ];
 
   xdg.configFile = {
