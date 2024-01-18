@@ -1,4 +1,4 @@
-{config, pkgs, ... }:
+{ config, pkgs, ... }:
 
 rec {
   home.username = "tomas";
@@ -11,10 +11,8 @@ rec {
     dataHome = "${home.homeDirectory}/.local/share";
     cacheHome = "${home.homeDirectory}/.cache";
   };
-  
-  imports = [
-    ./zsh.nix 
-  ];
+
+  imports = [ ./shell/zsh.nix ];
 
   home.packages = with pkgs; [
     fd
@@ -52,9 +50,8 @@ rec {
 
   xdg.configFile = {
     nvim = {
-      source =
-        config.lib.file.mkOutOfStoreSymlink
-          "${xdg.configHome}/home-manager/nvim";
+      source = config.lib.file.mkOutOfStoreSymlink
+        "${xdg.configHome}/home-manager/nvim";
       recursive = true;
     };
   };
