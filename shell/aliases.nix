@@ -2,12 +2,12 @@
   # home-manager
   hm = "home-manager";
   hms = "home-manager switch";
-  # hmcd = "cd ${config.xdg.configHome}/home-manager";
-  # hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && home-manager switch && popd";
-  #
-  # # nixos
-  # nos = "sudo nixos-rebuild switch --flake ${config.xdg.configHome}/nixos-config";
-  # noe = "pushd ${config.xdg.configHome}/nixos-config && nvim . && popd";
+  hmcd = "cd ${config.xdg.configHome}/home-manager";
+  hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && home-manager switch && popd";
+
+  # nixos
+  nos = "sudo nixos-rebuild switch --flake ${config.xdg.configHome}/nixos-config";
+  noe = "pushd ${config.xdg.configHome}/nixos-config && nvim . && popd";
 
   # Misc
   ls = "eza -G --color auto -a -s type";
