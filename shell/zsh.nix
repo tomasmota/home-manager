@@ -46,14 +46,18 @@
         fd --type d --hidden --follow --exclude ".git" . "$1"
       }
 
-      PATH=$PATH:~/.cargo/bin
-
+      eval "$(kubectl shell-ctx hook zsh)"
     '' + import ./functions.nix { inherit config; };
 
     initExtra = ''
       if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
         source ${config.xdg.configHome}/home-manager/secrets.env
       fi
+    '';
+
+    envExtra = ''
+      PATH=$PATH:~/.cargo/bin
+      PATH=$PATH:~/.krew/bin
     '';
 
     shellAliases = import ./aliases.nix { inherit config; };
