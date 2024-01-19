@@ -48,6 +48,7 @@ rec {
     openshift
     pinniped
     kubectl
+    kind
     krew
     k9s
   ];
