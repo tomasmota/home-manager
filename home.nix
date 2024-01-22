@@ -49,7 +49,6 @@ rec {
     pinniped
     kubectl
     kind
-    krew
     k9s
   ];
 

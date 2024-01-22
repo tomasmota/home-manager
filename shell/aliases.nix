@@ -20,7 +20,8 @@
   lg = "fd --type=d --max-depth=1";
   devflake = "nix flake init -t 'github:tomasmota/flake-templates#devshell'";
   k = "kubectl";
-  ks = "kubectl-shell-ctx";
+  ks = ''kubectl config get-contexts -o name | fzf | xargs -I {} kubectl config use-context "{}"'';
+  kc = ''kubectl config current-context'';
   wclip = "/mnt/c/Windows/System32/clip.exe";
 
   # Git
@@ -53,7 +54,7 @@
     cd $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
   # Fuzzy find over all repos under ~/dev
   cdr = ''
-    cd $(fd --search-path ~/dev --type directory --hidden --no-ignore-vcs "^\.git$" | xargs -I {} dirname {} | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
+    cd $(fd --search-path ~/dev -d 7 --type directory --hidden --no-ignore-vcs "^\.git$" | xargs -I {} dirname {} | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
   # Fuzzy find tree and open folder in neovim
   nvd = ''
     nv $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';

@@ -45,8 +45,6 @@
       _fzf_compgen_dir() {
         fd --type d --hidden --follow --exclude ".git" . "$1"
       }
-
-      eval "$(kubectl-shell_ctx hook zsh)"
     '' + import ./functions.nix { inherit config; };
 
     initExtra = ''
@@ -57,7 +55,6 @@
 
     envExtra = ''
       PATH=$PATH:~/.cargo/bin
-      PATH=$PATH:~/.krew/bin
     '';
 
     shellAliases = import ./aliases.nix { inherit config; };
