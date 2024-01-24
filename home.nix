@@ -42,6 +42,8 @@ rec {
     xclip
     lazygit
     neovim
+    eslint_d
+    yamlfmt
 
     # k8s stuff
     tektoncd-cli
