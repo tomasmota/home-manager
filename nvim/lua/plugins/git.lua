@@ -30,7 +30,14 @@ return {
       { "<leader>gc", ":DiffviewClose<CR>" },
       { "<leader>gh", ":DiffviewFileHistory %<CR>" },
       { "<leader>gH", ":DiffviewFileHistory<CR>" },
-      { "<C-\\>", ":DiffviewToggleFiles<CR>" },
+      { "<C-\\>",     ":DiffviewToggleFiles<CR>" },
     },
-  }
+  },
+  {
+    'linrongbin16/gitlinker.nvim',
+    opts = {},
+    keys = {
+      { "<leader>gl", ":GitLink<CR>" },
+    },
+  },
 }
