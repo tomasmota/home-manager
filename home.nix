@@ -84,7 +84,7 @@ rec {
       set -g renumber-windows on
 
       # Create windows in current path, instead of path where session was created. Create with empty name
-      bind c new-window -c "#{pane_current_path}" -n ""
+      bind c new-window -c "#{pane_current_path}" -n "" -a
 
       # split with "v" and "s"
       bind v split-window -h -c "#{pane_current_path}"

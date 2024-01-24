@@ -1,6 +1,7 @@
 return {
   {
     'lewis6991/gitsigns.nvim',
+    lazy = false,
     opts = {
       on_attach = function(buffer)
         local gs = package.loaded.gitsigns
@@ -18,15 +19,18 @@ return {
         map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", "GitSigns Select Hunk")
       end,
     },
-    lazy = false,
   },
   {
     'sindrets/diffview.nvim',
     config = true,
+    lazy = false,
     keys = {
-      { "<leader>gd", ":DiffviewOpen <CR>" },
+      { "<leader>gd", ":DiffviewOpen<CR>" },
       { "<leader>gD", ":DiffviewOpen HEAD~1<CR>" },
-      { "<leader>gc", ":DiffviewClose <CR>" },
-    }
+      { "<leader>gc", ":DiffviewClose<CR>" },
+      { "<leader>gh", ":DiffviewFileHistory %<CR>" },
+      { "<leader>gH", ":DiffviewFileHistory<CR>" },
+      { "<C-\\>", ":DiffviewToggleFiles<CR>" },
+    },
   }
 }
