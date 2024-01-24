@@ -120,14 +120,16 @@ return {
         sources = {
           -- sources: https://github.com/nvimtools/none-ls.nvim/blob/main/doc/BUILTINS.md
           null_ls.builtins.formatting.prettier,
-          null_ls.builtins.formatting.hclfmt,   -- hcl
-          null_ls.builtins.formatting.yamlfmt,  -- yaml
+          null_ls.builtins.formatting.hclfmt,     -- hcl
+          null_ls.builtins.formatting.yamlfmt,    -- yaml
+          null_ls.builtins.formatting.alejandra,  -- nix
 
-          null_ls.builtins.code_actions.xo,     -- ts and js
-          null_ls.builtins.code_actions.statix, -- nix
-          null_ls.builtins.code_actions.eslint_d,
+          null_ls.builtins.code_actions.statix,   -- nix
+          null_ls.builtins.code_actions.eslint_d, -- js and ts
 
-          null_ls.builtins.diagnostics.eslint_d
+          null_ls.builtins.diagnostics.eslint_d,  -- js and ts
+          null_ls.builtins.diagnostics.hadolint,  -- Dockerfiles
+          null_ls.builtins.diagnostics.statix,    -- nix
         }
       })
 

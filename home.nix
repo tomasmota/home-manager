@@ -1,6 +1,8 @@
-{ config, pkgs, ... }:
-
-rec {
+{
+  config,
+  pkgs,
+  ...
+}: rec {
   home.username = "tomas";
   home.homeDirectory = "/home/tomas";
 
@@ -12,7 +14,7 @@ rec {
     cacheHome = "${home.homeDirectory}/.cache";
   };
 
-  imports = [ ./shell/zsh.nix ];
+  imports = [./shell/zsh.nix];
 
   home.packages = with pkgs; [
     fd
@@ -42,8 +44,13 @@ rec {
     xclip
     lazygit
     neovim
-    eslint_d
-    yamlfmt
+
+    # formatters and linters
+    eslint_d  # js and ts
+    yamlfmt   # yaml
+    hadolint  # dockerfiles
+    alejandra # nix formatting
+    statix    # nix linter
 
     # k8s stuff
     tektoncd-cli
@@ -56,7 +63,8 @@ rec {
 
   xdg.configFile = {
     nvim = {
-      source = config.lib.file.mkOutOfStoreSymlink
+      source =
+        config.lib.file.mkOutOfStoreSymlink
         "${xdg.configHome}/home-manager/nvim";
       recursive = true;
     };
@@ -71,7 +79,7 @@ rec {
     disableConfirmationPrompt = true;
     escapeTime = 0;
     mouse = true;
-    plugins = [ pkgs.tmuxPlugins.catppuccin ];
+    plugins = [pkgs.tmuxPlugins.catppuccin];
     extraConfig = ''
       set -ag terminal-overrides ",xterm-256color:RGB"
 
@@ -140,7 +148,7 @@ rec {
       init.defaultBranch = "main";
       push.autoSetupRemote = true;
     };
-    ignores = [ "/.direnv" ];
+    ignores = ["/.direnv"];
   };
 
   home.file.".config/alacritty".source = ./alacritty;

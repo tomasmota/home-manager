@@ -1,4 +1,4 @@
-{ config }: {
+{config}: {
   # home-manager
   hm = "home-manager";
   hms = "home-manager switch";
