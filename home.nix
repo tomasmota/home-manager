@@ -144,6 +144,11 @@ rec {
   };
 
   home.file.".config/alacritty".source = ./alacritty;
+  home.file.".config/yamlfmt/.yamlfmt".text = ''
+    formatter:
+      type: basic
+      retain_line_breaks: true
+  '';
 
   programs.home-manager.enable = true;
   home.stateVersion = "23.05"; # Don't change this
