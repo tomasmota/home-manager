@@ -35,9 +35,27 @@ return {
   },
   {
     'linrongbin16/gitlinker.nvim',
-    opts = {},
-    keys = {
-      { "<leader>gl", ":GitLink<CR>" },
-    },
+    config = function()
+      require('gitlinker').setup({
+        message = false,
+        highlight_duration = 200,
+        router = {
+          browse = {
+            ["^dcgit%.dac%.local"] = "https://dcgit.dac.local/projects/"
+              .. "{_A.ORG}/repos/"
+              .. "{_A.REPO}/browse/"
+              .. "{_A.FILE}"
+              .. "?at={_A.REV}"
+              .. "#{_A.LSTART}"
+              .. "{(_A.LEND > _A.LSTART and ('-' .. _A.LEND) or '')}",
+          },
+        },
+      })
+
+      vim.keymap.set({ "n", "v" }, "<leader>gl", ":GitLink<cr>",
+        { silent = true, noremap = true, desc = "Copy git permlink to clipboard" })
+      vim.keymap.set({ "n", "v" }, "<leader>gL", ":GitLink!<cr>",
+        { silent = true, noremap = true, desc = "Copy git permlink in browser" })
+    end,
   },
 }
