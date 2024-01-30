@@ -72,6 +72,7 @@ return {
     vim.keymap.set('n', '<leader>a', function() builtin.find_files({hidden=true, no_ignore=true}) end)
     vim.keymap.set('n', '<leader>k', builtin.keymaps)
     vim.keymap.set('n', '<leader>fs', builtin.lsp_document_symbols)
+    vim.keymap.set('n', '<leader>b', builtin.buffers)
     vim.keymap.set('n', '<leader>fa', require('telescope').extensions.live_grep_args.live_grep_args)
     vim.keymap.set('n', '<leader>fb', require('telescope').extensions.file_browser.file_browser)
     vim.keymap.set("n", "<leader>le", "<cmd>Telescope diagnostics<cr>")
