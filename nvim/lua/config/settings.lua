@@ -1,11 +1,7 @@
 local opt = vim.opt
 
--- disable netrw (use oil.nvim as default)
-vim.g.loaded_netrw = 1
-vim.g.loaded_netrwPlugin = 1
-
 -- Number of screen lines to keep above and below the cursor
-opt.scrolloff = 8
+opt.scrolloff = 10
 
 opt.relativenumber = true
 opt.number = true
@@ -37,8 +33,6 @@ opt.formatoptions = opt.formatoptions
 -- set termguicolors to enable highlight groups
 opt.termguicolors = true
 opt.updatetime = 50
--- Use system clipboard: https://github.com/neovim/neovim/wiki/FAQ#how-to-use-the-windows-clipboard-from-wsl
--- Install win32yank.exe, put this in, and nothing else
 opt.clipboard = "unnamedplus"
 opt.signcolumn="yes"
 opt.splitright=true

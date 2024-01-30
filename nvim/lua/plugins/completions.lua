@@ -7,6 +7,7 @@ return {
       'hrsh7th/cmp-path',
       'hrsh7th/cmp-cmdline',
       'hrsh7th/nvim-cmp',
+      'onsails/lspkind.nvim',
     },
     config = function()
       local cmp = require 'cmp'
@@ -32,10 +33,21 @@ return {
         experimental = { ghost_text = true },
         sources = cmp.config.sources({
           { name = 'nvim_lsp' },
-          { name = 'luasnip' },
-        }, {
-          { name = 'buffer' },
-        })
+          { name = 'luasnip', max_item_count = 3 },
+          { name = 'path', max_item_count = 3 },
+          { name = 'buffer', max_item_count = 5 },
+        }),
+        formatting = {
+          expandable_indicator = true,
+          format = require("lspkind").cmp_format({
+            mode = "symbol_text",
+            maxwidth = 50,
+            ellipsis_char = "...",
+            symbol_map = {
+              Copilot = "",
+            },
+          }),
+        },
       })
     end
   },
@@ -50,7 +62,7 @@ return {
       local ls = require("luasnip")
       vim.keymap.set({ "i", "s" }, "<C-l>", function() ls.jump(1) end, { silent = true })
       vim.keymap.set({ "i", "s" }, "<C-h>", function() ls.jump(-1) end, { silent = true })
-     require("luasnip.loaders.from_vscode").lazy_load()
+      require("luasnip.loaders.from_vscode").lazy_load()
     end
   }
 }
