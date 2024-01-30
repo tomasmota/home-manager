@@ -8,9 +8,15 @@ return {
       'hrsh7th/cmp-cmdline',
       'hrsh7th/nvim-cmp',
       'onsails/lspkind.nvim',
+      'windwp/nvim-autopairs'
     },
     config = function()
       local cmp = require 'cmp'
+
+      -- Integrate nvim-autopairs with cmp
+      local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+      require("nvim-autopairs").setup()
+			cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
 
       cmp.setup({
         snippet = {
