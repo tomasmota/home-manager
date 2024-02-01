@@ -10,6 +10,18 @@ return {
       require('Comment').setup {
         pre_hook = require('ts_context_commentstring.integrations.comment_nvim').create_pre_hook(),
       }
+
+      -- comment and duplicate current selection
+      vim.keymap.set('x', '<leader>d', function()
+          local esc = vim.api.nvim_replace_termcodes(
+              '<ESC>', true, false, true
+          )
+          vim.cmd('normal! y')  -- yank selection
+          vim.cmd('normal! gv') -- reselect the visual selection
+          require('Comment.api').toggle.linewise(vim.fn.visualmode()) -- comment
+          vim.api.nvim_feedkeys(esc, 'nx', false) -- back to normal mode 
+          vim.cmd('normal! p')  -- paste selection
+      end)
     end,
   },
   {
