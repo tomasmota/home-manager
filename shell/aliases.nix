@@ -31,8 +31,8 @@
   gld = "git log -p --oneline --ext-diff";
   gD = "git diff HEAD~1";
   gprune = ''git remote prune origin && git for-each-ref --format "%(refname:short)" refs/heads | grep -v "master\|main" | xargs git branch -D'';
-  gwtcd = "cd $(git worktree list | awk '{print $1}' | fzf)";
-  gwtrm = "git worktree remove $(git worktree list | awk '{print $1}' | fzf)";
+  gwtcd = "cd $(git worktree list | grep -v '(bare)' | awk '{print $1}' | fzf)";
+  gwtrm = "git worktree remove $(git worktree list | grep -v '(bare)' | awk '{print $1}' | fzf)";
 
   # Docker
   dprune = "docker image prune --all";
