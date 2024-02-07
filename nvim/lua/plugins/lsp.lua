@@ -105,7 +105,10 @@ return {
 
       local telescope = require("telescope.builtin")
       vim.keymap.set("n", "gt", telescope.lsp_type_definitions)
-      vim.keymap.set("n", "gr", telescope.lsp_references)
+      vim.keymap.set("n", "gr", function() telescope.lsp_references({
+        include_declaration = false,
+        show_line = false
+      }) end)
       vim.keymap.set("n", "<leader>r", vim.lsp.buf.rename)
       vim.keymap.set("n", "<leader>e", vim.diagnostic.goto_next)
     end

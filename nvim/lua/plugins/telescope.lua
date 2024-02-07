@@ -13,6 +13,9 @@ return {
     telescope.setup({
       winblend = 10,
       defaults = {
+        path_display = {
+          shorten = 20
+        },
         mappings = {
           i = {
             ['<C-\\>'] = 'select_vertical',
@@ -76,9 +79,8 @@ return {
     vim.keymap.set('n', '<leader>fa', require('telescope').extensions.live_grep_args.live_grep_args)
     vim.keymap.set('n', '<leader>fb', require('telescope').extensions.file_browser.file_browser)
     vim.keymap.set("n", "<leader>le", "<cmd>Telescope diagnostics<cr>")
-    vim.keymap.set('n', '<leader>h', builtin.help_tags) -- grep help docs
+    vim.keymap.set('n', '<leader>fh', builtin.help_tags) -- grep help docs
     vim.keymap.set('n', '<leader>gst', builtin.git_status)
-    -- vim.keymap.set('n', '<leader>b', builtin.buffers)
     vim.keymap.set('n', '<c-f>', builtin.current_buffer_fuzzy_find)
   end
 }
