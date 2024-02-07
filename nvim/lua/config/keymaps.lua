@@ -29,3 +29,4 @@ vim.keymap.set("v", "<", "<gv")
 -- quickfix list
 vim.keymap.set('n', '<leader>cn', ":cnext<cr>")
 vim.keymap.set('n', '<leader>cp', ":cprev<cr>")
+vim.keymap.set('n', '<leader>cc', ":cclose<cr>")
