@@ -30,7 +30,7 @@
     dive
     wget
     wslu
-    go_1_21
+    go_1_22
     gcc
     cargo
     nodejs
