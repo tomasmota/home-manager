@@ -147,6 +147,9 @@
     extraConfig = {
       init.defaultBranch = "main";
       push.autoSetupRemote = true;
+      branch.sort = "-committerdate";
+      column.ui = "auto";
+      maintenance.strategy = "incremental";
     };
     ignores = ["/.direnv"];
   };
