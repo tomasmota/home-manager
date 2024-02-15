@@ -133,6 +133,7 @@ return {
           null_ls.builtins.diagnostics.eslint_d,  -- js and ts
           null_ls.builtins.diagnostics.hadolint,  -- Dockerfiles
           null_ls.builtins.diagnostics.statix,    -- nix
+          -- null_ls.builtins.diagnostics.buf,       -- protobuf
         }
       })
 
