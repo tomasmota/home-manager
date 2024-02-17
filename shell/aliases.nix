@@ -26,7 +26,7 @@
   wclip = "/mnt/c/Windows/System32/clip.exe";
 
   # Git
-  gc = "git commit --message";
+  gc = "git commit --signoff --message";
   gpt = "git push --tags";
   gld = "git log -p --oneline --ext-diff";
   gD = "git diff HEAD~1";
