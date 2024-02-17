@@ -46,11 +46,11 @@
     neovim
 
     # formatters and linters
-    eslint_d  # js and ts
-    yamlfmt   # yaml
-    hadolint  # dockerfiles
+    eslint_d # js and ts
+    yamlfmt # yaml
+    hadolint # dockerfiles
     alejandra # nix formatting
-    statix    # nix linter
+    statix # nix linter
 
     # k8s stuff
     tektoncd-cli
@@ -150,9 +150,18 @@
       branch.sort = "-committerdate";
       column.ui = "auto";
       maintenance.strategy = "incremental";
+
+      # Sign all commits using ssh key
+      commit.gpgsign = true;
+      gpg.format = "ssh";
+      user.signingkey = "${home.homeDirectory}/.ssh/id_ed25519.pub";
+      gpg.ssh.allowedSignersFile = "~/.ssh/allowed_signers";
     };
     ignores = ["/.direnv"];
   };
+
+  home.file.".ssh/allowed_signers".text =
+    "* ${builtins.readFile /home/tomas/.ssh/id_ed25519.pub}";
 
   home.file.".config/alacritty".source = ./alacritty;
   home.file.".config/yamlfmt/.yamlfmt".text = ''

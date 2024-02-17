@@ -1,9 +1,9 @@
 {config}: {
   # home-manager
   hm = "home-manager";
-  hms = "home-manager switch";
+  hms = "home-manager switch --impure";
   hmcd = "cd ${config.xdg.configHome}/home-manager";
-  hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && home-manager switch && popd";
+  hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && home-manager switch --impure && popd";
 
   # nixos
   nos = "sudo nixos-rebuild switch --flake ${config.xdg.configHome}/nixos-config";
@@ -26,7 +26,7 @@
   wclip = "/mnt/c/Windows/System32/clip.exe";
 
   # Git
-  gc = "git commit --signoff --message";
+  gc = "git commit --message";
   gpt = "git push --tags";
   gld = "git log -p --oneline --ext-diff";
   gD = "git diff HEAD~1";
