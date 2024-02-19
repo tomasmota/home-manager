@@ -17,7 +17,7 @@
   imports = [
     ./shell/zsh.nix
     ./git.nix
-    (import ./tmux.nix { inherit pkgs xdg;})
+    (import ./tmux.nix {inherit pkgs xdg;})
   ];
 
   home.packages = with pkgs; [
@@ -55,6 +55,7 @@
     hadolint # dockerfiles
     alejandra # nix formatting
     statix # nix linter
+    hclfmt # hcl formatter
 
     # k8s stuff
     tektoncd-cli
