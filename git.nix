@@ -1,6 +1,10 @@
-{pkgs,...}: {
-  home.file.".ssh/allowed_signers".text =
-    "* ${builtins.readFile ~/.ssh/id_ed25519.pub}";
+{
+  pkgs,
+  home,
+}: {
+  home.file.".ssh/allowed_signers".text = ''
+    * ${builtins.readFile "${home.homeDirectory}/.ssh/id_ed25519.pub"}
+  '';
 
   programs.git = {
     enable = true;
@@ -22,9 +26,16 @@
       # Sign all commits using ssh key
       commit.gpgsign = true;
       gpg.format = "ssh";
-      user.signingkey = "~/.ssh/id_ed25519.pub";
-      gpg.ssh.allowedSignersFile = "~/.ssh/allowed_signers";
+      user.signingkey = "${home.homeDirectory}/.ssh/id_ed25519.pub";
+      gpg.ssh.allowedSignersFile = "${home.homeDirectory}/.ssh/allowed_signers";
     };
+    includes = [
+      {
+        # For work repos, use custom config
+        condition = "gitdir:${home.homeDirectory}/dev/work/";
+        path = "${home.homeDirectory}/dev/work/.gitconfig";
+      }
+    ];
     ignores = ["/.direnv"];
   };
 }

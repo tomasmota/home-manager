@@ -16,7 +16,7 @@
 
   imports = [
     ./shell/zsh.nix
-    ./git.nix
+    (import ./git.nix {inherit pkgs home;})
     (import ./tmux.nix {inherit pkgs xdg;})
   ];
 
