@@ -23,6 +23,7 @@
       };
 
       sessionVariables = {
+        DIRENV_LOG_FORMAT = "";
         XDG_CONFIG_HOME = "${config.xdg.configHome}";
         EDITOR = "nvim";
         MANPAGER = "nvim +Man!";
