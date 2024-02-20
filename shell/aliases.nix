@@ -22,7 +22,7 @@
   k = "kubectl";
   ks = ''kubectl config get-contexts -o name | fzf | xargs -I {} kubectl config use-context "{}"'';
   kc = ''kubectl config current-context'';
-  kn = ''kubectl get ns | awk '{print $1}' | fzf | xargs -I {} kubectl config set-context --current --namespace "{}"'';
+  kn = ''kubectl get ns --no-headers | awk '{print $1}' | fzf | xargs -I {} kubectl config set-context --current --namespace "{}"'';
   wclip = "/mnt/c/Windows/System32/clip.exe";
 
   # Git
