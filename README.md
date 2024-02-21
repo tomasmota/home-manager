@@ -36,6 +36,9 @@ cat ~/.ssh/id_ed25519.pub
 try plugins
 - https://github.com/pmizio/typescript-tools.nvim
 - https://github.com/folke/neodev.nvim
-- noice.nvim
+- vim-sleuth
+- vim-fugitive
+- mini.surround
+- mini.ai
 - dressing
 - markdown preview 
