@@ -2,7 +2,7 @@ return {
   {
     "folke/todo-comments.nvim",
     dependencies = "nvim-lua/plenary.nvim",
-    config = true
+    opts = { signs = false }
   },
   {
     "numToStr/Comment.nvim",
@@ -13,14 +13,14 @@ return {
 
       -- comment and duplicate current selection
       vim.keymap.set('x', '<leader>d', function()
-          local esc = vim.api.nvim_replace_termcodes(
-              '<ESC>', true, false, true
-          )
-          vim.cmd('normal! y')  -- yank selection
-          vim.cmd('normal! gv') -- reselect the visual selection
-          require('Comment.api').toggle.linewise(vim.fn.visualmode()) -- comment
-          vim.api.nvim_feedkeys(esc, 'nx', false) -- back to normal mode 
-          vim.cmd('normal! p')  -- paste selection
+        local esc = vim.api.nvim_replace_termcodes(
+          '<ESC>', true, false, true
+        )
+        vim.cmd('normal! y')                                        -- yank selection
+        vim.cmd('normal! gv')                                       -- reselect the visual selection
+        require('Comment.api').toggle.linewise(vim.fn.visualmode()) -- comment
+        vim.api.nvim_feedkeys(esc, 'nx', false)                     -- back to normal mode
+        vim.cmd('normal! p')                                        -- paste selection
       end)
     end,
   },
@@ -28,19 +28,19 @@ return {
     "windwp/nvim-ts-autotag",
     config = true
   },
-	{
-		"lukas-reineke/indent-blankline.nvim",
-		event = "BufEnter",
-		main = "ibl",
-		opts = {},
-		config = function()
-			require("ibl").setup({
-				scope = {
-					enabled = false,
-					show_start = false,
-					show_end = false,
-				},
-			})
-		end,
-	},
+  {
+    "lukas-reineke/indent-blankline.nvim",
+    event = "BufEnter",
+    main = "ibl",
+    opts = {},
+    config = function()
+      require("ibl").setup({
+        scope = {
+          enabled = false,
+          show_start = false,
+          show_end = false,
+        },
+      })
+    end,
+  },
 }
