@@ -21,7 +21,11 @@ return {
   },
   {
     "neovim/nvim-lspconfig",
+    dependencies = {
+      'folke/neodev.nvim',
+    },
     config = function()
+      require('neodev').setup()
       local lspconfig = require('lspconfig')
       local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
@@ -98,17 +102,19 @@ return {
       vim.keymap.set("n", "K", vim.lsp.buf.hover)
       vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help)
       vim.keymap.set("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>zz") -- TODO: change this to a function, using vim.api.nvim_win_set_cursor
-      vim.keymap.set('n', 'gs', ":vsplit<cr>gd") -- Go to definition in new split
+      vim.keymap.set('n', 'gs', ":vsplit<cr>gd")                           -- Go to definition in new split
       vim.keymap.set("n", "gi", vim.lsp.buf.implementation)
       vim.keymap.set("n", "ga", function() vim.lsp.buf.code_action() end)
 
 
       local telescope = require("telescope.builtin")
       vim.keymap.set("n", "gt", telescope.lsp_type_definitions)
-      vim.keymap.set("n", "gr", function() telescope.lsp_references({
-        include_declaration = false,
-        show_line = false
-      }) end)
+      vim.keymap.set("n", "gr", function()
+        telescope.lsp_references({
+          include_declaration = false,
+          show_line = false
+        })
+      end)
       vim.keymap.set("n", "<leader>r", vim.lsp.buf.rename)
       vim.keymap.set("n", "<leader>e", vim.diagnostic.goto_next)
     end

@@ -27,20 +27,11 @@
       fi
   }
 
-  # push dotfiles
-  function hmpush(){
-      cd ${config.xdg.configHome}/home-manager
-      git add .
-      git commit -m "$''${1:-auto}"
-      git push
-      cd -
-  }
-
   # sync dotfiles
   function hmsync(){
       cd ${config.xdg.configHome}/home-manager
       git pull
-      home-manager switch
+      home-manager switch --impure
       cd -
   }
 ''
