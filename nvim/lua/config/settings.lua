@@ -5,21 +5,26 @@ opt.scrolloff = 10
 
 opt.relativenumber = true
 opt.number = true
+
 opt.expandtab = true
 opt.tabstop = 4
 opt.softtabstop = 4
 opt.shiftwidth = 4
 opt.expandtab = true
 opt.autoindent = true
+
 opt.undofile = true
 opt.swapfile = false
-opt.belloff = "all"
-opt.selection = 'exclusive'
+
 opt.autoindent = true
 opt.smartindent = true
 opt.breakindent = true
+
 opt.ignorecase = true -- Ignore case when searching...
 opt.smartcase = true  -- ... unless there is a capital letter in the query
+
+opt.belloff = "all"
+opt.selection = 'exclusive'
 opt.formatoptions = opt.formatoptions
     - "a"             -- Auto formatting is BAD.
     - "t"             -- Don't auto format my code. I got linters for that.

@@ -7,17 +7,11 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
--- -- Open Telescope find_files when opening nvim with a directory as first argument
--- _G.open_telescope = function()
---     local first_arg = vim.v.argv[#vim.v.argv]
---     if first_arg and vim.fn.isdirectory(first_arg) == 1 then
---         vim.g.loaded_netrw = true
---         require("telescope.builtin").find_files({search_dirs = {first_arg}})
---     end
--- end
--- vim.api.nvim_exec([[
--- augroup TelescopeOnEnter
---     autocmd!
---     autocmd VimEnter * lua open_telescope()
--- augroup END
--- ]], false)
+vim.api.nvim_create_autocmd("UIEnter", {
+  callback = function()
+    local arg = vim.fn.argv(0)
+    if arg == "" or vim.fn.isdirectory(arg) == 1 then
+      require("telescope.builtin").find_files()
+    end
+  end,
+})
