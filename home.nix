@@ -50,7 +50,6 @@
     neovim
 
     # formatters and linters
-    eslint_d # js and ts
     yamlfmt # yaml
     hadolint # dockerfiles
     alejandra # nix formatting
