@@ -35,6 +35,7 @@
     wget
     wslu
     go_1_22
+    gotools
     gcc
     cargo
     nodejs
@@ -46,8 +47,9 @@
     tree-sitter
     nodePackages.prettier
     xclip
-    lazygit
     neovim
+    terraform
+    bottom
 
     # formatters and linters
     yamlfmt # yaml
