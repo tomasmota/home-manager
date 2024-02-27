@@ -12,13 +12,22 @@
     disableConfirmationPrompt = true;
     escapeTime = 0;
     mouse = true;
-    plugins = [pkgs.tmuxPlugins.catppuccin];
+    plugins = with pkgs; [
+      tmuxPlugins.extrakto
+      {
+        plugin = tmuxPlugins.catppuccin;
+        extraConfig = ''
+          set -g @catppuccin_window_tabs_enabled on
+          set -g @catppuccin_window_default_text "#W"
+          set -g @catppuccin_window_current_text "#W"
+        '';
+      }
+    ];
     extraConfig = ''
       set -ag terminal-overrides ",xterm-256color:RGB"
 
-      set -g mouse on
-
-      set-option -g escape-time 50
+      # status bar on top
+      set-option -g status-position top
 
       # hide status on the right (hostname, time and date)
       set-option -g status-right ""
@@ -27,7 +36,7 @@
       set -g renumber-windows on
 
       # Create windows in current path, instead of path where session was created. Create with empty name
-      bind c new-window -c "#{pane_current_path}" -n "" -a
+      bind c new-window -c "#{pane_current_path}" -n ""
 
       # split with "v" and "s"
       bind v split-window -h -c "#{pane_current_path}"
@@ -53,14 +62,12 @@
       bind q kill-pane
       bind C-q kill-window
 
-      # dont use current window name as default when renaming
-      unbind ,
+      # # dont use current window name as default when renaming
+      # unbind ,
       bind-key , command-prompt -p (rename-window) "rename-window '%%'"
 
       # reload with "r"
       bind r source-file ${xdg.configHome}/tmux/tmux.conf \; display "Reloaded!"
-
-      set -g @catppuccin_window_tabs_enabled on
     '';
     historyLimit = 1000000;
   };
