@@ -3,9 +3,7 @@ return {
   dependencies = { "nvim-tree/nvim-web-devicons" },
   config = function ()
     local oil = require("oil")
-    oil.setup({
-      default_file_explorer = false,
-    })
+    oil.setup()
     vim.keymap.set('n', '<leader>o', oil.toggle_float)
   end,
 }

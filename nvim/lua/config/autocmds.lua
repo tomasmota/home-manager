@@ -6,12 +6,3 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.highlight.on_yank { higroup = 'IncSearch', timeout = 30 }
   end,
 })
-
-vim.api.nvim_create_autocmd("UIEnter", {
-  callback = function()
-    local arg = vim.fn.argv(0)
-    if arg == "" or vim.fn.isdirectory(arg) == 1 then
-      require("telescope.builtin").find_files()
-    end
-  end,
-})

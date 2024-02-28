@@ -1,5 +1,9 @@
 local opt = vim.opt
 
+-- disable netrw (use oil.nvim as default)
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 -- Number of screen lines to keep above and below the cursor
 opt.scrolloff = 10
 
