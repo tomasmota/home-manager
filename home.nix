@@ -59,6 +59,7 @@
     hclfmt # hcl formatter
 
     # k8s stuff
+    kubernetes-helm
     tektoncd-cli
     openshift
     pinniped
