@@ -31,14 +31,7 @@ cat ~/.ssh/id_ed25519.pub
 ## TODO:
 - fix auto commit message
 - add fonts to repo
-- configure Pauline
 
 try plugins
-- https://github.com/pmizio/typescript-tools.nvim
-- https://github.com/folke/neodev.nvim
-- vim-sleuth
 - vim-fugitive
-- mini.surround
-- mini.ai
-- dressing
 - markdown preview 
