@@ -42,7 +42,7 @@ opt.formatoptions = opt.formatoptions
 
 -- set termguicolors to enable highlight groups
 opt.termguicolors = true
-opt.updatetime = 50
+opt.updatetime = 250
 opt.clipboard = "unnamedplus"
 opt.signcolumn = "yes"
 opt.splitright = true

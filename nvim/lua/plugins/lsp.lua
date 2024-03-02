@@ -78,7 +78,7 @@ return {
         dockerls = {}
       }
 
-      -- Adding tools that should be installe by Mason but are not LSP servers
+      -- Adding tools that should be installed by Mason but are not LSP servers
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         -- Formatters
@@ -98,33 +98,46 @@ return {
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for tsserver)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
           end,
         },
       }
 
-      vim.keymap.set("n", "K", vim.lsp.buf.hover)
-      vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help)
-      vim.keymap.set("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>zz") -- TODO: change this to a function, using vim.api.nvim_win_set_cursor
-      vim.keymap.set('n', 'gs', ":vsplit<cr>gd")                           -- Go to definition in new split
-      vim.keymap.set("n", "gi", vim.lsp.buf.implementation)
-      vim.keymap.set("n", "ga", function() vim.lsp.buf.code_action() end)
+      vim.api.nvim_create_autocmd('LspAttach', {
+        group = vim.api.nvim_create_augroup('lsp-attach', { clear = true }),
+        callback = function(event)
+          local telescope = require("telescope.builtin")
+          vim.keymap.set("n", "gt", telescope.lsp_type_definitions)
+          vim.keymap.set("n", "gr", function()
+            telescope.lsp_references({
+              include_declaration = false,
+              show_line = false
+            })
+          end)
+          vim.keymap.set("n", "K", vim.lsp.buf.hover)
+          vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help)
+          vim.keymap.set("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>zz") -- TODO: change this to a function, using vim.api.nvim_win_set_cursor
+          vim.keymap.set('n', 'gs', ":vsplit<cr>gd")                           -- Go to definition in new split
+          vim.keymap.set("n", "gi", vim.lsp.buf.implementation)
+          vim.keymap.set("n", "ga", vim.lsp.buf.code_action)
+          vim.keymap.set("n", "<leader>r", vim.lsp.buf.rename)
+          vim.keymap.set("n", "<leader>e", vim.diagnostic.goto_next)
 
+          local client = vim.lsp.get_client_by_id(event.data.client_id)
+          if client and client.server_capabilities.documentHighlightProvider then
+            vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+              buffer = event.buf,
+              callback = vim.lsp.buf.document_highlight,
+            })
 
-      local telescope = require("telescope.builtin")
-      vim.keymap.set("n", "gt", telescope.lsp_type_definitions)
-      vim.keymap.set("n", "gr", function()
-        telescope.lsp_references({
-          include_declaration = false,
-          show_line = false
-        })
-      end)
-      vim.keymap.set("n", "<leader>r", vim.lsp.buf.rename)
-      vim.keymap.set("n", "<leader>e", vim.diagnostic.goto_next)
+            vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+              buffer = event.buf,
+              callback = vim.lsp.buf.clear_references,
+            })
+          end
+        end,
+      })
     end
   },
   {
