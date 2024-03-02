@@ -1,34 +1,13 @@
 return {
   {
-    "williamboman/mason.nvim",
-    config = true
-  },
-  {
-    "williamboman/mason-lspconfig.nvim",
-    opts = {
-      -- avaliable lsp servers https://github.com/williamboman/mason-lspconfig.nvim?tab=readme-ov-file#available-lsp-servers
-      ensure_installed = {
-        "lua_ls",
-        "gopls",
-        "tsserver",
-        "nil_ls",
-        "terraformls",
-        "yamlls",
-        "helm_ls",
-        "dockerls"
-      }
-    }
-  },
-  {
     "neovim/nvim-lspconfig",
     dependencies = {
-      'folke/neodev.nvim',
+      { "williamboman/mason.nvim", opts = {} },
+      "WhoIsSethDaniel/mason-tool-installer.nvim",
+      "williamboman/mason-lspconfig.nvim",
+      { "j-hui/fidget.nvim",       opts = {} },
     },
     config = function()
-      require('neodev').setup()
-      local lspconfig = require('lspconfig')
-      local capabilities = require('cmp_nvim_lsp').default_capabilities()
-
       -- used to set tabs to 2 spaces in some languages
       local twospaces = function()
         vim.o.tabstop = 2
@@ -37,66 +16,95 @@ return {
         vim.o.expandtab = true
       end
 
-      -- Go
-      lspconfig.gopls.setup {
-        capabilities = capabilities,
-        settings = {
-          gopls = {
-            experimentalPostfixCompletions = true,
-            analyses = {
-              unusedparams = true,
-              shadow = true,
+      local servers = {
+        lua_ls = {
+          settings = {
+            Lua = {
+              runtime = { version = 'LuaJIT' },
+              workspace = {
+                checkThirdParty = false,
+                library = {
+                  '${3rd}/luv/library',
+                  unpack(vim.api.nvim_get_runtime_file('', true)),
+                },
+              },
+              completion = {
+                callSnippet = 'Replace',
+              },
+              diagnostics = { disable = { 'missing-fields' } },
             },
-            staticcheck = true,
+          },
+          on_attach = twospaces,
+        },
+        gopls = {
+          settings = {
+            gopls = {
+              experimentalPostfixCompletions = true,
+              analyses = {
+                unusedparams = true,
+                shadow = true,
+              },
+              staticcheck = true,
+            },
+          },
+          init_options = {
+            usePlaceholders = true,
           },
         },
-        init_options = {
-          usePlaceholders = true,
-        }
-      }
-
-      -- Typescript
-      lspconfig.tsserver.setup {
-        capabilities = capabilities,
-        on_attach = twospaces
-      }
-
-      -- Lua
-      lspconfig.lua_ls.setup {
-        capabilities = capabilities,
-        on_attach = twospaces
-      }
-
-      -- Yaml
-      lspconfig.yamlls.setup {
-        settings = {
-          yaml = {
-            schemaStore = {
-              url = "https://www.schemastore.org/api/json/catalog.json",
-              enable = true,
+        tsserver = {
+          on_attach = twospaces,
+        },
+        nil_ls = {
+          on_attach = twospaces,
+        },
+        terraformls = {
+          on_attach = twospaces,
+        },
+        yamlls = {
+          settings = {
+            yaml = {
+              schemaStore = {
+                url = "https://www.schemastore.org/api/json/catalog.json",
+                enable = true,
+              },
+              style = {
+                flowSequence = 'allow'
+              },
+              keyOrdering = false
             },
-            style = {
-              flowSequence = 'allow'
-            },
-            keyOrdering = false
           },
         },
+        helm_ls = {},
+        dockerls = {}
       }
 
-      -- Nix
-      lspconfig.nil_ls.setup {
-        on_attach = twospaces
-      }
+      -- Adding tools that should be installe by Mason but are not LSP servers
+      local ensure_installed = vim.tbl_keys(servers or {})
+      vim.list_extend(ensure_installed, {
+        -- Formatters
+        "stylua",
+        "yamlfmt",
+        "hclfmt",
 
-      -- Terraform
-      lspconfig.terraformls.setup {
-        capabilities = capabilities,
-        on_attach = twospaces
-      }
+        -- Linters
+        "hadolint",
+      })
+      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
-      -- Terraform
-      lspconfig.dockerls.setup {
-        capabilities = capabilities,
+      local capabilities = vim.lsp.protocol.make_client_capabilities()
+      capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
+
+      require('mason-lspconfig').setup {
+        handlers = {
+          function(server_name)
+            local server = servers[server_name] or {}
+            -- This handles overriding only values explicitly passed
+            -- by the server configuration above. Useful when disabling
+            -- certain features of an LSP (for example, turning off formatting for tsserver)
+            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+            require('lspconfig')[server_name].setup(server)
+          end,
+        },
       }
 
       vim.keymap.set("n", "K", vim.lsp.buf.hover)
@@ -129,15 +137,14 @@ return {
         sources = {
           -- sources: https://github.com/nvimtools/none-ls.nvim/blob/main/doc/BUILTINS.md
           null_ls.builtins.formatting.prettier,
-          null_ls.builtins.formatting.hclfmt,     -- hcl
-          null_ls.builtins.formatting.yamlfmt,    -- yaml
-          null_ls.builtins.formatting.alejandra,  -- nix
+          null_ls.builtins.formatting.hclfmt,    -- hcl
+          null_ls.builtins.formatting.yamlfmt,   -- yaml
+          null_ls.builtins.formatting.alejandra, -- nix
 
-          null_ls.builtins.code_actions.statix,   -- nix
+          null_ls.builtins.code_actions.statix,  -- nix
 
-          null_ls.builtins.diagnostics.hadolint,  -- Dockerfiles
-          null_ls.builtins.diagnostics.statix,    -- nix
-          -- null_ls.builtins.diagnostics.buf,       -- protobuf
+          null_ls.builtins.diagnostics.hadolint, -- Dockerfiles
+          null_ls.builtins.diagnostics.statix,   -- nix
         }
       })
 
@@ -145,10 +152,6 @@ return {
         vim.lsp.buf.format { async = true }
       end)
     end
-  },
-  {
-    "j-hui/fidget.nvim",
-    config = true
   },
   {
     "towolf/vim-helm",

@@ -51,12 +51,8 @@
     terraform
     bottom
 
-    # formatters and linters
-    yamlfmt # yaml
-    hadolint # dockerfiles
     alejandra # nix formatting
     statix # nix linter
-    hclfmt # hcl formatter
 
     # k8s stuff
     kubernetes-helm
