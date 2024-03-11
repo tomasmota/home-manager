@@ -33,3 +33,7 @@ vim.keymap.set("v", "<", "<gv")
 vim.keymap.set('n', '<leader>cn', ":cnext<cr>")
 vim.keymap.set('n', '<leader>cp', ":cprev<cr>")
 vim.keymap.set('n', '<leader>cc', ":cclose<cr>")
+
+-- use c-n and c-p to go to previous and next buffer
+vim.keymap.set('n', '<c-n>', ":bnext<cr>")
+vim.keymap.set('n', '<c-p>', ":bprev<cr>")
