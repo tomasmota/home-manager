@@ -13,7 +13,7 @@ return {
       'onsails/lspkind.nvim',
 
       -- autopairs
-      -- 'windwp/nvim-autopairs'
+      'windwp/nvim-autopairs',
 
       -- luasnip
       'L3MON4D3/LuaSnip',
@@ -27,10 +27,9 @@ return {
       luasnip.config.setup {}
 
       -- Integrate nvim-autopairs with cmp (trying out not using this for now)
-      --
-      -- local cmp_autopairs = require("nvim-autopairs.completion.cmp")
-      -- require("nvim-autopairs").setup()
-      -- cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
+      local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+      require("nvim-autopairs").setup()
+      cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
 
       cmp.setup({
         snippet = {
