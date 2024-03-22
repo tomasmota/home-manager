@@ -14,7 +14,7 @@ return {
   {
     "zbirenbaum/copilot-cmp",
     event = { "BufEnter" },
-    enabled = true,
+    enabled = false,
     dependencies = { "zbirenbaum/copilot.lua" },
     config = function()
       require("copilot_cmp").setup()
