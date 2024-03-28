@@ -2,8 +2,7 @@
   programs = {
     zsh = {
       enable = true;
-      enableAutosuggestions = true;
-      enableCompletion = true;
+      autosuggestion.enable = true;
       syntaxHighlighting.enable = true;
       dotDir = ".config/zsh";
       autocd = true;
