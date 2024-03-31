@@ -34,23 +34,25 @@
     dive
     wget
     wslu
-    go_1_22
-    gotools
     gcc
-    cargo
-    nodejs
     glow
     unzip
     tree
     findutils
     bat
     tree-sitter
-    nodePackages.prettier
     xclip
     neovim
-    terraform
-    bottom
 
+    # code
+    nodejs
+    go_1_22
+    gotools
+    cargo
+    terraform
+
+    # formatting / linting
+    nodePackages.prettier
     alejandra # nix formatting
     statix # nix linter
 
