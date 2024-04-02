@@ -10,7 +10,7 @@
   noe = "pushd ${config.xdg.configHome}/nixos-config && nvim . && popd";
 
   # Misc
-  ls = "eza -G --color auto -a -s type";
+  ls = "eza -G --color auto -s type";
   la = "eza -l --color always -a -s type";
   l = "eza -l --color always -a -s type";
   nv = "nvim";
