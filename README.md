@@ -7,9 +7,7 @@
 
 ### If this is a new machine, set up github authentication
 ```bash
-ssh-keygen -t ed25519 -C "<key description>"
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -C "<key description>"
 cat ~/.ssh/id_ed25519.pub
 *add key to github*
 ```
@@ -27,7 +25,7 @@ cat ~/.ssh/id_ed25519.pub
 
 ### Set up work .gitconfig and signing (OPTIONAL)
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_work
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_work -C "<key description>"
 
 mkdir -p ~/dev/work
 
