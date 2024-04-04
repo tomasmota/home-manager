@@ -23,6 +23,8 @@
       # Makes stuff faster
       maintenance.strategy = "incremental";
 
+      core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
+
       # Sign all commits using ssh key
       commit.gpgsign = true;
       gpg.format = "ssh";

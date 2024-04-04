@@ -5,12 +5,9 @@
 ### Make sure nix is installed
 `curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install`
 
-
 ### If this is a new machine, set up github authentication
 ```bash
-ssh-keygen -t ed25519 -C "mail@example.com"
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -C "<key description>"
 cat ~/.ssh/id_ed25519.pub
 *add key to github*
 ```
@@ -28,7 +25,7 @@ cat ~/.ssh/id_ed25519.pub
 
 ### Set up work .gitconfig and signing (OPTIONAL)
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_work
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_work -C "<key description>"
 
 mkdir -p ~/dev/work
 
@@ -38,15 +35,16 @@ cat << EOF > ~/dev/work/.gitconfig
     email = <work_email>
     signingkey = "~/.ssh/id_ed25519_work.pub"
 
+[core]
+    sshCommand = "ssh -i ~/.ssh/id_ed25519_work"
+
 [gpg "ssh"]
     allowedSignersFile = "/home/tomas/dev/work/allowed_signers"
 EOF
 
 echo "* $(cat ~/.ssh/id_ed25519_work.pub)" > ~/dev/work/allowed_signers
 
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519_work
-
+cat ~/.ssh/id_ed25519_work.pub
 *Add pub key to work git as both auth and signing key*
 ```
 
