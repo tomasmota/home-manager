@@ -10,7 +10,7 @@
     enable = true;
     difftastic.enable = true;
     package = pkgs.gitFull;
-    userEmail = "tomasrebelomota@gmail.com";
+    userEmail = "tomasmota@hey.com";
     userName = "tomasmota";
     extraConfig = {
       init.defaultBranch = "main";
@@ -23,7 +23,7 @@
       # Makes stuff faster
       maintenance.strategy = "incremental";
 
-      core.sshCommand = "ssh -i ~/.ssh/id_ed25519";
+      core.sshCommand = "ssh -i ${home.homeDirectory}/.ssh/id_ed25519";
 
       # Sign all commits using ssh key
       commit.gpgsign = true;

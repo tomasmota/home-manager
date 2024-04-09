@@ -58,7 +58,7 @@
       '';
 
       envExtra = ''
-        PATH=$PATH:~/.cargo/bin
+        PATH=$PATH:${config.home.homeDirectory}/.cargo/bin
       '';
 
       shellAliases = import ./aliases.nix {inherit config;};
