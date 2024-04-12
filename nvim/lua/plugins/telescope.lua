@@ -9,13 +9,22 @@ return {
   },
   config = function()
     local telescope = require('telescope')
+    local actions = require('telescope.actions')
     local lga_actions = require("telescope-live-grep-args.actions")
     telescope.setup({
       winblend = 10,
       defaults = {
         path_display = {
           shorten = 20
-        }
+        },
+        mappings = {
+          i = {
+            ["<C-o>"] = actions.select_default,
+            ["<C-e>"] = actions.close,
+            ["<C-j>"] = actions.cycle_history_next,
+            ["<C-k>"] = actions.cycle_history_prev,
+          },
+        },
       },
       pickers = {
         lsp_document_symbols = {
@@ -31,7 +40,7 @@ return {
           auto_quoting = true,
           mappings = {
             i = {
-              ["<C-k>"] = lga_actions.quote_prompt({ postfix = " -t " }),
+              ["<C-t>"] = lga_actions.quote_prompt({ postfix = " -t " }),
             },
           },
         },
