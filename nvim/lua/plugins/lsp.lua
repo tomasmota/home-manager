@@ -112,7 +112,7 @@ return {
           vim.keymap.set("n", "gr", function()
             telescope.lsp_references({
               include_declaration = false,
-              show_line = false
+              trim_text = true
             })
           end)
           vim.keymap.set("n", "K", vim.lsp.buf.hover)

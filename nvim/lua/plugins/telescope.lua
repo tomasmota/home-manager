@@ -25,15 +25,15 @@ return {
             ["<C-k>"] = actions.cycle_history_prev,
           },
         },
-      },
-      pickers = {
-        lsp_document_symbols = {
-          symbol_width = 70,
-        }
-      },
-      layout_config = {
-        height = 0.9,
-        width = 0.9,
+        layout_config = {
+          height = 0.9,
+          width = 0.9,
+        },
+        pickers = {
+          lsp_document_symbols = {
+            symbol_width = 70,
+          }
+        },
       },
       extensions = {
         live_grep_args = {
