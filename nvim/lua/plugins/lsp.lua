@@ -39,16 +39,23 @@ return {
         gopls = {
           settings = {
             gopls = {
+              ["ui.inlayhint.hints"] = {
+                compositeLiteralFields = true,
+                constantValues = true,
+                rangeVariableTypes = true,
+                assignVariableTypes = true
+              },
               experimentalPostfixCompletions = true,
               analyses = {
-                unusedparams = true,
+                unusedvariable = true,
                 shadow = true,
+                useany = true
               },
               staticcheck = true,
+              gofumpt = true,
+              semanticTokens = true,
+              usePlaceholders = true,
             },
-          },
-          init_options = {
-            usePlaceholders = true,
           },
         },
         tsserver = {
@@ -125,6 +132,13 @@ return {
           vim.keymap.set("n", "<leader>e", vim.diagnostic.goto_next)
 
           local client = vim.lsp.get_client_by_id(event.data.client_id)
+
+          -- Enable inlay hints when available
+          if client and client.server_capabilities.inlayHintProvider then
+            vim.lsp.inlay_hint.enable(event.buf, true)
+          end
+
+          -- Highlight references to symbol under cursor
           if client and client.server_capabilities.documentHighlightProvider then
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
               buffer = event.buf,
