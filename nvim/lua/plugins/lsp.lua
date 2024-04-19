@@ -135,7 +135,7 @@ return {
 
           -- Enable inlay hints when available
           if client and client.server_capabilities.inlayHintProvider then
-            vim.lsp.inlay_hint.enable(event.buf, true)
+            vim.lsp.inlay_hint.enable(true)
           end
 
           -- Highlight references to symbol under cursor

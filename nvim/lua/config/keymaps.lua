@@ -2,9 +2,12 @@
 vim.g.mapleader = ' '
 
 -- Save with <leader>
-vim.keymap.set('n', '<leader>s', ':w<CR>')
+vim.keymap.set('n', '<leader>s', function() vim.cmd("write") end)
+
 -- Quit with <leader>
 vim.keymap.set('n', '<leader>q', ':q<CR>')
+vim.keymap.set('n', '<leader>Q', ':qa!<CR>')
+
 -- Clear highlighted search
 vim.keymap.set('n', '<C-l>', ':nohlsearch<CR>')
 

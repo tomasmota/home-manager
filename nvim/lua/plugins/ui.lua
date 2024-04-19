@@ -18,7 +18,6 @@ return {
   {
     "folke/noice.nvim",
     event = "VeryLazy",
-    enabled = false, -- figure out how to now show shortcuts in cmd first
     opts = {},
     dependencies = {
       "MunifTanjim/nui.nvim",
