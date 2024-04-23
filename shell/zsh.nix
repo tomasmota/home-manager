@@ -68,7 +68,11 @@
 
     fzf = {
       enable = true;
-      defaultOptions = ["--layout=reverse" "--height=40"];
+      defaultOptions = [
+        "--layout=reverse"
+        "--height=40"
+        ''--bind="ctrl-o:accept"''
+      ];
     };
 
     atuin = {
