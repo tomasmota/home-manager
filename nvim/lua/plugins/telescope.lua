@@ -1,7 +1,7 @@
 return {
   'nvim-telescope/telescope.nvim',
   event = 'VeryLazy',
-  branch = '0.1.x',
+  branch = 'master',
   dependencies = {
     'nvim-lua/plenary.nvim',
     'nvim-telescope/telescope-live-grep-args.nvim',
@@ -15,7 +15,7 @@ return {
       winblend = 10,
       defaults = {
         path_display = {
-          shorten = 20
+          "filename_first"
         },
         mappings = {
           i = {
