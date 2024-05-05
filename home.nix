@@ -65,6 +65,9 @@
     kubectl
     kind
     k9s
+
+    # llms
+    ollama
   ];
 
   xdg.configFile = {
