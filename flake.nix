@@ -7,19 +7,16 @@
       url = "https://flakehub.com/f/nix-community/home-manager/0.1.0.tar.gz";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
   };
 
   outputs = {
     nixpkgs,
     home-manager,
-    neovim-nightly-overlay,
     ...
   }: let
     system = "x86_64-linux";
     pkgs = import nixpkgs {
       inherit system;
-      overlays = [neovim-nightly-overlay.overlay];
     };
   in {
     homeConfigurations."tomas" = home-manager.lib.homeManagerConfiguration {
