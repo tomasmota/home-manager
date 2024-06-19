@@ -1,22 +1,20 @@
 {
   config,
   pkgs,
+  home,
   ...
 }: rec {
-  home.username = "tomas";
-  home.homeDirectory = "/home/tomas";
-
   xdg = {
     enable = true;
 
-    configHome = "${home.homeDirectory}/.config";
-    dataHome = "${home.homeDirectory}/.local/share";
-    cacheHome = "${home.homeDirectory}/.cache";
+    configHome = "${config.home.homeDirectory}/.config";
+    dataHome = "${config.home.homeDirectory}/.local/share";
+    cacheHome = "${config.home.homeDirectory}/.cache";
   };
 
   imports = [
     ./shell/zsh.nix
-    (import ./git.nix {inherit pkgs home;})
+    (import ./git.nix {inherit pkgs config;})
     (import ./tmux.nix {inherit pkgs xdg;})
   ];
 
@@ -34,7 +32,6 @@
     tldr
     dive
     wget
-    wslu
     gcc
     glow
     unzip

@@ -2,9 +2,10 @@
   description = "Home Manager configuration of tomas";
 
   inputs = {
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.0.tar.gz";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
     home-manager = {
-      url = "https://flakehub.com/f/nix-community/home-manager/0.1.0.tar.gz";
+      url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -13,21 +14,35 @@
     nixpkgs,
     home-manager,
     ...
-  }: let
-    system = "x86_64-linux";
-    pkgs = import nixpkgs {
-      inherit system;
-    };
-  in {
-    homeConfigurations."tomas" = home-manager.lib.homeManagerConfiguration {
-      inherit pkgs;
+  }: {
+    homeConfigurations = {
+      tomas = let
+        user = "tomas";
+      in
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = import nixpkgs {system = "x86_64-linux";};
+          modules = [
+            {
+              home.username = user;
+              home.homeDirectory = "/home/${user}";
+            }
+            ./home.nix
+          ];
+        };
 
-      # Specify your home configuration modules here, for example,
-      # the path to your home.nix.
-      modules = [./home.nix];
-
-      # Optionally use extraSpecialArgs
-      # to pass through arguments to home.nix
+      tmv6474 = let
+        user = "tmv6474";
+      in
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = import nixpkgs {system = "aarch64-darwin";};
+          modules = [
+            {
+              home.username = user;
+              home.homeDirectory = "/Users/${user}";
+            }
+            ./home.nix
+          ];
+        };
     };
   };
 }
