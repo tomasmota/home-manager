@@ -41,13 +41,14 @@
     tree-sitter
     xclip
     neovim
+    cloudfoundry-cli
 
     # code
-    nodejs
     go_1_22
     gotools
     cargo
     terraform
+    terragrunt
 
     # formatting / linting
     nodePackages.prettier
@@ -56,15 +57,15 @@
 
     # k8s stuff
     kubernetes-helm
-    tektoncd-cli
-    openshift
-    pinniped
+    kubevela
     kubectl
     kind
     k9s
 
     # llms
     ollama
+
+   (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin]) 
   ];
 
   xdg.configFile = {
