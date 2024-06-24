@@ -44,6 +44,7 @@
     cloudfoundry-cli
 
     # code
+    nodejs
     go_1_22
     gotools
     cargo

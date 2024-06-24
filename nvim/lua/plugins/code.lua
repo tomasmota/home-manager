@@ -25,10 +25,6 @@ return {
     end,
   },
   {
-    "windwp/nvim-ts-autotag",
-    config = true
-  },
-  {
     "lukas-reineke/indent-blankline.nvim",
     event = "BufEnter",
     main = "ibl",
