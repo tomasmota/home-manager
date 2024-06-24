@@ -49,6 +49,7 @@
     cargo
     terraform
     terragrunt
+    vault
 
     # formatting / linting
     nodePackages.prettier
