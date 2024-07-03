@@ -61,9 +61,10 @@ return {
         tsserver = {
           on_attach = twospaces,
         },
-        nil_ls = {
-          on_attach = twospaces,
-        },
+        -- Not able to build this right now, need to investigate
+        -- nil_ls = {
+        --   on_attach = twospaces,
+        -- },
         terraformls = {
           on_attach = twospaces,
         },

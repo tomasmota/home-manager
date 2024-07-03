@@ -44,6 +44,15 @@
   tfs = "terraform show";
   tfv = "terraform validate";
 
+  # Terragrunt
+  tg = "terragrunt";
+  tgi = "terragrunt init";
+  tgp = "terragrunt plan";
+  tga = "terragrunt apply";
+  tgd = "terragrunt destroy";
+  tgs = "terragrunt show";
+  tgv = "terragrunt validate";
+
   # Yarn
   yd = "yarn dev";
   yi = "yarn install";
