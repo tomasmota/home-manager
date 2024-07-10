@@ -24,14 +24,15 @@ config.window_padding = {
   top = 0,
   bottom = 0,
 }
+
 -- Maximize window on startup
 -- https://wezfurlong.org/wezterm/config/lua/gui-events/gui-startup.html
 local mux = wezterm.mux
-
 wezterm.on('gui-startup', function(cmd)
   local _, _, window = mux.spawn_window(cmd or {})
   window:gui_window():maximize()
 end)
+--
 
 -- and finally, return the configuration to wezterm
 return config
