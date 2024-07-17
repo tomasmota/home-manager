@@ -48,7 +48,7 @@
     go_1_22
     gotools
     cargo
-    terraform
+    opentofu
     terragrunt
     vault
 
@@ -67,7 +67,7 @@
     # llms
     ollama
 
-   (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin]) 
+    (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin])
   ];
 
   xdg.configFile = {
