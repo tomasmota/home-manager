@@ -49,8 +49,8 @@
     gotools
     cargo
     opentofu
+    hclfmt
     terragrunt
-    vault
 
     # formatting / linting
     nodePackages.prettier

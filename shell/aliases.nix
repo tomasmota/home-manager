@@ -36,13 +36,13 @@
   # Docker
   dprune = "docker image prune --all";
 
-  # Terraform
-  tfi = "terraform init";
-  tfp = "terraform plan";
-  tfa = "terraform apply";
-  tfd = "terraform destroy";
-  tfs = "terraform show";
-  tfv = "terraform validate";
+  # OpenTofu
+  tfi = "tofu init";
+  tfp = "tofu plan";
+  tfa = "tofu apply";
+  tfd = "tofu destroy";
+  tfs = "tofu show";
+  tfv = "tofu validate";
 
   # Terragrunt
   tg = "terragrunt";
