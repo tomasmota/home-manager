@@ -39,12 +39,12 @@ return {
         gopls = {
           settings = {
             gopls = {
-              ["ui.inlayhint.hints"] = {
-                compositeLiteralFields = true,
-                constantValues = true,
-                rangeVariableTypes = true,
-                assignVariableTypes = true
-              },
+              -- ["ui.inlayhint.hints"] = {
+              --   compositeLiteralFields = true,
+              --   constantValues = true,
+              --   rangeVariableTypes = true,
+              --   assignVariableTypes = true
+              -- },
               experimentalPostfixCompletions = true,
               analyses = {
                 unusedvariable = true,

@@ -42,6 +42,7 @@
     xclip
     neovim
     cloudfoundry-cli
+    charm-freeze
 
     # code
     nodejs
