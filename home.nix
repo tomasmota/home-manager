@@ -82,8 +82,6 @@
     nix-direnv.enable = true;
   };
 
-  home.file.".config/alacritty".source = ./alacritty;
-
   home.file.".config/wezterm".source = ./wezterm;
 
   home.file.".config/yamlfmt/.yamlfmt".text = ''
