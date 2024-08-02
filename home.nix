@@ -19,7 +19,6 @@
   ];
 
   home.packages = with pkgs; [
-    fh
     fd
     dua
     jq
@@ -41,11 +40,9 @@
     tree-sitter
     xclip
     neovim
-    cloudfoundry-cli
     charm-freeze
 
     # code
-    nodejs
     go_1_22
     gotools
     cargo
@@ -65,10 +62,9 @@
     kind
     k9s
 
-    # llms
-    ollama
-
+    # work
     (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin])
+    cloudfoundry-cli
   ];
 
   xdg.configFile = {
