@@ -18,6 +18,7 @@ return {
   {
     "folke/noice.nvim",
     event = "VeryLazy",
+    enabled = false,
     opts = {
       messages = {
         enabled = false,
