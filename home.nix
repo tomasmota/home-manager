@@ -19,13 +19,17 @@
   ];
 
   home.packages = with pkgs; [
-    fd
-    dua
+    fd      # better find
+    dua     # better du
+    duf     # better df
+    bottom  # better top
+    dogdns  # better dig
+    ripgrep # better grep
+    eza     # better ls
+    bat     # better cat
     jq
-    ripgrep
     openssh
     ffmpeg
-    eza
     gnumake
     gh
     tldr
@@ -36,7 +40,6 @@
     unzip
     tree
     findutils
-    bat
     tree-sitter
     xclip
     neovim
