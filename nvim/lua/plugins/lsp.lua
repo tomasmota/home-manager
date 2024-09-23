@@ -58,7 +58,7 @@ return {
             },
           },
         },
-        tsserver = {
+        ts_ls = {
           on_attach = twospaces,
         },
         -- Not able to build this right now, need to investigate
