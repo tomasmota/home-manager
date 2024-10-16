@@ -30,8 +30,8 @@
           ];
         };
 
-      tmv6474 = let
-        user = "tmv6474";
+      "tomas@macbook.local" = let
+        user = "tomas";
       in
         home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs {system = "aarch64-darwin";};
