@@ -39,7 +39,7 @@ cat << EOF > ~/dev/work/.gitconfig
     sshCommand = "ssh -i ~/.ssh/id_ed25519_work"
 
 [gpg "ssh"]
-    allowedSignersFile = "/home/tomas/dev/work/allowed_signers"
+    allowedSignersFile = "~/dev/work/allowed_signers"
 EOF
 
 echo "* $(cat ~/.ssh/id_ed25519_work.pub)" > ~/dev/work/allowed_signers
