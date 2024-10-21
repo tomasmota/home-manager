@@ -52,6 +52,7 @@
     opentofu
     hclfmt
     terragrunt
+    nodejs # needed for installing some language servers
 
     # formatting / linting
     nodePackages.prettier

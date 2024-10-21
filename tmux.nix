@@ -5,6 +5,8 @@
 }: {
   programs.tmux = {
     enable = true;
+    shell = "${pkgs.zsh}/bin/zsh";
+    sensibleOnTop = false;
     keyMode = "vi";
     baseIndex = 1;
     terminal = "tmux-256color";

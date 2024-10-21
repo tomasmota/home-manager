@@ -30,7 +30,7 @@
           ];
         };
 
-      "tomas@macbook.local" = let
+      "tomas@Mac.Home" = let
         user = "tomas";
       in
         home-manager.lib.homeManagerConfiguration {
