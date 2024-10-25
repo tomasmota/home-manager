@@ -63,6 +63,7 @@
     kubernetes-helm
     kubevela
     kubectl
+    argocd
     kind
     k9s
 

@@ -27,6 +27,9 @@ cat ~/.ssh/id_ed25519.pub
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_work -C "<key description>"
 
+cat ~/.ssh/id_ed25519_work.pub
+*Add pub key to work git as both auth and signing key*
+
 mkdir -p ~/dev/work
 
 cat << EOF > ~/dev/work/.gitconfig
@@ -41,11 +44,6 @@ cat << EOF > ~/dev/work/.gitconfig
 [gpg "ssh"]
     allowedSignersFile = "~/dev/work/allowed_signers"
 EOF
-
-echo "* $(cat ~/.ssh/id_ed25519_work.pub)" > ~/dev/work/allowed_signers
-
-cat ~/.ssh/id_ed25519_work.pub
-*Add pub key to work git as both auth and signing key*
 ```
 
 ## Notes
