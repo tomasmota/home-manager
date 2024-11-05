@@ -19,14 +19,14 @@
   ];
 
   home.packages = with pkgs; [
-    fd      # better find
-    dua     # better du
-    duf     # better df
-    bottom  # better top
-    dogdns  # better dig
+    fd # better find
+    dua # better du
+    duf # better df
+    bottom # better top
+    dogdns # better dig
     ripgrep # better grep
-    eza     # better ls
-    bat     # better cat
+    eza # better ls
+    bat # better cat
     jq
     openssh
     ffmpeg
@@ -49,7 +49,7 @@
     go_1_22
     gotools
     cargo
-    opentofu
+    terraform 
     hclfmt
     terragrunt
     nodejs # needed for installing some language servers
@@ -94,6 +94,10 @@
       type: basic
       retain_line_breaks: true
   '';
+
+  nixpkgs.config = {
+    allowUnfree = true;
+  };
 
   programs.home-manager.enable = true;
   home.stateVersion = "23.05"; # Don't change this

@@ -68,7 +68,7 @@ return {
         terraformls = {
           on_attach = function()
             twospaces()
-            vim.keymap.set('n', '<leader>ff', '<cmd>!tofu fmt %<cr><cr>')
+            vim.keymap.set('n', '<leader>ff', '<cmd>!terraform fmt %<cr><cr>')
           end,
         },
         yamlls = {
