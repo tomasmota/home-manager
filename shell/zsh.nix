@@ -84,10 +84,15 @@
       enable = true;
       enableZshIntegration = true;
       settings = {
-        gcloud.disabled = true;
-        aws.disabled = true;
-        cmd_duration.disabled = true;
-        helm.disabled = true;
+        format = ''$directory$cmd_duration$terraform$kubernetes$git_branch$git_status$line_break$character'';
+        terraform = {
+          format = "[🌍]($style) ";
+        };
+        kubernetes = {
+          disabled = false;
+          style = "blue";
+          format = ''on ⛵ [$context \($namespace\)]($style) '';
+        };
       };
     };
   };
