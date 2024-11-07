@@ -37,10 +37,6 @@
           setopt menu_complete
           unsetopt beep
 
-          # ZSH settings (helpful for wsl)
-          ZSH_HIGHLIGHT_MAXLENGTH=60
-          ZSH_HIGHLIGHT_DIRS_BLACKLIST=(/mnt/c)
-
           # FZF
           _fzf_compgen_path() {
             fd --hidden --follow --exclude ".git" . "$1"
@@ -90,7 +86,7 @@
         };
         kubernetes = {
           disabled = false;
-          style = "blue";
+          style = "blue bold";
           format = ''on ⛵ [$context \($namespace\)]($style) '';
         };
       };
