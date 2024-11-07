@@ -80,7 +80,12 @@
       enable = true;
       enableZshIntegration = true;
       settings = {
-        format = ''$directory$cmd_duration$terraform$kubernetes$git_branch$git_status$line_break$character'';
+        format = ''$directory$cmd_duration$terraform$kubernetes$git_branch$git_status$fill$gcloud$line_break$character'';
+        fill.symbol = " ";
+        gcloud = {
+          style = "bold yellow";
+          format = ''[$project]($style) '';
+        };
         terraform = {
           format = "[🌍]($style) ";
         };
