@@ -25,6 +25,12 @@ config.window_padding = {
   bottom = 0,
 }
 
+-- Make Option-Left and Option-Right go back or forward a word
+config.keys = {
+  { key = 'LeftArrow',  mods = 'OPT', action = wezterm.action.SendString '\x1bb' },
+  { key = 'RightArrow', mods = 'OPT', action = wezterm.action.SendString '\x1bf' },
+}
+
 -- Maximize window on startup
 -- https://wezfurlong.org/wezterm/config/lua/gui-events/gui-startup.html
 local mux = wezterm.mux
