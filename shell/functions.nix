@@ -34,4 +34,19 @@
       home-manager switch --impure
       cd -
   }
+
+  # home-manager switch
+  hms() {
+  if [ $# -eq 0 ]; then
+      if [[ "$(uname)" == "Darwin" ]]; then
+          home-manager switch --flake .#mac --impure
+      else
+          home-manager switch --impure
+      fi
+  else
+      home-manager switch --flake .#$1 --impure
+  fi
+  }
 ''
+
+

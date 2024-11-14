@@ -1,7 +1,6 @@
 {config}: {
   # home-manager
   hm = "home-manager";
-  hms = "home-manager switch --impure";
   hmcd = "cd ${config.xdg.configHome}/home-manager";
   hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && home-manager switch --impure && popd";
 
