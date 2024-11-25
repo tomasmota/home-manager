@@ -46,12 +46,11 @@
     charm-freeze
 
     # code
-    go_1_22
+    go_1_23
     gotools
     cargo
     terraform 
     hclfmt
-    terragrunt
     nodejs # needed for installing some language servers
 
     # formatting / linting
