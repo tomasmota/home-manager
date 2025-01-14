@@ -49,7 +49,7 @@
     go_1_23
     gotools
     cargo
-    terraform 
+    terraform
     hclfmt
     nodejs # needed for installing some language servers
 
@@ -63,6 +63,7 @@
     kubevela
     kubectl
     argocd
+    cmctl
     kind
     k9s
 
