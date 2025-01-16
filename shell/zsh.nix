@@ -92,6 +92,12 @@
         kubernetes = {
           disabled = false;
           style = "blue bold";
+          contexts = [
+            {
+              context_pattern = "prod";
+              style = "red bold";
+            }
+          ];
           format = ''on ⛵ [$context \($namespace\)]($style) '';
         };
       };
