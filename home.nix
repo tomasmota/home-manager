@@ -46,6 +46,7 @@
     charm-freeze
 
     # code
+    lua
     go_1_23
     gotools
     cargo
@@ -61,6 +62,7 @@
     # k8s stuff
     kubernetes-helm
     kubevela
+    istioctl
     kubectl
     argocd
     cmctl
