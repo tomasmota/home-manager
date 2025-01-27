@@ -28,6 +28,7 @@
     eza # better ls
     bat # better cat
     jq
+    yq
     openssh
     ffmpeg
     gnumake
