@@ -49,15 +49,15 @@
     }
 
     gssh() {
-    # Select project
-    local project=$(gcloud projects list | tail -n +2 | awk '{print $1}' | fzf)
+        # Select project
+        local project=$(gcloud projects list | tail -n +2 | awk '{print $1}' | fzf)
 
-    local instance_zone=$(gcloud compute instances list --project="$project" | fzf)
+        local instance_zone=$(gcloud compute instances list --project="$project" | fzf)
 
-    local instance=$(echo "$instance_zone" | awk '{print $1}')
-    local zone=$(echo "$instance_zone" | awk '{print $2}')
+        local instance=$(echo "$instance_zone" | awk '{print $1}')
+        local zone=$(echo "$instance_zone" | awk '{print $2}')
 
-    # SSH into the instance
-    gcloud compute ssh "$instance" --zone="$zone" --project="$project"
+        # SSH into the instance
+        gcloud compute ssh "$instance" --zone="$zone" --project="$project"
     }
 ''

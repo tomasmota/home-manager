@@ -28,7 +28,7 @@
     eza # better ls
     bat # better cat
     jq
-    yq
+    yq-go
     openssh
     ffmpeg
     gnumake
@@ -43,8 +43,8 @@
     findutils
     tree-sitter
     xclip
+    rclone
     neovim
-    charm-freeze
 
     # code
     lua

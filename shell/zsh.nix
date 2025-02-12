@@ -30,6 +30,7 @@
         SRC_ENDPOINT = "https://sourcegraph.com";
         TF_PLUGIN_CACHE_DIR = "${config.home.homeDirectory}/.terraform.d/plugin-cache";
         DOCKER_BUILDKIT = 1;
+        RCLONE_FAST_LIST = true;
       };
 
       initExtraBeforeCompInit =
