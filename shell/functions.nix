@@ -60,4 +60,15 @@
         # SSH into the instance
         gcloud compute ssh "$instance" --zone="$zone" --project="$project"
     }
+
+    gacp() {
+        if [ -z "$1" ]; then
+            echo "Error: Please provide a commit message"
+            echo "Usage: gacp \"commit message\""
+            return 1
+        fi
+        git add .
+        git commit -m "$1"
+        git push
+    }
 ''
