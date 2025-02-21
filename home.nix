@@ -45,6 +45,7 @@
     xclip
     rclone
     neovim
+    grpcurl
 
     # code
     lua
@@ -53,7 +54,7 @@
     cargo
     terraform
     hclfmt
-    nodejs # needed for installing some language servers
+    nodejs_23 # needed for installing some language servers
 
     # formatting / linting
     nodePackages.prettier
@@ -71,6 +72,7 @@
     k9s
 
     # work
+    websocat
     (google-cloud-sdk.withExtraComponents [google-cloud-sdk.components.gke-gcloud-auth-plugin])
   ];
 
