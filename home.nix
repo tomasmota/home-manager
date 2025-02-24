@@ -51,6 +51,7 @@
     lua
     go_1_23
     gotools
+    protobuf
     cargo
     terraform
     hclfmt
