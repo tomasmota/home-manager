@@ -18,6 +18,8 @@
     (import ./tmux.nix {inherit pkgs xdg;})
   ];
 
+  fonts.fontconfig.enable = true;
+
   home.packages = with pkgs; [
     fd # better find
     dua # better du
@@ -46,6 +48,9 @@
     rclone
     neovim
     grpcurl
+
+    # fonts
+    nerd-fonts.geist-mono
 
     # code
     lua
