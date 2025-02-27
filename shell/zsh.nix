@@ -57,6 +57,7 @@
       envExtra = ''
         PATH=$PATH:${config.home.homeDirectory}/.cargo/bin
         PATH=$PATH:${config.home.homeDirectory}/go/bin
+        PATH=$PATH:${config.home.homeDirectory}/.npm-global/bin
       '';
 
       shellAliases = import ./aliases.nix {inherit config;};
