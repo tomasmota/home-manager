@@ -22,7 +22,6 @@ return {
     opts = {
       messages = {
         enabled = false,
-
       }
     },
     dependencies = {
