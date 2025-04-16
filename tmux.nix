@@ -21,7 +21,7 @@
         plugin = tmuxPlugins.catppuccin;
         extraConfig = ''
           set -g @catppuccin_window_tabs_enabled on
-          set -g @catppuccin_window_default_text "#W"
+          set -g @catppuccin_window_text "#W"
           set -g @catppuccin_window_current_text "#W"
         '';
       }
