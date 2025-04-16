@@ -34,6 +34,7 @@
 
       # hide status on the right (hostname, time and date)
       set-option -g status-right ""
+      set-option -g status-left ""
 
       # Renumber windows to match positions
       set -g renumber-windows on
