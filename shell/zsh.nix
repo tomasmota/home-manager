@@ -33,7 +33,7 @@
         RCLONE_FAST_LIST = true;
       };
 
-      initExtraBeforeCompInit =
+      initContent = 
         ''
           setopt menu_complete
           unsetopt beep
@@ -45,14 +45,11 @@
           _fzf_compgen_dir() {
             fd --type d --hidden --follow --exclude ".git" . "$1"
           }
+          if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
+            source ${config.xdg.configHome}/home-manager/secrets.env
+          fi
         ''
         + import ./functions.nix {inherit config;};
-
-      initExtra = ''
-        if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
-          source ${config.xdg.configHome}/home-manager/secrets.env
-        fi
-      '';
 
       envExtra = ''
         PATH=$PATH:${config.home.homeDirectory}/.cargo/bin

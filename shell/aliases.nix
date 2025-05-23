@@ -50,12 +50,13 @@
 
   # Files
   # Fuzzy find tree and cd into folder
-  cdf = ''
-    cd $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
+  cdf = ''cd $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
   # Fuzzy find over all repos under ~/dev
-  cdr = ''
-    cd $(fd --search-path ~/dev -d 7 -t d --hidden --no-ignore-vcs "^\.git$" | xargs dirname | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
+    cdr = ''cd "$(fd --search-path ~/dev -d 7 -t d --hidden --no-ignore-vcs "^\.git$" \
+                | xargs dirname \
+                | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")" \
+        && [[ -n $TMUX ]] \
+        && tmux rename-window "''${PWD##*/}"'';
   # Fuzzy find tree and open folder in neovim
-  nvd = ''
-    nv $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
+  nvd = ''nv $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
 }

@@ -60,7 +60,7 @@
     cargo
     terraform
     hclfmt
-    nodejs_23 # needed for installing some language servers
+    nodejs_latest # needed for installing some language servers
 
     # formatting / linting
     nodePackages.prettier
@@ -69,7 +69,6 @@
 
     # k8s stuff
     kubernetes-helm
-    kubevela
     istioctl
     kubectl
     argocd

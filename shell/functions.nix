@@ -27,14 +27,6 @@
         fi
     }
 
-    # sync dotfiles
-    function hmsync(){
-        cd ${config.xdg.configHome}/home-manager
-        git pull
-        home-manager switch --impure
-        cd -
-    }
-
     # home-manager switch
     hms() {
     if [ $# -eq 0 ]; then
@@ -46,6 +38,14 @@
     else
         home-manager switch --flake .#$1 --impure
     fi
+    }
+
+    # sync dotfiles
+    function hmsync(){
+        cd ${config.xdg.configHome}/home-manager
+        git pull
+        hms
+        cd -
     }
 
     gssh() {
