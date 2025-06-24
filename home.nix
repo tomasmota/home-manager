@@ -48,6 +48,7 @@
     rclone
     neovim
     grpcurl
+    step-cli
 
     # fonts
     nerd-fonts.geist-mono
