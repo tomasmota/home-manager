@@ -41,5 +41,7 @@ wezterm.on('gui-startup', function(cmd)
 end)
 --
 
+config.enable_wayland = false
+
 -- and finally, return the configuration to wezterm
 return config
