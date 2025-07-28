@@ -15,7 +15,6 @@
     escapeTime = 0;
     mouse = true;
     plugins = with pkgs; [
-      tmuxPlugins.extrakto
       tmuxPlugins.fzf-tmux-url
       {
         plugin = tmuxPlugins.catppuccin;
