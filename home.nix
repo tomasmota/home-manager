@@ -50,6 +50,8 @@
     grpcurl
     step-cli
 
+    gemini-cli
+
     # fonts
     nerd-fonts.geist-mono
 
@@ -76,6 +78,7 @@
     cmctl
     kind
     k9s
+    k6
 
     # work
     websocat
