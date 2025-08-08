@@ -71,4 +71,18 @@
         git commit -m "$1"
         git push
     }
+
+    ziprepo() {
+        top=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "Not in a git repo."; return 1; }
+        if [ -n "$1" ]; then name="$1"; else name=$(basename "$top"); fi
+        tmpdir=$(mktemp -d)
+
+        git -C "$top" archive --format=zip --prefix="$name/" -o "$tmpdir/$name.zip" HEAD || { echo "git archive failed"; return 1; }
+
+        if [ "$(uname)" = "Darwin" ]; then
+            open "$tmpdir"
+        else
+            xdg-open "$tmpdir" >/dev/null 2>&1 || echo "$tmpdir"
+        fi
+    }
 ''
