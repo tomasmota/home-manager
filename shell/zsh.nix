@@ -79,6 +79,7 @@
       enable = true;
       enableZshIntegration = true;
       settings = {
+        command_timeout = 1500;
         format = ''$directory$cmd_duration$terraform$kubernetes$git_branch$git_status$fill$gcloud$line_break$character'';
         fill.symbol = " ";
         gcloud = {
