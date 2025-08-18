@@ -6,7 +6,6 @@
   programs.git = {
     enable = true;
     difftastic.enable = true;
-    package = pkgs.gitFull;
     userEmail = "tomasmota@hey.com";
     userName = "tomasmota";
     extraConfig = {

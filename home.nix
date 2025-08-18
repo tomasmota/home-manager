@@ -13,6 +13,7 @@
   };
 
   imports = [
+    ./terminal/ghostty.nix
     ./shell/zsh.nix
     (import ./git.nix {inherit pkgs config;})
     (import ./tmux.nix {inherit pkgs xdg;})
@@ -100,8 +101,6 @@
     nix-direnv.enable = true;
   };
 
-  home.file.".config/wezterm".source = ./wezterm;
-
   home.file.".config/yamlfmt/.yamlfmt".text = ''
     formatter:
       type: basic
@@ -113,5 +112,4 @@
   };
 
   programs.home-manager.enable = true;
-  home.stateVersion = "23.05"; # Don't change this
 }
