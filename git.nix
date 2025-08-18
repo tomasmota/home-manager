@@ -5,6 +5,7 @@
 }: {
   programs.git = {
     enable = true;
+    package = pkgs.gitMinimal;
     difftastic.enable = true;
     userEmail = "tomasmota@hey.com";
     userName = "tomasmota";
