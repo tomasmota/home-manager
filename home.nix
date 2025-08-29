@@ -46,7 +46,6 @@
     findutils
     tree-sitter
     just
-    xclip
     rclone
     neovim
     grpcurl
