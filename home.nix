@@ -49,7 +49,8 @@
     rclone
     neovim
     grpcurl
-    step-cli
+    step-cli # PKI utils
+    presenterm # slides in the terminal
 
     gemini-cli
 
