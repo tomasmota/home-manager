@@ -5,7 +5,7 @@ _:
     # install through package manager, configure through home-manager
     package = null;
     settings = {
-      "theme" = "catppuccin-mocha";
+      "theme" = "Catppuccin Mocha";
       "fullscreen" = true;
     };
   };
