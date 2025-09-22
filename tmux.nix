@@ -29,6 +29,9 @@
     extraConfig = ''
       set -ag terminal-overrides ",xterm-256color:RGB"
 
+      # escape sequence passthrough
+      set -g allow-passthrough on
+
       # status bar on top
       set-option -g status-position top
 
