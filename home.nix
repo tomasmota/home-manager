@@ -59,13 +59,14 @@
 
     # code
     lua
-    go_1_23
+    go_1_24
     gotools
     protobuf
     cargo
     terraform
     hclfmt
     nodejs_latest # needed for installing some language servers
+    pnpm
 
     # formatting / linting
     nodePackages.prettier
