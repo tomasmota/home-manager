@@ -4,6 +4,9 @@
   hmcd = "cd ${config.xdg.configHome}/home-manager";
   hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && home-manager switch --impure && popd";
 
+  # nix-darwin
+  nds = "sudo darwin-rebuild switch --flake .#";
+
   # Misc
   ls = "eza -G --color auto -a -s type";
   la = "eza -l --color always -a -s type";
@@ -44,16 +47,11 @@
   tfs = "terraform show";
   tfv = "terraform validate";
 
-  # Yarn
-  yd = "yarn dev";
-  yi = "yarn install";
-  yf = "yarn prettier --write .";
-
   # Files
   # Fuzzy find tree and cd into folder
   cdf = ''cd $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
   # Fuzzy find over all repos under ~/dev
-    cdr = ''cd "$(fd --search-path ~/dev -d 7 -t d --hidden --no-ignore-vcs "^\.git$" \
+  cdr = ''cd "$(fd --search-path ~/dev -d 7 -t d --hidden --no-ignore-vcs "^\.git$" \
                 | xargs dirname \
                 | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")" \
         && [[ -n $TMUX ]] \

@@ -5,6 +5,8 @@
   ...
 }: {
   nixpkgs.hostPlatform = "aarch64-darwin";
+  nixpkgs.config.allowUnfree = true;
+
   programs.zsh.enable = true;
   users.users.tomas.shell = pkgs.zsh;
   security.pam.services.sudo_local.touchIdAuth = true; 
@@ -48,14 +50,17 @@
     stateVersion = 6;
   };
 
+  services.tailscale.enable = true;
+
   homebrew = {
     enable = true;
     casks = [
       "ghostty"
       "middleclick"
-      "vivaldi"
+      "obsidian"
       "raycast"
       "rectangle"
+      "vivaldi"
     ];
     onActivation = {
       autoUpdate = true;

@@ -56,8 +56,6 @@
       macbook = nix-darwin.lib.darwinSystem {
         system = "aarch64-darwin";
         modules = [
-          {nixpkgs.config.allowUnfree = true;}
-
           home-manager.darwinModules.home-manager
 
           {
