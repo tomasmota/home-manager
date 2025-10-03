@@ -29,6 +29,7 @@
         MANPAGER = "nvim +Man!";
         SRC_ENDPOINT = "https://sourcegraph.com";
         TF_PLUGIN_CACHE_DIR = "${config.home.homeDirectory}/.terraform.d/plugin-cache";
+        TFE_PARALLELISM = 100;
         DOCKER_BUILDKIT = 1;
         RCLONE_FAST_LIST = true;
       };

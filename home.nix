@@ -52,8 +52,6 @@
     step-cli # PKI utils
     presenterm # slides in the terminal
 
-    gemini-cli
-
     # fonts
     nerd-fonts.geist-mono
 
