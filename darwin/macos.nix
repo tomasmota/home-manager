@@ -7,14 +7,13 @@
   nixpkgs.hostPlatform = "aarch64-darwin";
   programs.zsh.enable = true;
   users.users.tomas.shell = pkgs.zsh;
-  security.pam.services.sudo_local.touchIdAuth = true; # optional nice-to-have
+  security.pam.services.sudo_local.touchIdAuth = true; 
 
   nix = {
     settings = {
       experimental-features = ["nix-command" "flakes"];
-      # keep PATH sane, speed things up, and make CI reproducible
-      auto-optimise-store = lib.mkForce false; # see note below
       trusted-users = ["root" "tomas"];
+      auto-optimise-store = lib.mkForce false; # do this manually below
     };
 
     optimise.automatic = true;
@@ -35,12 +34,12 @@
       dock = {
         autohide = true;
         show-recents = false;
-        tilesize = 48;
+        tilesize = 60;
         mru-spaces = false;
       };
       finder = {
         AppleShowAllExtensions = true;
-        FXPreferredViewStyle = "Nlsv"; # list view
+        FXPreferredViewStyle = "Nlsv";
         ShowStatusBar = true;
         ShowPathbar = true;
       };
@@ -55,6 +54,8 @@
       "ghostty"
       "middleclick"
       "vivaldi"
+      "raycast"
+      "rectangle"
     ];
     onActivation = {
       autoUpdate = true;
