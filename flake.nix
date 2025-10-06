@@ -49,7 +49,7 @@
         homeDirectory = macHome;
       };
 
-      arch = mkHome {
+      linux = mkHome {
         system = linuxSystem;
         username = user;
         homeDirectory = linuxHome;
