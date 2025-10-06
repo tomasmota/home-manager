@@ -19,63 +19,60 @@
     nix-darwin,
     ...
   }: let
-    mkHome = {
-      system,
-      user,
-      homeDir,
-    }:
+    # Common user and system settings
+    user = "tomas";
+    macSystem = "aarch64-darwin";
+    macHome = "/Users/tomas";
+    linuxSystem = "x86_64-linux";
+    linuxHome = "/home/tomas";
+
+    # Shared home-manager module generator
+    mkHomeModule = { username, homeDirectory }: {
+      home = {
+        inherit username homeDirectory;
+        stateVersion = "24.05";
+      };
+      imports = [ ./home.nix ];
+    };
+
+    # Helper to build a standalone home-manager configuration
+    mkHome = { system, username, homeDirectory }:
       home-manager.lib.homeManagerConfiguration {
-        pkgs = import nixpkgs {inherit system;};
-        modules = [
-          {
-            home = {
-              username = user;
-              homeDirectory = homeDir;
-              stateVersion = "24.05";
-            };
-          }
-          ./home.nix
-        ];
+        pkgs = import nixpkgs { inherit system; };
+        modules = [ (mkHomeModule { inherit username homeDirectory; }) ];
       };
   in {
     homeConfigurations = {
       mac = mkHome {
-        system = "aarch64-darwin";
-        user = "tomas";
-        homeDir = "/Users/tomas";
+        system = macSystem;
+        username = user;
+        homeDirectory = macHome;
       };
 
       arch = mkHome {
-        system = "x86_64-linux";
-        user = "tomas";
-        homeDir = "/home/tomas";
+        system = linuxSystem;
+        username = user;
+        homeDirectory = linuxHome;
       };
     };
 
     darwinConfigurations = {
       macbook = nix-darwin.lib.darwinSystem {
-        system = "aarch64-darwin";
+        system = macSystem;
         modules = [
           home-manager.darwinModules.home-manager
-
           {
-            users.users.tomas = {
-              name = "tomas";
-              home = "/Users/tomas";
+            users.users."${user}" = {
+              name = user;
+              home = macHome;
             };
 
             home-manager.useUserPackages = true;
-
-            home-manager.users.tomas = {...}: {
-              home = {
-                username = "tomas";
-                homeDirectory = "/Users/tomas";
-                stateVersion = "24.05";
-              };
-              imports = [./home.nix];
+            home-manager.users."${user}" = mkHomeModule {
+              username = user;
+              homeDirectory = macHome;
             };
           }
-
           ./darwin/macos.nix
         ];
       };
