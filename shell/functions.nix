@@ -31,12 +31,12 @@
     hms() {
     if [ $# -eq 0 ]; then
         if [[ "$(uname)" == "Darwin" ]]; then
-            home-manager switch --flake .#mac --impure
+            home-manager switch --flake .#mac
         else
-            home-manager switch --impure
+            home-manager switch --flake .#linux
         fi
     else
-        home-manager switch --flake .#$1 --impure
+        home-manager switch --flake .#$1
     fi
     }
 

@@ -16,7 +16,7 @@ cat ~/.ssh/id_ed25519.pub
 `git clone git@github.com:tomasmota/home-manager.git ~/.config/home-manager`
 
 ### Init home-manager
-`nix run home-manager/master -- init --switch`
+`nix run home-manager/master -- switch --flake .#(mac|linux)`
 
 ### Set zsh as shell
 `echo ~/.nix-profile/bin/zsh | sudo tee -a /etc/shells`
@@ -45,6 +45,9 @@ cat << EOF > ~/dev/work/.gitconfig
     allowedSignersFile = "~/dev/work/allowed_signers"
 EOF
 ```
+
+### Updating flake
+`nix flake update`
 
 ## Notes
 
