@@ -41,8 +41,8 @@
 
   # Terraform
   tfi = "terraform init";
-  tfp = "terraform plan";
-  tfa = "terraform apply";
+  tfp = "terraform plan --parallelism=30";
+  tfa = "terraform apply --parallelism=30";
   tfd = "terraform destroy";
   tfs = "terraform show";
   tfv = "terraform validate";

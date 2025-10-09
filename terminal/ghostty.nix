@@ -7,6 +7,7 @@ _:
     settings = {
       "theme" = "Catppuccin Mocha";
       "fullscreen" = true;
+      "mouse-scroll-multiplier" = 1;
     };
   };
 }
