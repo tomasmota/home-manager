@@ -51,6 +51,7 @@
     grpcurl
     step-cli # PKI utils
     presenterm # slides in the terminal
+    unixtools.watch
 
     # fonts
     nerd-fonts.geist-mono
