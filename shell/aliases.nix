@@ -58,4 +58,8 @@
         && tmux rename-window "''${PWD##*/}"'';
   # Fuzzy find tree and open folder in neovim
   nvd = ''nv $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
+  cdt = ''cd "$(fd --type f --hidden --glob ".terraform.lock.hcl" "$(git rev-parse --show-toplevel)" \
+               | xargs -n1 dirname \
+               | fzf --preview "tree -I \"node_modules|.terraform|.git|dist|coverage\" -C {}")"
+        '';
 }
