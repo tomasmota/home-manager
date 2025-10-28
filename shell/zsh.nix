@@ -25,11 +25,9 @@
       sessionVariables = {
         DIRENV_LOG_FORMAT = "";
         XDG_CONFIG_HOME = "${config.xdg.configHome}";
-        EDITOR = "nvim";
         MANPAGER = "nvim +Man!";
         SRC_ENDPOINT = "https://sourcegraph.com";
         TF_PLUGIN_CACHE_DIR = "${config.home.homeDirectory}/.terraform.d/plugin-cache";
-        TFE_PARALLELISM = 100;
         DOCKER_BUILDKIT = 1;
         RCLONE_FAST_LIST = true;
       };
@@ -56,6 +54,8 @@
         PATH=$PATH:${config.home.homeDirectory}/.cargo/bin
         PATH=$PATH:${config.home.homeDirectory}/go/bin
         PATH=$PATH:${config.home.homeDirectory}/.npm-global/bin
+        EDITOR=nvim
+        TFE_PARALLELISM=100;
       '';
 
       shellAliases = import ./aliases.nix {inherit config;};
