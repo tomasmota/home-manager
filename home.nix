@@ -52,6 +52,7 @@
     step-cli # PKI utils
     presenterm # slides in the terminal
     unixtools.watch
+    mtr
 
     # fonts
     nerd-fonts.geist-mono

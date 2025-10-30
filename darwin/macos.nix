@@ -9,7 +9,7 @@
 
   programs.zsh.enable = true;
   users.users.tomas.shell = pkgs.zsh;
-  security.pam.services.sudo_local.touchIdAuth = true; 
+  security.pam.services.sudo_local.touchIdAuth = true;
 
   nix = {
     settings = {

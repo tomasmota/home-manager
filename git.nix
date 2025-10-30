@@ -6,10 +6,11 @@
   programs.git = {
     enable = true;
     package = pkgs.gitMinimal;
-    difftastic.enable = true;
-    userEmail = "tomasmota@hey.com";
-    userName = "tomasmota";
-    extraConfig = {
+    settings = {
+      user = {
+        email = "tomasmota@hey.com";
+        name = "tomasmota";
+      };
       init.defaultBranch = "main";
       push.autoSetupRemote = true;
 
@@ -37,6 +38,8 @@
     ];
     ignores = ["/.direnv"];
   };
+
+  programs.difftastic.git.enable = true;
 
   # This script runs after all files have been written
   # it creates allowed_signers files for both personal and work git configuration
