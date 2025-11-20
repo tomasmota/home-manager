@@ -61,6 +61,7 @@
       "raycast"
       "rectangle"
       "vivaldi"
+      "bitwarden"
     ];
     onActivation = {
       autoUpdate = true;
