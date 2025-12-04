@@ -5,7 +5,6 @@
   ...
 }: {
   nixpkgs.hostPlatform = "aarch64-darwin";
-  nixpkgs.config.allowUnfree = true;
 
   programs.zsh.enable = true;
   users.users.tomas.shell = pkgs.zsh;
@@ -13,6 +12,7 @@
 
   nix = {
     settings = {
+      download-buffer-size = 97108864;
       experimental-features = ["nix-command" "flakes"];
       trusted-users = ["root" "tomas"];
       auto-optimise-store = lib.mkForce false; # do this manually below

@@ -59,11 +59,11 @@
 
     # code
     lua
-    go_1_24
+    go_1_25
     gotools
     protobuf
     cargo
-    terraform
+    opentofu
     hclfmt
     nodejs_latest # needed for installing some language servers
     pnpm
@@ -108,10 +108,6 @@
       type: basic
       retain_line_breaks: true
   '';
-
-  nixpkgs.config = {
-    allowUnfree = true;
-  };
 
   programs.home-manager.enable = true;
 }

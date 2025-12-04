@@ -39,13 +39,13 @@
   # Docker
   dprune = "docker image prune --all";
 
-  # Terraform
-  tfi = "terraform init";
-  tfp = "terraform plan --parallelism=30";
-  tfa = "terraform apply --parallelism=30";
-  tfd = "terraform destroy";
-  tfs = "terraform show";
-  tfv = "terraform validate";
+  # tofu
+  tfi = "tofu init";
+  tfp = "tofu plan --parallelism=30";
+  tfa = "tofu apply --parallelism=30";
+  tfd = "tofu destroy";
+  tfs = "tofu show";
+  tfv = "tofu validate";
 
   # Files
   # Fuzzy find tree and cd into folder
