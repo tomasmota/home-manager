@@ -50,6 +50,8 @@
     stateVersion = 6;
   };
 
+  environment.shells = [ pkgs.zsh ];
+
   services.tailscale.enable = true;
 
   homebrew = {

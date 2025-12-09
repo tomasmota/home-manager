@@ -25,12 +25,13 @@
     fd # better find
     dua # better du
     duf # better df
-    bottom # better top
+    btop # better top
     dogdns # better dig
     ripgrep # better grep
     eza # better ls
     bat # better cat
     jq
+    navi
     yq-go
     openssh
     ffmpeg

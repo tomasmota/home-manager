@@ -1,4 +1,4 @@
-_: {
+{pkgs, ... }: {
   programs.ghostty = {
     enable = true;
 
@@ -9,7 +9,7 @@ _: {
     enableZshIntegration = true;
     settings = {
       "theme" = "Catppuccin Mocha";
-      "fullscreen" = true;
+      "fullscreen" = !pkgs.stdenv.isDarwin; # only want fullscreen on mac
       "mouse-scroll-multiplier" = 1;
     };
   };
