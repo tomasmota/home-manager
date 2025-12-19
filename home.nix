@@ -75,9 +75,12 @@
     statix # nix linter
 
     # k8s stuff
+    kubectl
+    kubectl-view-secret
+    kubectl-explore
+    kubectl-tree
     kubernetes-helm
     istioctl
-    kubectl
     argocd
     cmctl
     kind

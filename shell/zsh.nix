@@ -1,4 +1,4 @@
-{config, ...}: {
+{config, pkgs, ...}: {
   programs = {
     zsh = {
       enable = true;
@@ -16,7 +16,13 @@
         share = true;
         ignorePatterns = ["l*"];
       };
-
+      plugins = [
+        {
+          name = "vi-mode";
+          src = pkgs.zsh-vi-mode;
+          file = "share/zsh-vi-mode/zsh-vi-mode.plugin.zsh";
+        }
+      ];
       oh-my-zsh = {
         enable = true;
         plugins = ["git"];
