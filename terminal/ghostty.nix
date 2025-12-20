@@ -9,7 +9,7 @@
     enableZshIntegration = true;
     settings = {
       "theme" = "Catppuccin Mocha";
-      "fullscreen" = !pkgs.stdenv.isDarwin; # only want fullscreen on mac
+      "fullscreen" = false;
       "mouse-scroll-multiplier" = 1;
     };
   };
