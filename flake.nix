@@ -36,9 +36,10 @@
     };
 
     # Helper to build a standalone home-manager configuration
-    mkHome = { system, username, homeDirectory }:
+    mkHome = { system, username, homeDirectory, fontSize }:
       home-manager.lib.homeManagerConfiguration {
         pkgs = import nixpkgs { inherit system; };
+        extraSpecialArgs = { inherit fontSize; };
         modules = [ (mkHomeModule { inherit username homeDirectory; }) ];
       };
   in {
@@ -47,12 +48,14 @@
         system = macSystem;
         username = user;
         homeDirectory = macHome;
+        fontSize = 12;
       };
 
       linux = mkHome {
         system = linuxSystem;
         username = user;
         homeDirectory = linuxHome;
+        fontSize = 11;
       };
     };
 

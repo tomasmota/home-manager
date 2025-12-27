@@ -1,4 +1,4 @@
-{pkgs, ... }: {
+{pkgs, fontSize, ...}: {
   programs.ghostty = {
     enable = true;
 
@@ -9,8 +9,8 @@
     enableZshIntegration = true;
     settings = {
       "theme" = "Catppuccin Mocha";
-      "fullscreen" = false;
-      "mouse-scroll-multiplier" = 1;
+      "fullscreen" = true;
+      "font-size" = fontSize;
     };
   };
 }
