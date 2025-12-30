@@ -52,6 +52,9 @@
           if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
             source ${config.xdg.configHome}/home-manager/secrets.env
           fi
+
+          # zsh-vi-mode breaks atuin ctrl-r
+          zvm_after_init_commands+=(eval "$(atuin init zsh)")
         ''
         + import ./functions.nix {inherit config;};
 
