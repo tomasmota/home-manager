@@ -66,7 +66,7 @@
     cargo
     opentofu
     hclfmt
-    nodejs_latest # needed for installing some language servers
+    nodejs_24 # needed for installing some language servers
     pnpm
 
     # formatting / linting

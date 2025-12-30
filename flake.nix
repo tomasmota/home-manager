@@ -44,13 +44,6 @@
       };
   in {
     homeConfigurations = {
-      mac = mkHome {
-        system = macSystem;
-        username = user;
-        homeDirectory = macHome;
-        fontSize = 12;
-      };
-
       linux = mkHome {
         system = linuxSystem;
         username = user;
@@ -70,10 +63,13 @@
               home = macHome;
             };
 
-            home-manager.useUserPackages = true;
-            home-manager.users."${user}" = mkHomeModule {
-              username = user;
-              homeDirectory = macHome;
+            home-manager = {
+              useUserPackages = true;
+              extraSpecialArgs = { fontSize = 14; };
+              users."${user}" = mkHomeModule {
+                username = user;
+                homeDirectory = macHome;
+              };
             };
           }
           ./darwin/macos.nix
