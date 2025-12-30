@@ -23,8 +23,14 @@
   knettool = ''kubectl run --rm  -it --image wbitt/network-multitool tmp-debug -- /bin/bash'';
 
   # Git
+  gst = "git status";
+  ga = "git add";
+  gaa = "git add --all";
+  gd = "git diff";
   gc = "git commit --message";
+  gp = "git push";
   gpt = "git push --tags";
+  gl = "git pull";
   gld = "git log -p --oneline --ext-diff";
   gD = "git diff HEAD~1";
   # interactively browse commits, opening them in Diffview on select

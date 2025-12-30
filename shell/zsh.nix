@@ -7,7 +7,6 @@
       syntaxHighlighting.enable = true;
       dotDir = "${config.xdg.configHome}/zsh";
       autocd = true;
-      defaultKeymap = "emacs";
       history = {
         path = "${config.xdg.cacheHome}/zsh_history";
         save = 1000000;
@@ -23,10 +22,6 @@
           file = "share/zsh-vi-mode/zsh-vi-mode.plugin.zsh";
         }
       ];
-      oh-my-zsh = {
-        enable = true;
-        plugins = ["git"];
-      };
 
       sessionVariables = {
         DIRENV_LOG_FORMAT = "";
@@ -37,26 +32,33 @@
         RCLONE_FAST_LIST = true;
       };
 
-      initContent = 
-        ''
-          setopt menu_complete
-          unsetopt beep
+      completionInit = ''
+        autoload -U compinit
+        zstyle ':completion:*' menu select
+        zmodload zsh/complist
+        compinit -C
+      '';
 
-          # FZF
-          _fzf_compgen_path() {
-            fd --hidden --follow --exclude ".git" . "$1"
-          }
-          _fzf_compgen_dir() {
-            fd --type d --hidden --follow --exclude ".git" . "$1"
-          }
-          if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
-            source ${config.xdg.configHome}/home-manager/secrets.env
-          fi
+      initContent = ''
+        setopt menu_complete
+        unsetopt beep
 
-          # zsh-vi-mode breaks atuin ctrl-r
-          zvm_after_init_commands+=(eval "$(atuin init zsh)")
-        ''
-        + import ./functions.nix {inherit config;};
+        # FZF
+        _fzf_compgen_path() {
+          fd --hidden --follow --exclude ".git" . "$1"
+        }
+        _fzf_compgen_dir() {
+          fd --type d --hidden --follow --exclude ".git" . "$1"
+        }
+        if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
+          source ${config.xdg.configHome}/home-manager/secrets.env
+        fi
+
+        # zsh-vi-mode breaks atuin ctrl-r
+        zvm_after_init_commands+=(eval "$(atuin init zsh)")
+        # zsh-vi-mode breaks ctrl-o to accept-line
+        zvm_after_init_commands+=("zvm_bindkey viins '^O' accept-line")
+      '' + import ./functions.nix {inherit config;};
 
       envExtra = ''
         PATH=$PATH:${config.home.homeDirectory}/.cargo/bin
@@ -81,7 +83,6 @@
     atuin = {
       enable = true;
       flags = ["--disable-up-arrow"];
-      enableZshIntegration = true;
     };
 
     starship = {
@@ -99,7 +100,6 @@
           format = "[🌍]($style) ";
         };
         kubernetes = {
-          disabled = false;
           style = "blue bold";
           contexts = [
             {
@@ -110,6 +110,12 @@
           format = ''on ⛵ [$context \($namespace\)]($style) '';
         };
       };
+    };
+
+    direnv = {
+      enable = true;
+      enableZshIntegration = true;
+      nix-direnv.enable = true;
     };
   };
 }

@@ -101,12 +101,6 @@
     };
   };
 
-  programs.direnv = {
-    enable = true;
-    enableZshIntegration = true;
-    nix-direnv.enable = true;
-  };
-
   home.file.".config/yamlfmt/.yamlfmt".text = ''
     formatter:
       type: basic
