@@ -55,7 +55,7 @@
         fi
 
         # zsh-vi-mode breaks atuin ctrl-r
-        zvm_after_init_commands+=(eval "$(atuin init zsh)")
+        zvm_after_init_commands+=(eval "$(atuin init zsh --disable-up-arrow)")
         # zsh-vi-mode breaks ctrl-o to accept-line
         zvm_after_init_commands+=("zvm_bindkey viins '^O' accept-line")
       '' + import ./functions.nix {inherit config;};
@@ -82,7 +82,6 @@
 
     atuin = {
       enable = true;
-      flags = ["--disable-up-arrow"];
     };
 
     starship = {
@@ -100,6 +99,7 @@
           format = "[🌍]($style) ";
         };
         kubernetes = {
+          disabled = false;
           style = "blue bold";
           contexts = [
             {
