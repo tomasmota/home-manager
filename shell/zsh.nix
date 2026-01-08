@@ -100,6 +100,7 @@
           format = "[🌍]($style) ";
         };
         kubernetes = {
+          disabled = false;
           style = "blue bold";
           contexts = [
             {

@@ -17,12 +17,14 @@
   dra = "direnv allow";
   devflake = "nix flake init -t 'github:tomasmota/flake-templates#devshell'";
   k = "kubectl";
-  ks = ''kubectl config get-contexts -o name | fzf | xargs -I {} kubectl config use-context "{}"'';
+  ks = ''kubectl config get-contexts -o name | fzf | xargs -I {} sh -c "kubectl config use-context {}; kubectl version > /dev/null 2>&1 &"'';
   kc = ''kubectl config current-context'';
   kn = ''kubectl get ns --no-headers | awk '{print $1}' | fzf | xargs -I {} kubectl config set-context --current --namespace "{}"'';
   knettool = ''kubectl run --rm  -it --image wbitt/network-multitool tmp-debug -- /bin/bash'';
 
   # Git
+  g = "git";
+  gsw = "git switch";
   gst = "git status";
   ga = "git add";
   gaa = "git add --all";
@@ -41,6 +43,10 @@
   gprune = ''git remote prune origin && git for-each-ref --format "%(refname:short)" refs/heads | grep -v "master\|main" | xargs git branch -D'';
   gwtcd = "cd $(git worktree list | grep -v '(bare)' | awk '{print $1}' | fzf)";
   gwtrm = "git worktree remove $(git worktree list | grep -v '(bare)' | awk '{print $1}' | fzf)";
+  gbd = "git branch --delete";
+  gswm = "git switch main";
+  gswc = "git switch --create";
+  grhh = "git reset --hard";
 
   # Docker
   dprune = "docker image prune --all";
