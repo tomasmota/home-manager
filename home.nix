@@ -45,6 +45,7 @@
     unzip
     tree
     findutils
+    atuin
     tree-sitter
     just
     rclone
