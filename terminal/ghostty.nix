@@ -1,4 +1,4 @@
-{pkgs, fontSize, ...}: {
+{pkgs, fontSize, lib, ...}: {
   programs.ghostty = {
     enable = true;
 
@@ -9,7 +9,7 @@
     enableZshIntegration = true;
     settings = {
       "theme" = "Catppuccin Mocha";
-      "fullscreen" = true;
+      "fullscreen" = lib.mkIf pkgs.stdenv.isLinux true;
       "font-size" = fontSize;
     };
   };

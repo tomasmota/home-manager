@@ -26,7 +26,6 @@
     dua # better du
     duf # better df
     btop # better top
-    dogdns # better dig
     ripgrep # better grep
     eza # better ls
     bat # better cat

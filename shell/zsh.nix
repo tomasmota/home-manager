@@ -60,6 +60,7 @@
       '' + import ./functions.nix {inherit config;};
 
       envExtra = ''
+        PATH=$PATH:${config.home.homeDirectory}/.local/bin
         PATH=$PATH:${config.home.homeDirectory}/.cargo/bin
         PATH=$PATH:${config.home.homeDirectory}/go/bin
         PATH=$PATH:${config.home.homeDirectory}/.npm-global/bin
