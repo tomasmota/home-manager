@@ -58,6 +58,7 @@
   tfd = "tofu destroy";
   tfs = "tofu show";
   tfv = "tofu validate";
+  tfu = "tofu force-unlock $(tofu plan 2>&1 | grep ID | awk '{print $4}')";
 
   # Files
   # Fuzzy find tree and cd into folder
