@@ -1,4 +1,4 @@
-{config, pkgs, ...}: {
+{config, pkgs, lib, ...}: {
   programs = {
     zsh = {
       enable = true;
@@ -38,7 +38,16 @@
         compinit -C
       '';
 
-      initContent = ''
+      initContent = lib.mkOrder 550 (''
+        autoload -z edit-command-line
+        zle -N edit-command-line
+
+        zvm_after_init() {
+          eval "$(atuin init zsh --disable-up-arrow)"
+          zvm_bindkey viins '^O' accept-line
+          zvm_bindkey vicmd 'v' edit-command-line
+        }
+
         setopt menu_complete
         unsetopt beep
 
@@ -52,12 +61,7 @@
         if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
           source ${config.xdg.configHome}/home-manager/secrets.env
         fi
-
-        # zsh-vi-mode breaks atuin ctrl-r
-        zvm_after_init_commands+=(eval "$(atuin init zsh --disable-up-arrow)")
-        # zsh-vi-mode breaks ctrl-o to accept-line
-        zvm_after_init_commands+=("zvm_bindkey viins '^O' accept-line")
-      '' + import ./functions.nix {inherit config;};
+      '' + import ./functions.nix {inherit config;});
 
       envExtra = ''
         PATH=$PATH:${config.home.homeDirectory}/.local/bin
