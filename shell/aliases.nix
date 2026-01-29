@@ -47,6 +47,7 @@
   gswm = "git switch main";
   gswc = "git switch --create";
   grhh = "git reset --hard";
+  cdg = "cd $(git rev-parse --show-toplevel)";
 
   # Docker
   dprune = "docker image prune --all";
