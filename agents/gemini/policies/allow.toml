@@ -1,0 +1,5 @@
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = ["cd", "ls", "cat", "echo"]
+decision = "allow"
+priority = 100

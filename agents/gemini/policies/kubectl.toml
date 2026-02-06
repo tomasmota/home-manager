@@ -1,0 +1,37 @@
+# 1. SAFETY NET: Catch-all for kubectl
+# If it's not explicitly allowed below, ASK THE USER.
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = ["kubectl"]
+decision = "ask_user"
+priority = 100
+
+# 2. ALLOW LIST: Read-Only Commands with Regex
+# We use argsPattern to match the JSON representation of arguments.
+# This allows flags like -n or --context to appear before the verb.
+# Regex matches: "command":"kubectl [anything] verb
+
+[[rule]]
+toolName = "run_shell_command"
+# Matches: kubectl ... (get|describe|diff|logs|top|events|version|cluster-info|api-resources|api-versions)
+argsPattern = '"command":"kubectl\s+.*?\b(get|describe|diff|logs|top|events|version|cluster-info|api-resources|api-versions)\b'
+decision = "allow"
+priority = 900
+
+[[rule]]
+toolName = "run_shell_command"
+# Matches: kubectl ... config (view|current-context)
+argsPattern = '"command":"kubectl\s+.*?\bconfig\s+(view|current-context|get-contexts)\b'
+decision = "allow"
+priority = 900
+
+# 3. HARD DENY: High-risk destructive commands
+# Higher priority (2000) overrides the allow list if a destructive verb is present.
+# This prevents trickery like "kubectl delete pod get".
+
+[[rule]]
+toolName = "run_shell_command"
+# Matches: kubectl ... (delete|apply|edit|scale|cordon|uncordon|drain|run|create|patch|replace|expose|autoscale|rollout)
+argsPattern = '"command":"kubectl\s+.*?\b(delete|apply|edit|scale|cordon|uncordon|drain|run|create|patch|replace|expose|autoscale|rollout)\b'
+decision = "deny"
+priority = 950

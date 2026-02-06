@@ -1,0 +1,17 @@
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = ["tofu"]
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = ["tofu import", "tofu state", "tofu taint", "tofu untaint"]
+decision = "ask_user"
+priority = 500
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = ["tofu apply", "tofu destroy"]
+decision = "deny"
+priority = 999

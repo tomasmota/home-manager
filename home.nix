@@ -13,6 +13,7 @@
   };
 
   imports = [
+    ./agents.nix
     ./terminal/ghostty.nix
     ./shell/zsh.nix
     (import ./git.nix {inherit pkgs config;})
