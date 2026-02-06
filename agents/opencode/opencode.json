@@ -33,6 +33,8 @@
       "mkdir*": "allow",
       "jq*": "allow",
       "yq*": "allow",
+      "rg*": "allow",
+      "grep*": "allow",
 
       "tofu import*": "ask",
       "tofu state*": "ask",
