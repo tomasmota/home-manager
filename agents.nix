@@ -14,4 +14,8 @@ in {
 
   home.file.".gemini/policies".source =
     config.lib.file.mkOutOfStoreSymlink "${agentsDir}/gemini/policies";
+
+  # OpenCode Configuration
+  home.file.".config/opencode/opencode.json".source =
+    config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/opencode.json";
 }

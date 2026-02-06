@@ -1,0 +1,17 @@
+[[rule]]
+mcpName = "confluence"
+toolName = "getAccessibleAtlassianResources"
+decision = "allow"
+priority = 200
+
+[[rule]]
+mcpName = "confluence"
+toolName = "getConfluenceSpaces"
+decision = "allow"
+priority = 200
+
+[[rule]]
+mcpName = "confluence"
+toolName = "searchConfluenceUsingCql"
+decision = "allow"
+priority = 200
