@@ -29,12 +29,13 @@
 
     # home-manager switch
     hms() {
+    if [[ "$(uname)" == "Darwin" ]]; then
+        echo "Use nds on macOS (hms is linux-only)."
+        return 1
+    fi
+
     if [ $# -eq 0 ]; then
-        if [[ "$(uname)" == "Darwin" ]]; then
-            home-manager switch --flake .#mac
-        else
-            home-manager switch --flake .#linux
-        fi
+        home-manager switch --flake .#linux
     else
         home-manager switch --flake .#$1
     fi

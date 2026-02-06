@@ -15,8 +15,9 @@ cat ~/.ssh/id_ed25519.pub
 ### Clone this repo into .config
 `git clone git@github.com:tomasmota/home-manager.git ~/.config/home-manager`
 
-### Init home-manager
-`nix run home-manager/master -- switch --flake .#(mac|linux)`
+### Init configuration
+- Linux: `nix run home-manager/master -- switch --flake .#linux`
+- macOS: `sudo darwin-rebuild switch --flake .#macbook`
 
 ### Set zsh as shell
 `echo ~/.nix-profile/bin/zsh | sudo tee -a /etc/shells`
@@ -50,7 +51,6 @@ EOF
 `nix flake update`
 
 ## Notes
-
 Existing aliases and git config assume all code is under ~/dev/work/ and ~/dev/personal/
 
 ## Add secrets to secrets.env, at the root of this repo

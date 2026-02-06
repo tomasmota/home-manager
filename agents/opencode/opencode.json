@@ -153,8 +153,7 @@
       "kubectl * rollout*": "deny"
     },
     "confluence_*": "ask",
-    "confluence_getAccessibleAtlassianResources": "allow",
-    "confluence_getConfluenceSpaces": "allow",
-    "confluence_searchConfluenceUsingCql": "allow"
+    "confluence_get*": "allow",
+    "confluence_search*": "allow",
   }
 }
