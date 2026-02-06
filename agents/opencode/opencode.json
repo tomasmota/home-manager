@@ -1,8 +1,31 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.md",
+    "~/.agents/AGENTS.md"
+  ],
+  "mcp": {
+    "GeminiCloudAssist": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@google-cloud/gemini-cloud-assist-mcp@latest"
+      ],
+      "timeout": 600000
+    },
+    "opentofu": {
+      "type": "remote",
+      "url": "https://mcp.opentofu.org/sse"
+    },
+    "confluence": {
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    }
+  },
   "permission": {
     "bash": {
-      "*": "allow",
+      "*": "ask",
       "cd*": "allow",
       "ls*": "allow",
       "cat*": "allow",
@@ -15,7 +38,7 @@
       "tofu apply*": "deny",
       "tofu destroy*": "deny",
 
-      "git*": "ask",
+      "git*": "allow",
       "git status*": "allow",
       "git log*": "allow",
       "git show*": "allow",
