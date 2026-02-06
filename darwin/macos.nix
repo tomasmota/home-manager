@@ -50,7 +50,7 @@
     stateVersion = 6;
   };
 
-  environment.shells = [ pkgs.zsh ];
+  environment.shells = [pkgs.zsh];
 
   services.tailscale.enable = true;
 

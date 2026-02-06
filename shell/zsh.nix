@@ -1,4 +1,16 @@
-{config, pkgs, lib, ...}: {
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
+  home.sessionPath = [
+    "${config.home.homeDirectory}/.local/bin"
+    "${config.home.homeDirectory}/.cargo/bin"
+    "${config.home.homeDirectory}/go/bin"
+    "${config.home.homeDirectory}/.npm-global/bin"
+  ];
+
   programs = {
     zsh = {
       enable = true;
@@ -25,10 +37,11 @@
 
       sessionVariables = {
         DIRENV_LOG_FORMAT = "";
-        XDG_CONFIG_HOME = "${config.xdg.configHome}";
         MANPAGER = "nvim +Man!";
-        DOCKER_BUILDKIT = 1;
-        RCLONE_FAST_LIST = true;
+        DOCKER_BUILDKIT = "1";
+        RCLONE_FAST_LIST = "true";
+        EDITOR = "nvim";
+        TFE_PARALLELISM = "100";
       };
 
       completionInit = ''
@@ -39,38 +52,30 @@
       '';
 
       initContent = lib.mkOrder 550 (''
-        autoload -z edit-command-line
-        zle -N edit-command-line
+          autoload -z edit-command-line
+          zle -N edit-command-line
 
-        zvm_after_init() {
-          eval "$(atuin init zsh --disable-up-arrow)"
-          zvm_bindkey viins '^O' accept-line
-          zvm_bindkey vicmd 'v' edit-command-line
-        }
+          zvm_after_init() {
+            eval "$(atuin init zsh --disable-up-arrow)"
+            zvm_bindkey viins '^O' accept-line
+            zvm_bindkey vicmd 'v' edit-command-line
+          }
 
-        setopt menu_complete
-        unsetopt beep
+          setopt menu_complete
+          unsetopt beep
 
-        # FZF
-        _fzf_compgen_path() {
-          fd --hidden --follow --exclude ".git" . "$1"
-        }
-        _fzf_compgen_dir() {
-          fd --type d --hidden --follow --exclude ".git" . "$1"
-        }
-        if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
-          source ${config.xdg.configHome}/home-manager/secrets.env
-        fi
-      '' + import ./functions.nix {inherit config;});
-
-      envExtra = ''
-        PATH=$PATH:${config.home.homeDirectory}/.local/bin
-        PATH=$PATH:${config.home.homeDirectory}/.cargo/bin
-        PATH=$PATH:${config.home.homeDirectory}/go/bin
-        PATH=$PATH:${config.home.homeDirectory}/.npm-global/bin
-        EDITOR=nvim
-        TFE_PARALLELISM=100;
-      '';
+          # FZF
+          _fzf_compgen_path() {
+            fd --hidden --follow --exclude ".git" . "$1"
+          }
+          _fzf_compgen_dir() {
+            fd --type d --hidden --follow --exclude ".git" . "$1"
+          }
+          if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
+            source ${config.xdg.configHome}/home-manager/secrets.env
+          fi
+        ''
+        + import ./functions.nix {inherit config;});
 
       shellAliases = import ./aliases.nix {inherit config;};
     };

@@ -1,0 +1,27 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  nix:
+    name: nix checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: install nix
+        uses: cachix/install-nix-action@v31
+
+      - name: flake check
+        run: nix flake check
+
+      - name: alejandra format check
+        run: nix run nixpkgs#alejandra -- --check .
+
+      - name: statix lint
+        run: nix run nixpkgs#statix -- check .

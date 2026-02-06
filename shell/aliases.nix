@@ -41,17 +41,15 @@
   # diff between HEAD and the main branch
   gdm = ''nvim -c "DiffviewOpen $(git_main_branch)..."'';
   # clean up branches that have also been deleted in remote
-  gprune = ''git remote prune origin && git for-each-ref --format "%(refname:short)" refs/heads | grep -v "master\|main" | xargs git branch -D'';
-  gwtcd = "cd $(git worktree list | grep -v '(bare)' | awk '{print $1}' | fzf)";
-  gwtrm = "git worktree remove $(git worktree list | grep -v '(bare)' | awk '{print $1}' | fzf)";
+  gprune = ''read -q "REPLY?Delete local branches (except main/master)? [y/N] " && git remote prune origin && git for-each-ref --format "%(refname:short)" refs/heads | grep -v "master\|main" | xargs -I {} git branch -d "{}"; echo'';
   gbd = "git branch --delete";
   gswm = "git switch main";
   gswc = "git switch --create";
-  grhh = "git reset --hard";
+  grhh = ''read -q "REPLY?Reset hard and discard local changes? [y/N] " && git reset --hard; echo'';
   cdg = "cd $(git rev-parse --show-toplevel)";
 
   # Docker
-  dprune = "docker image prune --all";
+  dprune = ''read -q "REPLY?Prune all Docker images? [y/N] " && docker image prune --all; echo'';
 
   # tofu
   tfi = "tofu init";
@@ -66,15 +64,15 @@
   # Fuzzy find tree and cd into folder
   cdf = ''cd $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
   # Fuzzy find over all repos under ~/dev
-  cdr = ''cd "$(fd --search-path ~/dev -d 7 -t d --hidden --no-ignore-vcs "^\.git$" \
-                | xargs dirname \
-                | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")" \
-        && [[ -n $TMUX ]] \
-        && tmux rename-window "''${PWD##*/}"'';
+  cdr = ''    cd "$(fd --search-path ~/dev -d 7 -t d --hidden --no-ignore-vcs "^\.git$" \
+                    | xargs dirname \
+                    | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")" \
+            && [[ -n $TMUX ]] \
+            && tmux rename-window "''${PWD##*/}"'';
   # Fuzzy find tree and open folder in neovim
   nvd = ''nv $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
-  cdt = ''cd "$(git rev-parse --show-toplevel)" && cd "$(fd --type f --hidden --glob ".terraform.lock.hcl" \
-             | xargs -n1 dirname \
-             | fzf --preview "tree -I \"node_modules|.terraform|.git|dist|coverage\" -C {}")"
-        '';
+  cdt = ''    cd "$(git rev-parse --show-toplevel)" && cd "$(fd --type f --hidden --glob ".terraform.lock.hcl" \
+                 | xargs -n1 dirname \
+                 | fzf --preview "tree -I \"node_modules|.terraform|.git|dist|coverage\" -C {}")"
+  '';
 }

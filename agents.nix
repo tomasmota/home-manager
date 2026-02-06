@@ -8,14 +8,16 @@ in {
   # Shared configuration for AI agents (Gemini, Amp, Codex, etc.)
   # Managed via out-of-store symlinks for easy editing.
 
-  # Gemini Configuration
-  home.file.".gemini/settings.json".source =
-    config.lib.file.mkOutOfStoreSymlink "${agentsDir}/gemini/settings.json";
+  home.file = {
+    # Gemini Configuration
+    ".gemini/settings.json".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/gemini/settings.json";
 
-  home.file.".gemini/policies".source =
-    config.lib.file.mkOutOfStoreSymlink "${agentsDir}/gemini/policies";
+    ".gemini/policies".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/gemini/policies";
 
-  # OpenCode Configuration
-  home.file.".config/opencode/opencode.json".source =
-    config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/opencode.json";
+    # OpenCode Configuration
+    ".config/opencode/opencode.json".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/opencode.json";
+  };
 }

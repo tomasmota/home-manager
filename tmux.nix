@@ -31,6 +31,7 @@
 
       # escape sequence passthrough
       set -g allow-passthrough on
+      set -s set-clipboard on
 
       # status bar on top
       set-option -g status-position top
@@ -62,7 +63,7 @@
       bind Space last-window
 
       bind -T copy-mode-vi v send -X begin-selection
-      bind -T copy-mode-vi y send -X copy-pipe-and-cancel "reattach-to-user-namespace pbcopy"
+      bind -T copy-mode-vi y send -X copy-selection-and-cancel
 
       # kill pane with "q"
       unbind x

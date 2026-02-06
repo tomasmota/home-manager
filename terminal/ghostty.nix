@@ -1,4 +1,9 @@
-{pkgs, fontSize, lib, ...}: {
+{
+  pkgs,
+  fontSize,
+  lib,
+  ...
+}: {
   programs.ghostty = {
     enable = true;
 

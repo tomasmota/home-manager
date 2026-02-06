@@ -27,20 +27,28 @@
     linuxHome = "/home/tomas";
 
     # Shared home-manager module generator
-    mkHomeModule = { username, homeDirectory }: {
+    mkHomeModule = {
+      username,
+      homeDirectory,
+    }: {
       home = {
         inherit username homeDirectory;
         stateVersion = "24.05";
       };
-      imports = [ ./home.nix ];
+      imports = [./home.nix];
     };
 
     # Helper to build a standalone home-manager configuration
-    mkHome = { system, username, homeDirectory, fontSize }:
+    mkHome = {
+      system,
+      username,
+      homeDirectory,
+      fontSize,
+    }:
       home-manager.lib.homeManagerConfiguration {
-        pkgs = import nixpkgs { inherit system; };
-        extraSpecialArgs = { inherit fontSize; };
-        modules = [ (mkHomeModule { inherit username homeDirectory; }) ];
+        pkgs = import nixpkgs {inherit system;};
+        extraSpecialArgs = {inherit fontSize;};
+        modules = [(mkHomeModule {inherit username homeDirectory;})];
       };
   in {
     homeConfigurations = {
@@ -65,7 +73,7 @@
 
             home-manager = {
               useUserPackages = true;
-              extraSpecialArgs = { fontSize = 14; };
+              extraSpecialArgs = {fontSize = 14;};
               users."${user}" = mkHomeModule {
                 username = user;
                 homeDirectory = macHome;

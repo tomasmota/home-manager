@@ -30,6 +30,9 @@
       "ls*": "allow",
       "cat*": "allow",
       "echo*": "allow",
+      "mkdir*": "allow",
+      "jq*": "allow",
+      "yq*": "allow",
 
       "tofu import*": "ask",
       "tofu state*": "ask",
@@ -38,7 +41,10 @@
       "tofu apply*": "deny",
       "tofu destroy*": "deny",
 
-      "git*": "allow",
+      "nix flake*": "allow",
+      "statix*": "allow",
+      "alejandra*": "allow",
+
       "git status*": "allow",
       "git log*": "allow",
       "git show*": "allow",
@@ -154,6 +160,6 @@
     },
     "confluence_*": "ask",
     "confluence_get*": "allow",
-    "confluence_search*": "allow",
+    "confluence_search*": "allow"
   }
 }
