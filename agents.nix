@@ -4,6 +4,10 @@
   ...
 }: let
   agentsDir = "${config.xdg.configHome}/home-manager/agents";
+  opencodeConfigFile =
+    if pkgs.stdenv.isLinux
+    then "opencode.json"
+    else "opencode.macos.json";
 in {
   # Shared configuration for AI agents (Gemini, Amp, Codex, etc.)
   # Managed via out-of-store symlinks for easy editing.
@@ -18,6 +22,6 @@ in {
 
     # OpenCode Configuration
     ".config/opencode/opencode.json".source =
-      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/opencode.json";
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/${opencodeConfigFile}";
   };
 }

@@ -4,13 +4,6 @@
   lib,
   ...
 }: {
-  home.sessionPath = [
-    "${config.home.homeDirectory}/.local/bin"
-    "${config.home.homeDirectory}/.cargo/bin"
-    "${config.home.homeDirectory}/go/bin"
-    "${config.home.homeDirectory}/.npm-global/bin"
-  ];
-
   programs = {
     zsh = {
       enable = true;
@@ -27,6 +20,21 @@
         share = true;
         ignorePatterns = ["l*"];
       };
+
+      envExtra = ''
+        PATH=$PATH:${config.home.homeDirectory}/.local/bin
+        PATH=$PATH:${config.home.homeDirectory}/.cargo/bin
+        PATH=$PATH:${config.home.homeDirectory}/go/bin
+        PATH=$PATH:${config.home.homeDirectory}/.npm-global/bin
+        PATH=$PATH:${config.home.homeDirectory}/.opencode/bin
+        EDITOR=nvim
+        TFE_PARALLELISM=100
+        DIRENV_LOG_FORMAT = ""
+        MANPAGER = "nvim +Man!"
+        DOCKER_BUILDKIT = "1"
+        RCLONE_FAST_LIST = "true"
+      '';
+
       plugins = [
         {
           name = "vi-mode";
@@ -34,15 +42,6 @@
           file = "share/zsh-vi-mode/zsh-vi-mode.plugin.zsh";
         }
       ];
-
-      sessionVariables = {
-        DIRENV_LOG_FORMAT = "";
-        MANPAGER = "nvim +Man!";
-        DOCKER_BUILDKIT = "1";
-        RCLONE_FAST_LIST = "true";
-        EDITOR = "nvim";
-        TFE_PARALLELISM = "100";
-      };
 
       completionInit = ''
         autoload -U compinit
