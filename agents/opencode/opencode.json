@@ -36,6 +36,9 @@
       "rg*": "allow",
       "grep*": "allow",
 
+      "npm view*": "allow",
+      "pnpm check*": "allow",
+
       "tofu import*": "ask",
       "tofu state*": "ask",
       "tofu taint*": "ask",

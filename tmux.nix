@@ -29,7 +29,7 @@
     extraConfig = ''
       set -ag terminal-overrides ",xterm-256color:RGB"
       set -as terminal-features ",xterm*:extkeys"
-      set -s extended-keys on
+      set -s extended-keys always
 
       # escape sequence passthrough
       set -g allow-passthrough on
