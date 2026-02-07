@@ -5,15 +5,17 @@ return {
       { "williamboman/mason.nvim", opts = {} },
       "WhoIsSethDaniel/mason-tool-installer.nvim",
       "williamboman/mason-lspconfig.nvim",
-      { "j-hui/fidget.nvim",       opts = {} },
+      { "j-hui/fidget.nvim", opts = {} },
     },
     config = function()
       -- used to set tabs to 2 spaces in some languages
-      local twospaces = function()
-        vim.o.tabstop = 2
-        vim.o.softtabstop = 2
-        vim.o.shiftwidth = 2
-        vim.o.expandtab = true
+      local twospaces = function(_, bufnr)
+        bufnr = bufnr or 0
+        local opt = vim.bo[bufnr]
+        opt.tabstop = 2
+        opt.softtabstop = 2
+        opt.shiftwidth = 2
+        opt.expandtab = true
       end
 
       local servers = {
@@ -25,7 +27,7 @@ return {
                 checkThirdParty = false,
                 library = {
                   '${3rd}/luv/library',
-                  unpack(vim.api.nvim_get_runtime_file('', true)),
+                  (table.unpack or unpack)(vim.api.nvim_get_runtime_file('', true)),
                 },
               },
               completion = {
@@ -49,7 +51,7 @@ return {
               analyses = {
                 unusedvariable = true,
                 shadow = true,
-                useany = true
+                useany = true,
               },
               staticcheck = true,
               gofumpt = true,
@@ -66,8 +68,8 @@ return {
         --   on_attach = twospaces,
         -- },
         tofu_ls = {
-          on_attach = function()
-            twospaces()
+          on_attach = function(client, bufnr)
+            twospaces(client, bufnr)
             vim.keymap.set('n', '<leader>ff', '<cmd>!tofu fmt %<cr><cr>')
           end,
         },
@@ -79,14 +81,33 @@ return {
                 enable = true,
               },
               style = {
-                flowSequence = 'allow'
+                flowSequence = 'allow',
               },
-              keyOrdering = false
+              keyOrdering = false,
             },
           },
         },
-        helm_ls = {},
-        dockerls = {}
+        helm_ls = {
+          on_attach = twospaces,
+          settings = {
+            ['helm-ls'] = {
+              yamlls = {
+                enabled = true,
+                diagnosticsLimit = 50,
+                showDiagnosticsDirectly = false,
+                path = "yaml-language-server",
+                config = {
+                  schemas = {
+                    kubernetes = "**",
+                  },
+                  completion = true,
+                  hover = true,
+                },
+              },
+            },
+          },
+        },
+        dockerls = {},
       }
 
       -- Adding tools that should be installed by Mason but are not LSP servers
@@ -102,18 +123,22 @@ return {
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
-      local capabilities = vim.lsp.protocol.make_client_capabilities()
-      capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
+      require('mason-lspconfig').setup({
+        automatic_enable = false,
+      })
 
-      require('mason-lspconfig').setup {
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
-        },
-      }
+      local capabilities = vim.tbl_deep_extend(
+        'force',
+        vim.lsp.protocol.make_client_capabilities(),
+        require('cmp_nvim_lsp').default_capabilities()
+      )
+
+      for server_name, server in pairs(servers) do
+        server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+        vim.lsp.config(server_name, server)
+      end
+
+      vim.lsp.enable(vim.tbl_keys(servers))
 
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('lsp-attach', { clear = true }),
@@ -123,7 +148,7 @@ return {
           vim.keymap.set("n", "gr", function()
             telescope.lsp_references({
               include_declaration = false,
-              trim_text = true
+              trim_text = true,
             })
           end)
           vim.keymap.set("n", "K", vim.lsp.buf.hover)
@@ -133,13 +158,21 @@ return {
           vim.keymap.set("n", "gi", vim.lsp.buf.implementation)
           vim.keymap.set("n", "ga", vim.lsp.buf.code_action)
           vim.keymap.set("n", "<leader>r", vim.lsp.buf.rename)
-          vim.keymap.set("n", "<leader>e", vim.diagnostic.goto_next)
+          vim.keymap.set("n", "<leader>e", function()
+            vim.diagnostic.jump({ count = 1 })
+            vim.schedule(function()
+              vim.diagnostic.open_float(nil, {
+                focusable = false,
+                scope = "cursor",
+              })
+            end)
+          end, { desc = "Next diagnostic" })
 
           local client = vim.lsp.get_client_by_id(event.data.client_id)
 
           -- Enable inlay hints when available
           if client and client.server_capabilities.inlayHintProvider then
-            vim.lsp.inlay_hint.enable(true)
+            vim.lsp.inlay_hint.enable(true, { bufnr = event.buf })
           end
 
           -- Highlight references to symbol under cursor
@@ -156,7 +189,7 @@ return {
           end
         end,
       })
-    end
+    end,
   },
   {
     "nvimtools/none-ls.nvim",
@@ -168,54 +201,24 @@ return {
         sources = {
           -- sources: https://github.com/nvimtools/none-ls.nvim/blob/main/doc/BUILTINS.md
           null_ls.builtins.formatting.prettier,
-          null_ls.builtins.formatting.hclfmt,    -- hcl
-          null_ls.builtins.formatting.yamlfmt,   -- yaml
+          null_ls.builtins.formatting.hclfmt, -- hcl
+          null_ls.builtins.formatting.yamlfmt, -- yaml
           null_ls.builtins.formatting.alejandra, -- nix
 
-          null_ls.builtins.code_actions.statix,  -- nix
+          null_ls.builtins.code_actions.statix, -- nix
 
           null_ls.builtins.diagnostics.hadolint, -- Dockerfiles
-          null_ls.builtins.diagnostics.statix,   -- nix
-        }
+          null_ls.builtins.diagnostics.statix, -- nix
+        },
       })
 
       vim.keymap.set('n', '<leader>ff', function()
         vim.lsp.buf.format { async = true }
       end)
-    end
+    end,
   },
   {
     "towolf/vim-helm",
     ft = 'helm',
-    config = function()
-      local lspconfig = require('lspconfig')
-      -- Helm
-      lspconfig.helm_ls.setup {
-        on_attach = function()
-          vim.o.tabstop = 2
-          vim.o.softtabstop = 2
-          vim.o.shiftwidth = 2
-          vim.o.expandtab = true
-        end,
-        capabilities = require('cmp_nvim_lsp').default_capabilities(),
-        settings = {
-          ['helm-ls'] = {
-            yamlls = {
-              enabled = true,
-              diagnosticsLimit = 50,
-              showDiagnosticsDirectly = false,
-              path = "yaml-language-server",
-              config = {
-                schemas = {
-                  kubernetes = "**",
-                },
-                completion = true,
-                hover = true,
-              }
-            }
-          }
-        }
-      }
-    end
-  }
+  },
 }

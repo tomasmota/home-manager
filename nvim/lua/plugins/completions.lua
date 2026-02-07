@@ -31,6 +31,17 @@ return {
       require("nvim-autopairs").setup()
       cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
 
+      local sources = {
+        { name = 'nvim_lsp' },
+        { name = 'luasnip', max_item_count = 3 },
+        { name = 'path', max_item_count = 3 },
+        { name = 'buffer', max_item_count = 5 },
+      }
+
+      if pcall(require, "copilot_cmp") then
+        table.insert(sources, 2, { name = 'copilot' })
+      end
+
       cmp.setup({
         snippet = {
           expand = function(args)
@@ -60,13 +71,7 @@ return {
         }),
         completion = { completeopt = "menu,menuone,noinsert" },
         experimental = { ghost_text = true },
-        sources = cmp.config.sources({
-          { name = 'nvim_lsp' },
-          { name = 'copilot' },
-          { name = 'luasnip', max_item_count = 3 },
-          { name = 'path',    max_item_count = 3 },
-          { name = 'buffer',  max_item_count = 5 },
-        }),
+        sources = cmp.config.sources(sources),
         formatting = {
           expandable_indicator = true,
           format = require("lspkind").cmp_format({

@@ -29,10 +29,10 @@ return {
           height = 0.9,
           width = 0.9,
         },
-        pickers = {
-          lsp_document_symbols = {
-            symbol_width = 70,
-          }
+      },
+      pickers = {
+        lsp_document_symbols = {
+          symbol_width = 70,
         },
       },
       extensions = {

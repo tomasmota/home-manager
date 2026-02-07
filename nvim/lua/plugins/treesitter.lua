@@ -2,7 +2,7 @@ return {
   {
     "nvim-treesitter/nvim-treesitter",
     build = ":TSUpdate",
-    config = function () 
+    config = function()
       local configs = require("nvim-treesitter.configs")
 
       configs.setup({
@@ -11,6 +11,7 @@ return {
           "hcl",
           "rust",
           "markdown",
+          "markdown_inline",
           "gomod",
           "yaml",
           "json",
@@ -22,6 +23,8 @@ return {
           "css",
           "query",
           "lua",
+          "vim",
+          "vimdoc",
           "python"
         },
 
@@ -73,7 +76,7 @@ return {
           enable = true,
         },
       })
-    end
+    end,
   },
   "nvim-treesitter/playground",
   "nvim-treesitter/nvim-treesitter-textobjects",
