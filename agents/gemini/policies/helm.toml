@@ -1,0 +1,22 @@
+# 1. SAFETY NET: Catch-all for helm
+# If it's not explicitly allowed below, ASK THE USER.
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = ["helm"]
+decision = "ask_user"
+priority = 100
+
+# 2. ALLOW LIST: Read-only helm operations
+# Use argsPattern so global flags before the verb are still matched.
+[[rule]]
+toolName = "run_shell_command"
+argsPattern = '"command":"helm\s+.*?\b(help|version|list|status|get|show|search|history|template|lint)\b'
+decision = "allow"
+priority = 900
+
+# 3. HARD DENY: Explicitly destructive release operations
+[[rule]]
+toolName = "run_shell_command"
+argsPattern = '"command":"helm\s+.*?\b(uninstall|delete)\b'
+decision = "deny"
+priority = 950
