@@ -13,6 +13,10 @@ in {
   # Managed via out-of-store symlinks for easy editing.
 
   home.file = {
+    # Shared agent-compatible skills
+    ".agents/skills".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/skills";
+
     # Gemini Configuration
     ".gemini/settings.json".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/gemini/settings.json";
