@@ -19,7 +19,7 @@
     fi
 
     local file
-    file=$(rg -S -- "$query" -l | fzf --preview "bat --color=always {}")
+    file=$(rg -S -l -- "$query" | fzf --preview "bat --color=always {}")
     if [[ -n "$file" ]]; then
       nvim "$file" -c "/$query"
     fi

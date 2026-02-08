@@ -22,17 +22,17 @@
       };
 
       envExtra = ''
-        PATH=$PATH:${config.home.homeDirectory}/.local/bin
-        PATH=$PATH:${config.home.homeDirectory}/.cargo/bin
-        PATH=$PATH:${config.home.homeDirectory}/go/bin
-        PATH=$PATH:${config.home.homeDirectory}/.npm-global/bin
-        PATH=$PATH:${config.home.homeDirectory}/.opencode/bin
-        EDITOR=nvim
-        TFE_PARALLELISM=100
-        DIRENV_LOG_FORMAT = ""
-        MANPAGER = "nvim +Man!"
-        DOCKER_BUILDKIT = "1"
-        RCLONE_FAST_LIST = "true"
+        export PATH="$PATH:${config.home.homeDirectory}/.local/bin"
+        export PATH="$PATH:${config.home.homeDirectory}/.cargo/bin"
+        export PATH="$PATH:${config.home.homeDirectory}/go/bin"
+        export PATH="$PATH:${config.home.homeDirectory}/.npm-global/bin"
+        export PATH="$PATH:${config.home.homeDirectory}/.opencode/bin"
+        export EDITOR="nvim"
+        export TFE_PARALLELISM="100"
+        export DIRENV_LOG_FORMAT=""
+        export MANPAGER='nvim +Man!'
+        export DOCKER_BUILDKIT="1"
+        export RCLONE_FAST_LIST="true"
       '';
 
       plugins = [
