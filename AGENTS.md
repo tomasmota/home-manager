@@ -19,6 +19,7 @@
 - `tmux.nix`: tmux settings/plugins/keybindings.
 - `nvim/`: Neovim config (lazy.nvim, plugin specs under `nvim/lua/plugins`, core config under `nvim/lua/config`).
 - `agents.nix`, `agents/**`: AI tool configs/policies (Gemini + OpenCode).
+- `agents/skills/**`: shared cross-agent skills; each skill lives in `agents/skills/<skill-name>/SKILL.md`.
 - `secrets.env`: local secrets file at repo root, intentionally gitignored.
 
 ## Configuration Composition Notes
@@ -61,6 +62,9 @@
   - `secrets.env` may be sourced by zsh init; never commit credentials.
 - Agent policies:
   - Edit policy source files in `agents/gemini/policies/*.toml` and `agents/opencode/opencode.json`.
+- Agent skills:
+  - Add new skills under `agents/skills/<skill-name>/SKILL.md`.
+  - Keep the existing frontmatter style (`name`, `description`, and `metadata`) and include usage-oriented sections.
 
 ## Safety and Gotchas
 - `README.md` setup examples are useful but partially outdated; trust `flake.nix` outputs over old snippets.

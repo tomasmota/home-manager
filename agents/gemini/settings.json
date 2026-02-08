@@ -47,6 +47,16 @@
       ],
       "timeout": 600000
     },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--no-usage-statistics",
+        "--no-performance-crux"
+      ],
+      "timeout": 120000
+    },
     "opentofu": {
       "url": "https://mcp.opentofu.org/sse"
     },

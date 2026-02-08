@@ -4,5 +4,18 @@
     "AGENTS.md",
     "~/.agents/AGENTS.md"
   ],
+  "mcp": {
+    "chrome-devtools": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--no-usage-statistics",
+        "--no-performance-crux"
+      ],
+      "timeout": 120000
+    }
+  },
   "permission": "allow"
 }
