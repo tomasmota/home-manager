@@ -15,6 +15,17 @@
         "--no-performance-crux"
       ],
       "timeout": 120000
+    },
+    "kubernetes": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "kubernetes-mcp-server@latest",
+        "--read-only",
+        "--toolsets=config,core"
+      ],
+      "timeout": 120000
     }
   },
   "permission": "allow"

@@ -1,0 +1,41 @@
+[[rule]]
+mcpName = "kubernetes"
+toolName = "*"
+decision = "ask_user"
+priority = 100
+
+[[rule]]
+mcpName = "kubernetes"
+toolName = [
+  "configuration_contexts_list",
+  "configuration_view",
+  "targets_list",
+  "events_list",
+  "namespaces_list",
+  "projects_list",
+  "nodes_log",
+  "nodes_stats_summary",
+  "nodes_top",
+  "pods_list",
+  "pods_list_in_namespace",
+  "pods_get",
+  "pods_top",
+  "pods_log",
+  "resources_list",
+  "resources_get"
+]
+decision = "allow"
+priority = 900
+
+[[rule]]
+mcpName = "kubernetes"
+toolName = [
+  "pods_delete",
+  "pods_exec",
+  "pods_run",
+  "resources_create_or_update",
+  "resources_delete",
+  "resources_scale"
+]
+decision = "deny"
+priority = 950

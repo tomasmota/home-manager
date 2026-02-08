@@ -25,6 +25,17 @@
       ],
       "timeout": 120000
     },
+    "kubernetes": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "kubernetes-mcp-server@latest",
+        "--read-only",
+        "--toolsets=config,core"
+      ],
+      "timeout": 120000
+    },
     "opentofu": {
       "type": "remote",
       "url": "https://mcp.opentofu.org/sse"
@@ -201,6 +212,27 @@
       "helm * delete*": "deny"
     },
     "chrome-devtools_*": "allow",
+    "kubernetes_*": "ask",
+    "kubernetes_configuration_*": "allow",
+    "kubernetes_targets_list*": "allow",
+    "kubernetes_events_list*": "allow",
+    "kubernetes_namespaces_list*": "allow",
+    "kubernetes_projects_list*": "allow",
+    "kubernetes_nodes_log*": "allow",
+    "kubernetes_nodes_stats_summary*": "allow",
+    "kubernetes_nodes_top*": "allow",
+    "kubernetes_pods_list*": "allow",
+    "kubernetes_pods_get*": "allow",
+    "kubernetes_pods_top*": "allow",
+    "kubernetes_pods_log*": "allow",
+    "kubernetes_resources_list*": "allow",
+    "kubernetes_resources_get*": "allow",
+    "kubernetes_pods_delete*": "deny",
+    "kubernetes_pods_exec*": "deny",
+    "kubernetes_pods_run*": "deny",
+    "kubernetes_resources_create_or_update*": "deny",
+    "kubernetes_resources_delete*": "deny",
+    "kubernetes_resources_scale*": "deny",
     "confluence_*": "ask",
     "confluence_get*": "allow",
     "confluence_search*": "allow"

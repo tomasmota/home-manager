@@ -67,8 +67,6 @@
   - Keep the existing frontmatter style (`name`, `description`, and `metadata`) and include usage-oriented sections.
 
 ## Safety and Gotchas
-- `README.md` setup examples are useful but partially outdated; trust `flake.nix` outputs over old snippets.
-- Some shell aliases/functions are destructive (`grhh`, `gprune`); do not run them unless explicitly requested.
 - `git.nix` writes `allowed_signers` files during activation; keep this behavior in mind when changing git/signing config.
 
 ## Commit Hygiene
