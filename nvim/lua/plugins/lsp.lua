@@ -68,6 +68,17 @@ return {
         --   on_attach = twospaces,
         -- },
         tofu_ls = {
+          root_dir = function(bufnr, on_dir)
+            local name = vim.api.nvim_buf_get_name(bufnr)
+            if name:match('^%a[%w+.-]*://') then
+              return
+            end
+
+            local root = vim.fs.root(name, { '.terraform', '.git' })
+            if root then
+              on_dir(root)
+            end
+          end,
           on_attach = function(client, bufnr)
             twospaces(client, bufnr)
             vim.keymap.set('n', '<leader>ff', '<cmd>!tofu fmt %<cr><cr>')
