@@ -28,5 +28,8 @@
       "timeout": 120000
     }
   },
+  "experimental": {
+    "disable_paste_summary": true,
+  },
   "permission": "allow"
 }

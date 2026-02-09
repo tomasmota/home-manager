@@ -45,6 +45,9 @@
       "url": "https://mcp.atlassian.com/v1/mcp"
     }
   },
+  "experimental": {
+    "disable_paste_summary": true,
+  },
   "permission": {
     "bash": {
       "*": "allow",
