@@ -47,7 +47,7 @@
   },
   "permission": {
     "bash": {
-      "*": "allow"
+      "*": "allow",
 
       "tofu*": "ask",
       "tofu version*": "allow",
@@ -93,7 +93,7 @@
       "helm*": "ask",
       "cmctl*": "ask",
       "istioctl*": "ask",
-      "argocd*": "ask",
+      "argocd*": "ask"
     },
     "external_directory": "allow",
     "chrome-devtools_*": "allow",
