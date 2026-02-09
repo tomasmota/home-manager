@@ -26,7 +26,28 @@
         "--toolsets=config,core"
       ],
       "timeout": 120000
+    },
+    "gitlab": {
+      "type": "remote",
+      "url": "https://gitlab.com/api/v4/mcp"
     }
+  },
+  "tools": {
+    "gitlab_*": false,
+    "gitlab_get_mcp_server_version": true,
+    "gitlab_create_issue": true,
+    "gitlab_get_issue": true,
+    "gitlab_create_merge_request": true,
+    "gitlab_get_merge_request": true,
+    "gitlab_get_merge_request_commits": true,
+    "gitlab_get_merge_request_diffs": true,
+    "gitlab_get_merge_request_pipelines": true,
+    "gitlab_get_pipeline_jobs": true,
+    "gitlab_create_workitem_note": true,
+    "gitlab_get_workitem_notes": true,
+    "gitlab_search": true,
+    "gitlab_search_labels": true,
+    "gitlab_semantic_code_search": true
   },
   "experimental": {
     "disable_paste_summary": true,

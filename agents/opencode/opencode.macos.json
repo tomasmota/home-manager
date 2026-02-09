@@ -43,7 +43,25 @@
     "confluence": {
       "type": "remote",
       "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "gitlab": {
+      "type": "remote",
+      "url": "https://gitlab.com/api/v4/mcp"
     }
+  },
+  "tools": {
+    "gitlab_*": false,
+    "gitlab_get_mcp_server_version": true,
+    "gitlab_get_issue": true,
+    "gitlab_get_merge_request": true,
+    "gitlab_get_merge_request_commits": true,
+    "gitlab_get_merge_request_diffs": true,
+    "gitlab_get_merge_request_pipelines": true,
+    "gitlab_get_pipeline_jobs": true,
+    "gitlab_get_workitem_notes": true,
+    "gitlab_search": true,
+    "gitlab_search_labels": true,
+    "gitlab_semantic_code_search": true
   },
   "experimental": {
     "disable_paste_summary": true,
@@ -52,8 +70,14 @@
     "bash": {
       "*": "allow",
 
+      "python3*": "ask",
+      "node*": "ask",
+      "bash*": "ask",
+
       "tofu*": "ask",
       "tofu version*": "allow",
+      "tofu plan*": "allow",
+      "tofu init*": "allow",
       "tofu fmt*": "allow",
       "tofu validate*": "allow",
       "tofu show*": "allow",

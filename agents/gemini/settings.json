@@ -72,6 +72,25 @@
     },
     "confluence": {
       "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "gitlab": {
+      "httpUrl": "https://gitlab.com/api/v4/mcp",
+      "includeTools": [
+        "get_mcp_server_version",
+        "create_issue",
+        "get_issue",
+        "create_merge_request",
+        "get_merge_request",
+        "get_merge_request_commits",
+        "get_merge_request_diffs",
+        "get_merge_request_pipelines",
+        "get_pipeline_jobs",
+        "create_workitem_note",
+        "get_workitem_notes",
+        "search",
+        "search_labels",
+        "semantic_code_search"
+      ]
     }
   },
   "experimental": {
