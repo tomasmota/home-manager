@@ -47,6 +47,9 @@
   },
   "permission": {
     "bash": {
+      "*": "allow"
+
+      "tofu*": "ask",
       "tofu version*": "allow",
       "tofu fmt*": "allow",
       "tofu validate*": "allow",
@@ -56,11 +59,11 @@
       "tofu apply*": "deny",
       "tofu destroy*": "deny",
       "tofu state rm*": "deny",
-      "tofu*": "ask",
 
       "git push --force*": "deny",
       "git push -f*": "deny",
 
+      "gcloud*": "ask",
       "gcloud config list*": "allow",
       "gcloud config get-value*": "allow",
       "gcloud auth list*": "allow",
@@ -71,8 +74,8 @@
       "gcloud projects delete*": "deny",
       "gcloud organizations*": "deny",
       "gcloud auth revoke*": "deny",
-      "gcloud*": "ask",
 
+      "kubectl*": "ask",
       "kubectl* get*": "allow",
       "kubectl* describe*": "allow",
       "kubectl* diff*": "allow",
@@ -86,14 +89,11 @@
       "kubectl* config view*": "allow",
       "kubectl* config current-context*": "allow",
       "kubectl* config get-contexts*": "allow",
-      "kubectl*": "ask",
 
       "helm*": "ask",
       "cmctl*": "ask",
       "istioctl*": "ask",
       "argocd*": "ask",
-
-      "*": "allow"
     },
     "external_directory": "allow",
     "chrome-devtools_*": "allow",
