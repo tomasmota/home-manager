@@ -1,65 +1,33 @@
-# 1. SAFETY NET: Catch-all for gcloud
-# If it's not explicitly allowed below, ASK THE USER.
-# This guarantees 100% coverage because nothing runs silently.
 [[rule]]
 toolName = "run_shell_command"
 commandPrefix = ["gcloud"]
 decision = "ask_user"
-priority = 100
+priority = 200
 
-# 2. ALLOW LIST: Explicitly Safe Read-Only Commands
-# Add to this list as you discover commands you trust.
 [[rule]]
 toolName = "run_shell_command"
 commandPrefix = [
-    # General Info
-    "gcloud config list",
-    "gcloud config get-value",
-    "gcloud projects list",
-    "gcloud projects describe",
-    "gcloud auth list",
-    "gcloud services list",
-
-    # Compute Engine (Read-Only)
-    "gcloud compute instances list",
-    "gcloud compute instances describe",
-    "gcloud compute zones list",
-    "gcloud compute regions list",
-    "gcloud compute machine-types list",
-    "gcloud compute disks list",
-    "gcloud compute images list",
-
-    # Kubernetes (Read-Only)
-    "gcloud container clusters list",
-    "gcloud container clusters describe",
-    "gcloud container node-pools list",
-
-    # Storage (Read-Only)
-    "gcloud storage ls",
-    "gcloud storage buckets list",
-    "gcloud storage buckets describe",
-
-    # Networking (Read-Only)
-    "gcloud compute networks list",
-    "gcloud compute networks describe",
-    "gcloud compute firewall-rules list",
-    "gcloud compute firewall-rules describe",
-
-    # IAM (Read-Only)
-    "gcloud iam service-accounts list",
-    "gcloud iam roles list"
+  "gcloud config list",
+  "gcloud config get-value",
+  "gcloud auth list",
+  "gcloud services list",
+  "gcloud storage ls"
 ]
 decision = "allow"
 priority = 900
 
-# 3. HARD DENY: Things you NEVER want to happen, even if asked.
-# (Optional, since the default is ask, but good for extra safety on criticals)
+[[rule]]
+toolName = "run_shell_command"
+argsPattern = '"command":"gcloud\s+.*?\b(list|describe)\b'
+decision = "allow"
+priority = 900
+
 [[rule]]
 toolName = "run_shell_command"
 commandPrefix = [
-    "gcloud projects delete",
-    "gcloud organizations",
-    "gcloud auth revoke"
+  "gcloud projects delete",
+  "gcloud organizations",
+  "gcloud auth revoke"
 ]
 decision = "deny"
 priority = 950

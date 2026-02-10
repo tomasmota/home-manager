@@ -1,5 +1,10 @@
 [[rule]]
 toolName = "run_shell_command"
-commandPrefix = ["cd", "ls", "cat", "echo"]
 decision = "allow"
 priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = ["python3", "node", "bash", "cmctl", "istioctl", "argocd"]
+decision = "ask_user"
+priority = 200

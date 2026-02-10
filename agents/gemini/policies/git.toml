@@ -1,62 +1,8 @@
-# 1. SAFETY NET: Catch-all for git
-# If it's not explicitly allowed below, ASK THE USER.
-# This guarantees 100% coverage because nothing runs silently.
-[[rule]]
-toolName = "run_shell_command"
-commandPrefix = ["git"]
-decision = "ask_user"
-priority = 100
-
-# 2. ALLOW LIST: Explicitly Safe Read-Only Commands
-# Add to this list as you discover commands you trust.
 [[rule]]
 toolName = "run_shell_command"
 commandPrefix = [
-    # Status & History
-    "git status",
-    "git log",
-    "git show",
-    "git diff",
-    "git shortlog",
-    "git reflog",
-
-    # Listing References
-    "git branch --list",
-    "git branch -a",
-    "git branch -r",
-    "git tag --list",
-    "git tag -l",
-
-    # Remote Info
-    "git remote -v",
-    "git remote show",
-
-    # File & Tree Info
-    "git ls-files",
-    "git ls-tree",
-    "git grep",
-    "git rev-parse",
-
-    # Configuration
-    "git config --list",
-    "git config --get",
-    "git version"
-]
-decision = "allow"
-priority = 900
-
-# 3. HARD DENY: High-risk destructive commands
-# These are dangerous enough to warrant an explicit block, 
-# forcing you to rethink or do it manually.
-[[rule]]
-toolName = "run_shell_command"
-commandPrefix = [
-    "git push --force",
-    "git push -f",
-    "git clean -f",
-    "git clean -fdx",
-    "git reset --hard",
-    "git rebase" 
+  "git push --force",
+  "git push -f"
 ]
 decision = "deny"
 priority = 950
