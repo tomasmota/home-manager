@@ -51,6 +51,7 @@
     rclone
     neovim
     grpcurl
+    glab
     step-cli # PKI utils
     presenterm # slides in the terminal
     unixtools.watch
