@@ -17,6 +17,9 @@ in {
     ".agents/skills".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/skills";
 
+    ".agents/AGENTS.md".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/AGENTS.md";
+
     # Gemini Configuration
     ".gemini/settings.json".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/gemini/settings.json";
