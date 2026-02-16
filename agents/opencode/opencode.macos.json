@@ -4,6 +4,24 @@
     "AGENTS.md",
     "~/.agents/AGENTS.md"
   ],
+  "plugin": ["opencode-gemini-auth@latest"],
+  "provider": {
+    "google": {
+      "models": {
+        "gemini-3-pro-preview": {
+          "options": {
+            "thinkingConfig": {
+              "thinkingLevel": "high",
+              "includeThoughts": true
+            }
+          }
+        }
+      },
+      "options": {
+        "projectId": "technology-dev-platform"
+      }
+    }
+  },
   "mcp": {
     "GeminiCloudAssist": {
       "type": "local",
@@ -119,6 +137,17 @@
       "kubectl* config get-contexts*": "allow",
 
       "helm*": "ask",
+      "helm list*": "allow",
+      "helm ls*": "allow",
+      "helm search*": "allow",
+      "helm show*": "allow",
+      "helm status*": "allow",
+      "helm get*": "allow",
+      "helm version*": "allow",
+      "helm history*": "allow",
+      "helm template*": "allow",
+      "helm lint*": "allow",
+      "helm env*": "allow",
       "cmctl*": "ask",
       "istioctl*": "ask",
       "argocd*": "ask"
