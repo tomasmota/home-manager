@@ -21,12 +21,6 @@
     "loadMemoryFromIncludeDirectories": true
   },
   "tools": {
-    "allowed": [
-      "git"
-    ],
-    "exclude": [
-      "run_shell_command(tofu apply)"
-    ],
     "approvalMode": "auto_edit"
   },
   "model": {
@@ -55,7 +49,8 @@
         "--no-usage-statistics",
         "--no-performance-crux"
       ],
-      "timeout": 120000
+      "timeout": 120000,
+      "trust": true
     },
     "kubernetes": {
       "command": "npx",
@@ -68,7 +63,8 @@
       "timeout": 120000
     },
     "opentofu": {
-      "url": "https://mcp.opentofu.org/sse"
+      "url": "https://mcp.opentofu.org/sse",
+      "trust": true
     },
     "confluence": {
       "url": "https://mcp.atlassian.com/v1/mcp"

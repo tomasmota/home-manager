@@ -42,7 +42,7 @@
   # diff between HEAD and the main branch
   gdm = ''nvim -c "DiffviewOpen $(git_main_branch)..."'';
   # clean up branches that have also been deleted in remote
-  gprune = ''read -q "REPLY?Delete local branches (except main/master)? [y/N] " && git remote prune origin && git for-each-ref --format "%(refname:short)" refs/heads | grep -v "master\|main" | xargs -I {} git branch -d "{}"; echo'';
+  gprune = ''read -q "REPLY?Prune branches deleted in remote? [y/N] " && git fetch -p && git branch -vv | awk '/: gone]/{print $1}' | xargs -r git branch -d; echo'';
   gbd = "git branch --delete";
   gswm = "git switch main";
   gswc = "git switch --create";
