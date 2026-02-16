@@ -14,7 +14,7 @@ priority = 100
 [[rule]]
 toolName = "run_shell_command"
 # Matches: kubectl ... (get|describe|diff|logs|top|events|version|cluster-info|api-resources|api-versions)
-argsPattern = '"command":"kubectl\s+.*?\b(get|describe|diff|logs|top|events|version|cluster-info|api-resources|api-versions)\b'
+argsPattern = '"command":"kubectl\s+.*?\b(get|describe|explain|diff|logs|top|events|version|cluster-info|api-resources|api-versions)\b'
 decision = "allow"
 priority = 900
 

@@ -105,6 +105,7 @@
       "kubectl*": "ask",
       "kubectl* get*": "allow",
       "kubectl* describe*": "allow",
+      "kubectl* explain*": "allow",
       "kubectl* diff*": "allow",
       "kubectl* logs*": "allow",
       "kubectl* top*": "allow",

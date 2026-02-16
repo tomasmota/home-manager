@@ -11,6 +11,7 @@
   ls = "eza -G --color auto -a -s type";
   la = "eza -l --color always -a -s type";
   l = "eza -l --color always -a -s type";
+  ports = "lsof -i -P -n | grep LISTEN";
   nv = "nvim";
   tree = "tree -I 'node_modules|dist|coverage'";
   t = "tree -I 'node_modules|dist|coverage'";
@@ -39,6 +40,8 @@
   gD = "git diff HEAD~1";
   # interactively browse commits, opening them in Diffview on select
   gdi = ''git log --oneline | fzf --preview 'git show --name-only {1}' --bind "enter:execute(nvim -c 'DiffviewOpen {1}^!' -- . ':(exclude)flake.lock' ':(exclude)nvim/lazy-lock.json' '(exclude)yarn.lock')"'';
+  # pretty log
+  gll = "git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit";
   # diff between HEAD and the main branch
   gdm = ''nvim -c "DiffviewOpen $(git_main_branch)..."'';
   # clean up branches that have also been deleted in remote
