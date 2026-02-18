@@ -23,6 +23,17 @@ vim.api.nvim_create_autocmd('BufWinEnter', {
   end,
 })
 
+vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHoldI' }, {
+  group = vim.api.nvim_create_augroup('autoread_checktime', {}),
+  desc = 'Check for files changed outside of Neovim',
+  pattern = '*',
+  callback = function()
+    if vim.bo.buftype == '' then
+      vim.cmd('silent! checktime')
+    end
+  end,
+})
+
 -- taken from https://github.com/golang/tools/blob/master/gopls/doc/vim.md#imports-and-formatting
 vim.api.nvim_create_autocmd('BufWritePre', {
   group = vim.api.nvim_create_augroup('go_imports_format_onsave', {}),

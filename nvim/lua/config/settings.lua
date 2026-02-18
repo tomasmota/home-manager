@@ -19,6 +19,7 @@ opt.autoindent = true
 
 opt.undofile = true
 opt.swapfile = false
+opt.autoread = true
 
 opt.autoindent = true
 opt.smartindent = true

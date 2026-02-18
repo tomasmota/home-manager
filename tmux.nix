@@ -33,6 +33,7 @@
 
       # escape sequence passthrough
       set -g allow-passthrough on
+      set -g focus-events on
       set -s set-clipboard on
 
       # status bar on top

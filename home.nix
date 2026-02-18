@@ -69,6 +69,7 @@
     opentofu
     hclfmt
     nodejs_24 # needed for installing some language servers
+    python3 # latest Python in current nixpkgs
     pnpm
 
     # formatting / linting
