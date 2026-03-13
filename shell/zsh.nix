@@ -70,6 +70,11 @@
           _fzf_compgen_dir() {
             fd --type d --hidden --follow --exclude ".git" . "$1"
           }
+
+          if (( $+commands[wt] )); then
+            eval "$(wt config shell init zsh)"
+          fi
+
           if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
             source ${config.xdg.configHome}/home-manager/secrets.env
           fi
