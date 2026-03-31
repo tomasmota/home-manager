@@ -119,6 +119,8 @@
       "gcloud projects delete*": "deny",
       "gcloud organizations*": "deny",
       "gcloud auth revoke*": "deny",
+      "gcloud logging read*": "deny",
+      "gcloud* get-iam-policy*": "deny",
 
       "kubectl*": "ask",
       "kubectl* get*": "allow",
