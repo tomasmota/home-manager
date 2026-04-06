@@ -101,6 +101,7 @@
       "tofu show*": "allow",
       "tofu output*": "allow",
       "tofu state list*": "allow",
+      "tofu state show*": "allow",
       "tofu apply*": "deny",
       "tofu destroy*": "deny",
       "tofu state rm*": "deny",
