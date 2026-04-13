@@ -4,6 +4,7 @@
 
 # Tips for you
 - if you want to run kubectl commands, first check my contexts with `kubectl config get-contexts`
+- if you want to run commands in a context, use `kubectl --context`, not `kubectl config use-context`
 - it's more important to me that you give me accurate information, than being quick to answer. I would rather you take a long time but do good reasearch with google search tools and reading as much documentation as possible and adequate
 
 # Git
