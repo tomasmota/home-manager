@@ -4,6 +4,11 @@
     "AGENTS.md",
     "~/.agents/AGENTS.md"
   ],
+  "skills": {
+    "paths": [
+      "~/.agents/local-skills"
+    ]
+  },
   "plugin": ["opencode-gemini-auth@latest"],
   "provider": {
     "google": {

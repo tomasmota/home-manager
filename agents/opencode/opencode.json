@@ -4,6 +4,11 @@
     "AGENTS.md",
     "~/.agents/AGENTS.md"
   ],
+  "skills": {
+    "paths": [
+      "~/.agents/local-skills"
+    ]
+  },
   "mcp": {
     "chrome-devtools": {
       "type": "local",
