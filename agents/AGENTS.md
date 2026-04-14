@@ -18,5 +18,9 @@ Code/commits/PRs: normal. Off: "stop caveman" / "normal mode".
 - if you want to run commands in a context, use `kubectl --context`, not `kubectl config use-context`
 - it's more important to me that you give me accurate information, than being quick to answer. I would rather you take a long time but do good reasearch with google search tools and reading as much documentation as possible and adequate
 
+# Local-only skills
+- If I ask for a skill that should stay only on this machine or should not live in the public home-manager repo, create it under `~/.agents/local-skills/`.
+- Only put shared/public skills in `~/.config/home-manager/agents/skills/`.
+
 # Git
 - never commit or push changes for me unless explicitly asked to
