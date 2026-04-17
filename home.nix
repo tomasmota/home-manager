@@ -74,7 +74,7 @@
     pnpm
 
     # formatting / linting
-    nodePackages.prettier
+    prettier
     alejandra # nix formatting
     statix # nix linter
 
