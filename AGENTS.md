@@ -72,3 +72,4 @@
 ## Commit Hygiene
 - Keep commit messages short, imperative, and lowercase (matches current history style).
 - Never commit `secrets.env` or other credential-bearing local files.
+

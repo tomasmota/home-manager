@@ -1,84 +1,32 @@
 return {
   {
-    "nvim-treesitter/nvim-treesitter",
-    build = ":TSUpdate",
+    "nvim-treesitter/nvim-treesitter-textobjects",
+    branch = "main",
     config = function()
-      local configs = require("nvim-treesitter.configs")
-
-      configs.setup({
-        ensure_installed = {
-          "go",
-          "hcl",
-          "rust",
-          "markdown",
-          "markdown_inline",
-          "gomod",
-          "yaml",
-          "json",
-          "make",
-          "tsx",
-          "typescript",
-          "javascript",
-          "html",
-          "css",
-          "query",
-          "lua",
-          "vim",
-          "vimdoc",
-          "python"
-        },
-
-        -- Install parsers synchronously (only applied to `ensure_installed`)
-        sync_install = false,
-
-        -- Automatically install missing parsers when entering buffer
-        -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-        auto_install = true,
-
-        highlight = {
-          enable = true,
-        },
-        incremental_selection = {
-          enable = true,
-          keymaps = {
-            init_selection = "gnn",
-            node_incremental = "grn",
-            scope_incremental = "grc",
-            node_decremental = "grm",
-          },
-        },
-        indent = { enable = true },
-        autopairs = { enable = true },
-        textobjects = {
-          select = {
-            enable = true,
-            lookahead = true,
-            keymaps = {
-              -- You can use the capture groups defined in textobjects.scm
-              ["af"] = { query = "@function.outer", desc = "around function" },
-              ["if"] = { query = "@function.inner", desc = "inside function" },
-              ["ab"] = { query = "@block.inner", desc = "around block" },
-              ["ib"] = { query = "@block.inner", desc = "inside block" },
-              -- ["ap"] = { query = "@parameter.outer", desc = "around parameter" },
-              -- ["ip"] = { query = "@parameter.inner", desc = "inside a parameter" },
-              ["ai"] = { query = "@conditional.outer", desc = "around an if statement" },
-              ["ii"] = { query = "@conditional.inner", desc = "inside if statement" },
-            },
-            include_surrounding_whitespace = false,
-          },
-        },
-        rainbow = {
-          enable = true,
-          extended_mode = true, -- Highlight also non-parentheses delimiters, boolean or table: lang -> boolean
-          max_file_lines = 2000, -- Do not enable for files with more than specified lines
-        },
-        autotag = {
-          enable = true,
+      require("nvim-treesitter-textobjects").setup({
+        select = {
+          lookahead = true,
+          include_surrounding_whitespace = false,
         },
       })
+
+      local select = require("nvim-treesitter-textobjects.select")
+      for _, mode in ipairs({ "x", "o" }) do
+        vim.keymap.set(mode, "af", function() select.select_textobject("@function.outer", "textobjects") end, { desc = "around function" })
+        vim.keymap.set(mode, "if", function() select.select_textobject("@function.inner", "textobjects") end, { desc = "inside function" })
+        vim.keymap.set(mode, "ab", function() select.select_textobject("@block.inner", "textobjects") end, { desc = "around block" })
+        vim.keymap.set(mode, "ib", function() select.select_textobject("@block.inner", "textobjects") end, { desc = "inside block" })
+        vim.keymap.set(mode, "ai", function() select.select_textobject("@conditional.outer", "textobjects") end, { desc = "around if statement" })
+        vim.keymap.set(mode, "ii", function() select.select_textobject("@conditional.inner", "textobjects") end, { desc = "inside if statement" })
+      end
     end,
   },
-  "nvim-treesitter/nvim-treesitter-textobjects",
-  "JoosepAlviste/nvim-ts-context-commentstring",
+  {
+    "JoosepAlviste/nvim-ts-context-commentstring",
+    init = function()
+      vim.g.skip_ts_context_commentstring_module = true
+    end,
+    opts = {},
+  },
   "nvim-treesitter/nvim-treesitter-context",
 }

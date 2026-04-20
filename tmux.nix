@@ -29,10 +29,11 @@
     extraConfig = ''
       set -ag terminal-overrides ",xterm-256color:RGB"
       set -as terminal-features ",xterm*:extkeys"
+      set -as terminal-features ",xterm-ghostty:hyperlinks"
       set -s extended-keys always
 
       # escape sequence passthrough
-      set -g allow-passthrough on
+      set -g allow-passthrough all
       set -g focus-events on
       set -s set-clipboard on
 
