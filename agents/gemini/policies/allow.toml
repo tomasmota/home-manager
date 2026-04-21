@@ -5,6 +5,6 @@ priority = 100
 
 [[rule]]
 toolName = "run_shell_command"
-commandPrefix = ["python3", "node", "bash", "cmctl", "istioctl", "argocd"]
+commandPrefix = ["python3", "node", "bash"]
 decision = "ask_user"
 priority = 200

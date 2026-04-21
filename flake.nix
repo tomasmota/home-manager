@@ -33,7 +33,7 @@
     }: {
       home = {
         inherit username homeDirectory;
-        stateVersion = "24.05";
+        stateVersion = "25.05";
       };
       imports = [./home.nix];
     };

@@ -1,17 +1,38 @@
 [[rule]]
 mcpName = "confluence"
-toolName = "getAccessibleAtlassianResources"
-decision = "allow"
-priority = 200
+toolName = "*"
+decision = "ask_user"
+priority = 100
 
 [[rule]]
 mcpName = "confluence"
-toolName = "getConfluenceSpaces"
+toolName = [
+  "getAccessibleAtlassianResources",
+  "getConfluencePage",
+  "getConfluenceSpaces",
+  "getPagesInConfluenceSpace",
+  "getConfluencePageFooterComments",
+  "getConfluencePageInlineComments",
+  "getConfluenceCommentChildren",
+  "getConfluencePageDescendants",
+  "getJiraIssue",
+  "getTransitionsForJiraIssue",
+  "getJiraIssueRemoteIssueLinks",
+  "getVisibleJiraProjects",
+  "getJiraProjectIssueTypesMetadata",
+  "getJiraIssueTypeMetaWithFields",
+  "getIssueLinkTypes"
+]
 decision = "allow"
-priority = 200
+priority = 900
 
 [[rule]]
 mcpName = "confluence"
-toolName = "searchConfluenceUsingCql"
+toolName = [
+  "searchConfluenceUsingCql",
+  "searchJiraIssuesUsingJql",
+  "search",
+  "fetch"
+]
 decision = "allow"
-priority = 200
+priority = 900

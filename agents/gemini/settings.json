@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/google-gemini/gemini-cli/main/schemas/settings.schema.json",
   "security": {
     "auth": {
       "selectedType": "oauth-personal"
@@ -16,18 +17,11 @@
     }
   },
   "context": {
-    "fileName": [
-      "AGENTS.md",
-      "CONTEXT.md",
-      "GEMINI.md"
-    ],
+    "fileName": "AGENTS.md",
     "includeDirectories": [
       "~/.agents"
     ],
     "loadMemoryFromIncludeDirectories": true
-  },
-  "tools": {
-    "approvalMode": "auto_edit"
   },
   "model": {
     "name": "gemini-3-pro-preview",
@@ -36,7 +30,11 @@
   "ui": {
     "showHomeDirectoryWarning": false,
     "hideBanner": true,
-    "showMemoryUsage": false
+    "showMemoryUsage": false,
+    "inlineThinkingMode": "full",
+    "footer": {
+      "hideContextPercentage": false
+    }
   },
   "mcpServers": {
     "GeminiCloudAssist": {
@@ -79,23 +77,17 @@
       "httpUrl": "https://gitlab.com/api/v4/mcp",
       "includeTools": [
         "get_mcp_server_version",
-        "create_issue",
         "get_issue",
-        "create_merge_request",
         "get_merge_request",
         "get_merge_request_commits",
         "get_merge_request_diffs",
         "get_merge_request_pipelines",
         "get_pipeline_jobs",
-        "create_workitem_note",
         "get_workitem_notes",
         "search",
         "search_labels",
         "semantic_code_search"
       ]
     }
-  },
-  "experimental": {
-    "plan": true
   }
 }

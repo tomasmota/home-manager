@@ -87,7 +87,7 @@
     "gitlab_semantic_code_search": true
   },
   "experimental": {
-    "disable_paste_summary": true,
+    "disable_paste_summary": true
   },
   "permission": {
     "bash": {

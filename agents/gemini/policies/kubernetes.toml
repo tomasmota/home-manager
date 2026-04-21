@@ -9,10 +9,8 @@ mcpName = "kubernetes"
 toolName = [
   "configuration_contexts_list",
   "configuration_view",
-  "targets_list",
   "events_list",
   "namespaces_list",
-  "projects_list",
   "nodes_log",
   "nodes_stats_summary",
   "nodes_top",
@@ -26,16 +24,3 @@ toolName = [
 ]
 decision = "allow"
 priority = 900
-
-[[rule]]
-mcpName = "kubernetes"
-toolName = [
-  "pods_delete",
-  "pods_exec",
-  "pods_run",
-  "resources_create_or_update",
-  "resources_delete",
-  "resources_scale"
-]
-decision = "deny"
-priority = 950

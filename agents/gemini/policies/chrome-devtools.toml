@@ -1,0 +1,5 @@
+[[rule]]
+mcpName = "chrome-devtools"
+toolName = "*"
+decision = "allow"
+priority = 900
