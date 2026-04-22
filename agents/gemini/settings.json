@@ -70,9 +70,6 @@
       "url": "https://mcp.opentofu.org/sse",
       "trust": true
     },
-    "confluence": {
-      "url": "https://mcp.atlassian.com/v1/mcp"
-    },
     "gitlab": {
       "httpUrl": "https://gitlab.com/api/v4/mcp",
       "includeTools": [

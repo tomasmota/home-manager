@@ -63,10 +63,6 @@
       "type": "remote",
       "url": "https://mcp.opentofu.org/sse"
     },
-    "confluence": {
-      "type": "remote",
-      "url": "https://mcp.atlassian.com/v1/mcp"
-    },
     "gitlab": {
       "type": "remote",
       "url": "https://gitlab.com/api/v4/mcp"
@@ -173,8 +169,5 @@
     "kubernetes_events_*": "allow",
     "kubernetes_namespaces_*": "allow",
     "kubernetes_*": "ask",
-    "confluence_*": "ask",
-    "confluence_get*": "allow",
-    "confluence_search*": "allow"
   }
 }
