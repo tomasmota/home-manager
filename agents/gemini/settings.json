@@ -37,14 +37,6 @@
     }
   },
   "mcpServers": {
-    "GeminiCloudAssist": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@google-cloud/gemini-cloud-assist-mcp@latest"
-      ],
-      "timeout": 600000
-    },
     "chrome-devtools": {
       "command": "npx",
       "args": [
