@@ -1,89 +1,106 @@
+local terraform_filetypes = {
+  terraform = true,
+  ['terraform-vars'] = true,
+  opentofu = true,
+  ['opentofu-vars'] = true,
+  hcl = true,
+}
+
 return {
   {
-    'hrsh7th/nvim-cmp',
-    event = 'InsertEnter',
+    'saghen/blink.cmp',
+    version = '1.*',
     dependencies = {
-      -- completion integrations
-      'hrsh7th/cmp-nvim-lsp',
-      'hrsh7th/cmp-buffer',
-      'hrsh7th/cmp-path',
-      'hrsh7th/cmp-cmdline',
-
-      -- icons
-      'onsails/lspkind.nvim',
-
-      -- autopairs
-      'windwp/nvim-autopairs',
-
-      -- luasnip
-      'L3MON4D3/LuaSnip',
-      'saadparwaiz1/cmp_luasnip',
-      'rafamadriz/friendly-snippets'
+      'rafamadriz/friendly-snippets',
     },
-    config = function()
-      local cmp = require 'cmp'
-      local luasnip = require 'luasnip'
-      require('luasnip.loaders.from_vscode').lazy_load()
-      luasnip.config.setup {}
-
-      -- Integrate nvim-autopairs with cmp (trying out not using this for now)
-      local cmp_autopairs = require("nvim-autopairs.completion.cmp")
-      require("nvim-autopairs").setup()
-      cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
-
-      local sources = {
-        { name = 'nvim_lsp' },
-        { name = 'luasnip', max_item_count = 3 },
-        { name = 'path', max_item_count = 3 },
-        { name = 'buffer', max_item_count = 5 },
-      }
-
-      if pcall(require, "copilot_cmp") then
-        table.insert(sources, 2, { name = 'copilot' })
-      end
-
-      cmp.setup({
-        snippet = {
-          expand = function(args)
-            luasnip.lsp_expand(args.body)
-          end
+    ---@module 'blink.cmp'
+    ---@type blink.cmp.Config
+    opts = {
+      appearance = {
+        nerd_font_variant = 'mono',
+      },
+      keymap = {
+        preset = 'default',
+        ['<C-o>'] = { 'accept', 'fallback' },
+        ['<C-l>'] = { 'snippet_forward', 'fallback' },
+        ['<C-h>'] = { 'snippet_backward', 'fallback' },
+      },
+      completion = {
+        list = {
+          max_items = 30,
+          selection = {
+            preselect = false,
+            auto_insert = false,
+          },
         },
-        window = {
-          completion = cmp.config.window.bordered(),
-          documentation = cmp.config.window.bordered(),
-        },
-        mapping = cmp.mapping.preset.insert({
-          ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-          ['<C-f>'] = cmp.mapping.scroll_docs(4),
-          ['<C-Space>'] = cmp.mapping.complete(),
-          ['<C-e>'] = cmp.mapping.abort(),
-          ['<C-o>'] = cmp.mapping.confirm({ select = true }),
-          ['<C-l>'] = cmp.mapping(function()
-            if luasnip.expand_or_locally_jumpable() then
-              luasnip.expand_or_jump()
-            end
-          end, { 'i', 's' }),
-          ['<C-h>'] = cmp.mapping(function()
-            if luasnip.locally_jumpable(-1) then
-              luasnip.jump(-1)
-            end
-          end, { 'i', 's' }),
-        }),
-        completion = { completeopt = "menu,menuone,noinsert" },
-        experimental = { ghost_text = true },
-        sources = cmp.config.sources(sources),
-        formatting = {
-          expandable_indicator = true,
-          format = require("lspkind").cmp_format({
-            mode = "symbol_text",
-            maxwidth = 50,
-            ellipsis_char = "...",
-            symbol_map = {
-              Copilot = "",
+        menu = {
+          border = 'rounded',
+          auto_show_delay_ms = 100,
+          draw = {
+            columns = {
+              { 'kind_icon' },
+              { 'label', 'label_description', gap = 1 },
+              { 'source_name' },
             },
-          }),
+            components = {
+              label = {
+                width = { fill = true, max = 60 },
+              },
+              label_description = {
+                width = { max = 24 },
+              },
+              source_name = {
+                width = { max = 6 },
+              },
+            },
+          },
         },
-      })
-    end
-  }
+        documentation = {
+          auto_show = true,
+          auto_show_delay_ms = 200,
+          window = {
+            border = 'rounded',
+          },
+        },
+        ghost_text = { enabled = false },
+      },
+      fuzzy = {
+        implementation = 'prefer_rust',
+        sorts = { 'exact', 'score', 'sort_text' },
+      },
+      sources = {
+        default = { 'lsp', 'path', 'snippets', 'buffer' },
+        providers = {
+          lsp = {
+            name = 'LSP',
+          },
+          path = {
+            name = 'Path',
+          },
+          snippets = {
+            name = 'Snip',
+            min_keyword_length = 2,
+            opts = {
+              filter_snippets = function(filetype, file)
+                return not (
+                  terraform_filetypes[filetype]
+                  and file:match('friendly.snippets')
+                  and file:match('terraform%.json$')
+                )
+              end,
+            },
+          },
+          buffer = {
+            name = 'Buf',
+            min_keyword_length = 4,
+          },
+        },
+      },
+    },
+  },
+  {
+    'windwp/nvim-autopairs',
+    event = 'InsertEnter',
+    opts = {},
+  },
 }

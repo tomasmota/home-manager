@@ -6,6 +6,7 @@ return {
       "WhoIsSethDaniel/mason-tool-installer.nvim",
       "williamboman/mason-lspconfig.nvim",
       { "j-hui/fidget.nvim", opts = {} },
+      "saghen/blink.cmp",
     },
     config = function()
       -- used to set tabs to 2 spaces in some languages
@@ -138,11 +139,7 @@ return {
         automatic_enable = false,
       })
 
-      local capabilities = vim.tbl_deep_extend(
-        'force',
-        vim.lsp.protocol.make_client_capabilities(),
-        require('cmp_nvim_lsp').default_capabilities()
-      )
+      local capabilities = require('blink.cmp').get_lsp_capabilities()
 
       for server_name, server in pairs(servers) do
         server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
@@ -154,6 +151,8 @@ return {
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('lsp-attach', { clear = true }),
         callback = function(event)
+          local client = vim.lsp.get_client_by_id(event.data.client_id)
+
           local telescope = require("telescope.builtin")
           vim.keymap.set("n", "gt", telescope.lsp_type_definitions)
           vim.keymap.set("n", "gr", function()
@@ -178,8 +177,6 @@ return {
               })
             end)
           end, { desc = "Next diagnostic" })
-
-          local client = vim.lsp.get_client_by_id(event.data.client_id)
 
           -- Enable inlay hints when available
           if client and client.server_capabilities.inlayHintProvider then
