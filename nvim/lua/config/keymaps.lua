@@ -40,3 +40,10 @@ vim.keymap.set('n', '<leader>cc', ":cclose<cr>")
 -- use c-n and c-p to go to previous and next buffer
 vim.keymap.set('n', '<c-n>', ":bnext<cr>")
 vim.keymap.set('n', '<c-p>', ":bprev<cr>")
+
+-- comment and duplicate current selection
+vim.keymap.set('x', '<leader>d', function()
+  vim.cmd('normal! y')
+  vim.cmd('normal! gvgc')
+  vim.cmd('normal! `>p')
+end)
