@@ -4,7 +4,7 @@ return {
     dependencies = {
       { "williamboman/mason.nvim", opts = {} },
       "WhoIsSethDaniel/mason-tool-installer.nvim",
-      "williamboman/mason-lspconfig.nvim",
+      "mason-org/mason-lspconfig.nvim",
       { "j-hui/fidget.nvim", opts = {} },
       "saghen/blink.cmp",
     },
