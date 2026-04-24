@@ -82,7 +82,6 @@ return {
           end,
           on_attach = function(client, bufnr)
             twospaces(client, bufnr)
-            vim.keymap.set('n', '<leader>ff', '<cmd>!tofu fmt %<cr><cr>')
           end,
         },
         yamlls = {
@@ -200,28 +199,67 @@ return {
     end,
   },
   {
-    "nvimtools/none-ls.nvim",
-    dependencies = { "nvim-lua/plenary.nvim" },
+    "stevearc/conform.nvim",
+    cmd = "ConformInfo",
+    keys = {
+      {
+        "<leader>ff",
+        function()
+          require("conform").format({ async = true, lsp_format = "fallback" })
+        end,
+        mode = { "n", "v" },
+        desc = "Format buffer",
+      },
+    },
+    opts = {
+      formatters_by_ft = {
+        javascript = { "prettier" },
+        javascriptreact = { "prettier" },
+        typescript = { "prettier" },
+        typescriptreact = { "prettier" },
+        vue = { "prettier" },
+        css = { "prettier" },
+        scss = { "prettier" },
+        less = { "prettier" },
+        html = { "prettier" },
+        json = { "prettier" },
+        jsonc = { "prettier" },
+        markdown = { "prettier" },
+        graphql = { "prettier" },
+        yaml = { "yamlfmt" },
+        nix = { "alejandra" },
+        hcl = { "hcl" },
+        terraform = { "tofu_fmt" },
+        ["terraform-vars"] = { "tofu_fmt" },
+        opentofu = { "tofu_fmt" },
+        ["opentofu-vars"] = { "tofu_fmt" },
+      },
+      default_format_opts = {
+        lsp_format = "fallback",
+      },
+      notify_no_formatters = false,
+    },
+  },
+  {
+    "mfussenegger/nvim-lint",
+    event = { "BufReadPost", "BufWritePost" },
     config = function()
-      local null_ls = require("null-ls")
+      local lint = require("lint")
 
-      null_ls.setup({
-        sources = {
-          -- sources: https://github.com/nvimtools/none-ls.nvim/blob/main/doc/BUILTINS.md
-          null_ls.builtins.formatting.prettier,
-          null_ls.builtins.formatting.hclfmt, -- hcl
-          null_ls.builtins.formatting.yamlfmt, -- yaml
-          null_ls.builtins.formatting.alejandra, -- nix
+      lint.linters_by_ft = {
+        dockerfile = { "hadolint" },
+        nix = { "statix" },
+      }
 
-          null_ls.builtins.code_actions.statix, -- nix
-
-          null_ls.builtins.diagnostics.hadolint, -- Dockerfiles
-          null_ls.builtins.diagnostics.statix, -- nix
-        },
+      vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost" }, {
+        group = vim.api.nvim_create_augroup("nvim_lint", { clear = true }),
+        callback = function()
+          lint.try_lint()
+        end,
       })
 
-      vim.keymap.set('n', '<leader>ff', function()
-        vim.lsp.buf.format { async = true }
+      vim.schedule(function()
+        lint.try_lint()
       end)
     end,
   },
