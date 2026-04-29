@@ -106,6 +106,7 @@
       "gcloud config get-value*": "allow",
       "gcloud auth list*": "allow",
       "gcloud services list*": "allow",
+      "gcloud asset search-all-resources*": "allow",
       "gcloud* list*": "allow",
       "gcloud* describe*": "allow",
       "gcloud storage ls*": "allow",

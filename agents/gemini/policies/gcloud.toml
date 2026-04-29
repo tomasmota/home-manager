@@ -11,6 +11,7 @@ commandPrefix = [
   "gcloud config get-value",
   "gcloud auth list",
   "gcloud services list",
+  "gcloud asset search-all-resources",
   "gcloud storage ls",
   "gcloud logging read"
 ]
