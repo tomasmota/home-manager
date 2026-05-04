@@ -1,0 +1,41 @@
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = ["glab"]
+decision = "ask_user"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = [
+  "glab help",
+  "glab version",
+  "glab auth status",
+  "glab config get",
+  "glab config list",
+  "glab alias list",
+  "glab api --method GET",
+  "glab api -X GET"
+]
+decision = "allow"
+priority = 900
+
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = 'glab\s+.*?\b(list|view|status|search|diff|lint)\b'
+decision = "allow"
+priority = 900
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = [
+  "glab auth revoke",
+  "glab auth logout"
+]
+decision = "deny"
+priority = 950
+
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = 'glab\s+.*?\b(delete|archive|revoke)\b'
+decision = "deny"
+priority = 950

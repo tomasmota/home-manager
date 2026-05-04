@@ -101,6 +101,27 @@
       "git push --force*": "deny",
       "git push -f*": "deny",
 
+      "glab*": "ask",
+      "glab help*": "allow",
+      "glab version*": "allow",
+      "glab auth status*": "allow",
+      "glab config get*": "allow",
+      "glab config list*": "allow",
+      "glab alias list*": "allow",
+      "glab* list*": "allow",
+      "glab* view*": "allow",
+      "glab* status*": "allow",
+      "glab* search*": "allow",
+      "glab* diff*": "allow",
+      "glab* lint*": "allow",
+      "glab api --method GET*": "allow",
+      "glab api -X GET*": "allow",
+      "glab auth revoke*": "deny",
+      "glab auth logout*": "deny",
+      "glab* delete*": "deny",
+      "glab* archive*": "deny",
+      "glab* revoke*": "deny",
+
       "gcloud*": "ask",
       "gcloud config list*": "allow",
       "gcloud config get-value*": "allow",
@@ -160,6 +181,6 @@
     "kubernetes_*_stats*": "allow",
     "kubernetes_events_*": "allow",
     "kubernetes_namespaces_*": "allow",
-    "kubernetes_*": "ask",
+    "kubernetes_*": "ask"
   }
 }
