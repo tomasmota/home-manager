@@ -81,6 +81,8 @@ return {
             end
           end,
           on_attach = function(client, bufnr)
+            -- Work around a tofu-ls semantic-token bug; remove this once tofu-ls fixes heredoc interpolation ranges.
+            client.server_capabilities.semanticTokensProvider = nil
             twospaces(client, bufnr)
           end,
         },
