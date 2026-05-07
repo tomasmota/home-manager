@@ -8,3 +8,8 @@ toolName = "run_shell_command"
 commandPrefix = ["python3", "node", "bash"]
 decision = "ask_user"
 priority = 200
+
+[[rule]]
+toolName = "activate_skill"
+decision = "allow"
+priority = 100

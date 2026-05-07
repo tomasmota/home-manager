@@ -33,7 +33,8 @@
     "showMemoryUsage": false,
     "inlineThinkingMode": "full",
     "footer": {
-      "hideContextPercentage": false
+      "hideContextPercentage": false,
+      "showLabels": true
     }
   },
   "mcpServers": {
