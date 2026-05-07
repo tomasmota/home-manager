@@ -8,6 +8,13 @@ vim.keymap.set('n', '<leader>Q', ':qa!<CR>')
 -- Clear highlighted search
 vim.keymap.set('n', '<C-l>', ':nohlsearch<CR>')
 
+-- Copy current buffer path to clipboard
+vim.keymap.set('n', '<leader>yp', function()
+  local path = vim.fn.expand('%:p')
+  vim.fn.setreg('+', path)
+  vim.notify(path)
+end)
+
 -- Navigation
 vim.keymap.set('n', '<C-u>', '<C-u>zz')
 vim.keymap.set('n', '<C-d>', '<C-d>zz')
