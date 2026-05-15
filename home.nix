@@ -37,6 +37,7 @@
     ffmpeg
     gnumake
     gh
+    bitwarden-cli
     tldr
     dive
     wget
