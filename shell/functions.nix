@@ -76,4 +76,17 @@
     git commit -m "$1"
     git push
   }
+
+  ocweb() {
+    local url="http://macbook:4096/"
+
+    tailscale serve --bg --http 4096 4096 || return 1
+    echo "Open: $url"
+
+    {
+      opencode web --hostname 127.0.0.1 "$@"
+    } always {
+      tailscale serve --http=4096 off >/dev/null 2>&1
+    }
+  }
 ''
