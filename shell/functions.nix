@@ -78,15 +78,16 @@
   }
 
   ocweb() {
-    local url="http://macbook:4096/"
+    local host
+    host="$(scutil --get LocalHostName 2>/dev/null || hostname -s)"
 
-    tailscale serve --bg --http 4096 4096 || return 1
-    echo "Open: $url"
+    tailscale serve --http=4096 off >/dev/null 2>&1 || true
+    echo "Open: http://$host:4096/"
 
-    {
-      opencode web --hostname 127.0.0.1 "$@"
-    } always {
-      tailscale serve --http=4096 off >/dev/null 2>&1
-    }
+    if command -v caffeinate >/dev/null 2>&1; then
+      caffeinate -dimsu opencode web --port 4096 --hostname 0.0.0.0 "$@"
+    else
+      opencode web --port 4096 --hostname 0.0.0.0 "$@"
+    fi
   }
 ''
