@@ -76,18 +76,4 @@
     git commit -m "$1"
     git push
   }
-
-  ocweb() {
-    local host
-    host="$(scutil --get LocalHostName 2>/dev/null || hostname -s)"
-
-    tailscale serve --http=4096 off >/dev/null 2>&1 || true
-    echo "Open: http://$host:4096/"
-
-    if command -v caffeinate >/dev/null 2>&1; then
-      caffeinate -dimsu opencode web --port 4096 --hostname 0.0.0.0 "$@"
-    else
-      opencode web --port 4096 --hostname 0.0.0.0 "$@"
-    fi
-  }
 ''

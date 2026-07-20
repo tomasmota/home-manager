@@ -23,6 +23,7 @@
   kn = ''kubectl get ns --no-headers | awk '{print $1}' | fzf | xargs -I {} kubectl config set-context --current --namespace "{}"'';
   knettool = ''kubectl run --rm  -it --image wbitt/network-multitool tmp-debug -- /bin/bash'';
   oc = ''opencode'';
+  ocweb = ''oc web --hostname "$(hostname)" --port 4096'';
 
   # Git
   g = "git";

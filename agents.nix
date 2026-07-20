@@ -30,5 +30,11 @@ in {
     # OpenCode Configuration
     ".config/opencode/opencode.json".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/${opencodeConfigFile}";
+
+    ".config/opencode/plugins/tmux-status.js".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/tmux-status.js";
+
+    ".config/opencode/tui.json".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/tui.json";
   };
 }

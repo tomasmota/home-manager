@@ -2,7 +2,16 @@
   pkgs,
   xdg,
   ...
-}: {
+}: let
+  agentWindowText = builtins.concatStringsSep "" [
+    " "
+    "#{?#{==:#{@opencode_status},working},#[fg=#{@thm_blue}]● ,}"
+    "#{?#{==:#{@opencode_status},waiting},#[fg=#{@thm_yellow}]◆ ,}"
+    "#{?#{==:#{@opencode_status},idle},#[fg=#{@thm_green}]○ ,}"
+    "#{?#{==:#{@opencode_status},error},#[fg=#{@thm_red}]! ,}"
+    "#[fg=#{@thm_fg}]#W"
+  ];
+in {
   programs.tmux = {
     enable = true;
     shell = "${pkgs.zsh}/bin/zsh";
@@ -20,8 +29,8 @@
         plugin = tmuxPlugins.catppuccin;
         extraConfig = ''
           set -g @catppuccin_window_tabs_enabled on
-          set -g @catppuccin_window_text " #W"
-          set -g @catppuccin_window_current_text " #W"
+          set -g @catppuccin_window_text "${agentWindowText}"
+          set -g @catppuccin_window_current_text "${agentWindowText}"
           set -g @catppuccin_window_status_style "slanted"
         '';
       }
@@ -65,6 +74,9 @@
       bind -r C-l resize-pane -R 15
 
       bind Space last-window
+
+      # Remove the old agent picker binding from already-running servers
+      unbind -q a
 
       bind -T copy-mode-vi v send -X begin-selection
       bind -T copy-mode-vi y send -X copy-selection-and-cancel
