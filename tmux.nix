@@ -3,10 +3,12 @@
   xdg,
   ...
 }: let
+  acknowledgeFinishedAgent = ''if-shell -F "#{&&:#{>:#{window_active_clients},0},#{==:#{@opencode_status},done}}" "set-option -w @opencode_status idle"'';
   agentWindowText = builtins.concatStringsSep "" [
     " "
-    "#{?#{==:#{@opencode_status},working},#[fg=#{@thm_blue}]● ,}"
+    "#{?#{==:#{@opencode_status},working},#[fg=#{@thm_green}]● ,}"
     "#{?#{==:#{@opencode_status},waiting},#[fg=#{@thm_yellow}]◆ ,}"
+    "#{?#{==:#{@opencode_status},done},#[fg=#{@thm_mauve}]✓ ,}"
     "#{?#{==:#{@opencode_status},idle},#[fg=#{@thm_green}]○ ,}"
     "#{?#{==:#{@opencode_status},error},#[fg=#{@thm_red}]! ,}"
     "#[fg=#{@thm_fg}]#W"
@@ -52,6 +54,11 @@ in {
       # hide status on the right (hostname, time and date)
       set-option -g status-right ""
       set-option -g status-left ""
+
+      # Clear completed-work notifications when their window is viewed
+      set-hook -g session-window-changed[900] '${acknowledgeFinishedAgent}'
+      set-hook -g client-attached[900] '${acknowledgeFinishedAgent}'
+      set-hook -g client-session-changed[900] '${acknowledgeFinishedAgent}'
 
       # Renumber windows to match positions
       set -g renumber-windows on

@@ -4,10 +4,24 @@ export const TmuxStatusPlugin = async () => {
   const pane = process.env.TMUX_PANE
   if (!process.env.TMUX || !pane) return {}
 
-  const tmuxArgs = (state) =>
-    state === null
-      ? ["set-option", "-w", "-u", "-t", pane, "@opencode_status"]
-      : ["set-option", "-w", "-t", pane, "@opencode_status", state]
+  const setStatusCommand = (state) =>
+    `set-option -w -t ${pane} @opencode_status ${state}`
+
+  const tmuxArgs = (state) => {
+    if (state === null) return ["set-option", "-w", "-u", "-t", pane, "@opencode_status"]
+    if (state === "done") {
+      return [
+        "if-shell",
+        "-F",
+        "-t",
+        pane,
+        "#{window_active_clients}",
+        setStatusCommand("idle"),
+        setStatusCommand("done"),
+      ]
+    }
+    return ["set-option", "-w", "-t", pane, "@opencode_status", state]
+  }
 
   const runTmux = (state) =>
     new Promise((resolve) => {
@@ -60,7 +74,10 @@ export const TmuxStatusPlugin = async () => {
 
   const setLifecycleState = (state) => {
     if (requestedState === "waiting") return writes
-    if (state === "idle" && requestedState === "error") return writes
+    if (state === "idle") {
+      if (requestedState === "working") return setState("done")
+      if (requestedState === "done" || requestedState === "error") return writes
+    }
     return setState(state)
   }
 
