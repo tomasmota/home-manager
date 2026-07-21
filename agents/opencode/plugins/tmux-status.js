@@ -7,8 +7,16 @@ export const TmuxStatusPlugin = async () => {
   const setStatusCommand = (state) =>
     `set-option -w -t ${pane} @opencode_status ${state}`
 
-  const tmuxArgs = (state) => {
-    if (state === null) return ["set-option", "-w", "-u", "-t", pane, "@opencode_status"]
+  const setOptionArgs = (name, value) =>
+    value === null
+      ? ["set-option", "-w", "-u", "-t", pane, name]
+      : ["set-option", "-w", "-t", pane, name, String(value)]
+
+  const tmuxArgs = (state, startedAt) => {
+    const timerArgs = setOptionArgs("@opencode_started_at", startedAt)
+    if (state === null) {
+      return [...setOptionArgs("@opencode_status", null), ";", ...timerArgs]
+    }
     if (state === "done") {
       return [
         "if-shell",
@@ -18,15 +26,17 @@ export const TmuxStatusPlugin = async () => {
         "#{window_active_clients}",
         setStatusCommand("idle"),
         setStatusCommand("done"),
+        ";",
+        ...timerArgs,
       ]
     }
-    return ["set-option", "-w", "-t", pane, "@opencode_status", state]
+    return [...setOptionArgs("@opencode_status", state), ";", ...timerArgs]
   }
 
-  const runTmux = (state) =>
+  const runTmux = (state, startedAt) =>
     new Promise((resolve) => {
       try {
-        const child = spawn("tmux", tmuxArgs(state), { stdio: "ignore" })
+        const child = spawn("tmux", tmuxArgs(state, startedAt), { stdio: "ignore" })
         child.once("error", resolve)
         child.once("close", resolve)
       } catch {
@@ -36,19 +46,29 @@ export const TmuxStatusPlugin = async () => {
 
   let requestedState
   let appliedState
+  let promptStartedAt = null
+  let appliedStartedAt
   let stopped = false
   let writes = Promise.resolve()
 
   const flush = async () => {
-    while (appliedState !== requestedState) {
+    while (appliedState !== requestedState || appliedStartedAt !== promptStartedAt) {
       const state = requestedState
-      await runTmux(state)
+      const startedAt = promptStartedAt
+      await runTmux(state, startedAt)
       appliedState = state
+      appliedStartedAt = startedAt
     }
   }
 
   const setState = (state) => {
-    if ((stopped && state !== null) || state === requestedState) return writes
+    if (stopped && state !== null) return writes
+    const promptActive = state === "working" || state === "waiting"
+    if (promptActive && promptStartedAt === null) {
+      promptStartedAt = Math.floor(Date.now() / 1000)
+    }
+    if (!promptActive) promptStartedAt = null
+    if (state === requestedState) return writes
     requestedState = state
     writes = writes.then(flush, flush)
     return writes
@@ -61,12 +81,14 @@ export const TmuxStatusPlugin = async () => {
 
   const clearOnExit = () => {
     stopped = true
-    if (requestedState === null && appliedState === null) return
+    promptStartedAt = null
+    if (requestedState === null && appliedState === null && appliedStartedAt === null) return
     requestedState = null
     try {
-      spawnSync("tmux", tmuxArgs(null), { stdio: "ignore" })
+      spawnSync("tmux", tmuxArgs(null, null), { stdio: "ignore" })
     } catch {}
     appliedState = null
+    appliedStartedAt = null
   }
 
   const childSessions = new Set()
