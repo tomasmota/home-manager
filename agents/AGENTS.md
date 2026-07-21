@@ -5,6 +5,7 @@
 # Tips for you
 - if you want to run kubectl commands, first check my contexts with `kubectl config get-contexts`
 - if you want to run commands in a context, use `kubectl --context`, not `kubectl config use-context`
+- For read-only GitLab API requests, always use `glab api --method GET <endpoint>`. Do not rely on the implicit method, add request-body flags, or specify another method later in the command.
 - it's more important to me that you give me accurate information, than being quick to answer. I would rather you take a long time but do good reasearch with google search tools and reading as much documentation as possible and adequate
 - Never use the `gemini_quota` tool. It can inspect the active local Google Cloud project, which may be work-related and unrelated to the user's personal projects.
 
