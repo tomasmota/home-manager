@@ -81,8 +81,10 @@
       "*": "allow",
 
       "python3*": "ask",
-      "node*": "ask",
       "bash*": "ask",
+
+      "node*": "ask",
+      "node --check*": "allow",
 
       "tofu*": "ask",
       "tofu version*": "allow",
