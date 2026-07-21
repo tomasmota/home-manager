@@ -12,28 +12,59 @@
     now="$(${pkgs.coreutils}/bin/date +%s)"
     elapsed=$((now - $1))
     if [ "$elapsed" -ge 3600 ]; then
-      printf '%dh%dm' "$((elapsed / 3600))" "$(((elapsed / 60) % 60))"
-    elif [ "$elapsed" -ge 60 ]; then
-      printf '%dm%ds' "$((elapsed / 60))" "$((elapsed % 60))"
+      printf '%d:%02d:%02d' \
+        "$((elapsed / 3600))" \
+        "$(((elapsed / 60) % 60))" \
+        "$((elapsed % 60))"
     else
-      printf '%ds' "$elapsed"
+      printf '%02d:%02d' "$((elapsed / 60))" "$((elapsed % 60))"
     fi
   '';
+  agentTabColor = fallback:
+    builtins.concatStringsSep "" [
+      "#{?#{==:#{@opencode_status},waiting},#{@thm_yellow},"
+      "#{?#{==:#{@opencode_status},done},#{@thm_green},"
+      "#{?#{==:#{@opencode_status},error},#{@thm_red},${fallback}}"
+      "}"
+      "}"
+    ];
+  agentHasStatus = "#{&&:#{@opencode_status},#{!=:#{@opencode_status},idle}}";
+  agentHasAlert = "#{||:#{==:#{@opencode_status},waiting},#{||:#{==:#{@opencode_status},done},#{==:#{@opencode_status},error}}}";
+  agentElapsedColor = fallback: "#{?#{==:#{@opencode_status},working},#{@thm_blue},${fallback}}";
+  agentStatusText = builtins.concatStringsSep "" [
+    "#{?#{==:#{@opencode_status},waiting},◆ ,}"
+    "#{?#{==:#{@opencode_status},done},✓ ,}"
+    "#{?#{==:#{@opencode_status},error},! ,}"
+  ];
+  agentCurrentStatusText = builtins.concatStringsSep "" [
+    "#{?#{==:#{@opencode_status},waiting},#[fg=#{@thm_yellow}]◆ ,}"
+    "#{?#{==:#{@opencode_status},done},#[fg=#{@thm_green}]✓ ,}"
+    "#{?#{==:#{@opencode_status},error},#[fg=#{@thm_red}]! ,}"
+  ];
   agentWindowText = builtins.concatStringsSep "" [
     " "
-    "#{?#{==:#{@opencode_status},working},#[fg=#{@thm_green}]● ,}"
-    "#{?#{==:#{@opencode_status},waiting},#[fg=#{@thm_yellow}]◆ ,}"
-    "#{?#{==:#{@opencode_status},done},#[fg=#{@thm_crust}]#[bold]✓ ,}"
-    "#{?#{==:#{@opencode_status},idle},#[fg=#{@thm_green}]○ ,}"
-    "#{?#{==:#{@opencode_status},error},#[fg=#{@thm_red}]! ,}"
-    "#{?#{==:#{@opencode_status},done},#[fg=#{@thm_crust}]#[bold],#[fg=#{@thm_fg}]}#W"
+    "#{?${agentHasAlert},#[fg=#{@thm_crust}]#[bold],#[fg=#{@thm_fg}]}"
+    agentStatusText
+    "#W"
   ];
-  agentElapsedText = builtins.concatStringsSep "" [
-    "#{?#{@opencode_started_at},"
-    "#[fg=#{@thm_overlay_1}] · "
-    "#(${formatElapsed} #{@opencode_started_at})"
-    ",}"
+  agentCurrentWindowText = builtins.concatStringsSep "" [
+    " "
+    agentCurrentStatusText
+    "#{?${agentHasStatus},#[fg=#{@thm_fg}]#[bold],#[fg=#{@thm_fg}]}#W"
   ];
+  agentElapsedText = color:
+    builtins.concatStringsSep "" [
+      "#{?#{@opencode_started_at},"
+      "#[fg=${color}] · "
+      "#(${formatElapsed} #{@opencode_started_at})"
+      ",}"
+    ];
+  agentCompletedText = color:
+    builtins.concatStringsSep "" [
+      "#{?#{==:#{@opencode_status},done},"
+      "#[fg=${color}] · #{@opencode_duration}"
+      ",}"
+    ];
 in {
   programs.tmux = {
     enable = true;
@@ -52,10 +83,12 @@ in {
         plugin = tmuxPlugins.catppuccin;
         extraConfig = ''
           set -g @catppuccin_window_tabs_enabled on
-          set -g @catppuccin_window_number_color "#{?#{==:#{@opencode_status},done},#{@thm_green},#{@thm_overlay_2}}"
-          set -g @catppuccin_window_text_color "#{?#{==:#{@opencode_status},done},#{@thm_green},#{@thm_surface_0}}"
-          set -g @catppuccin_window_text "${agentWindowText}"
-          set -g @catppuccin_window_current_text "${agentWindowText}${agentElapsedText}"
+          set -g @catppuccin_window_number_color "${agentTabColor "#{@thm_overlay_2}"}"
+          set -g @catppuccin_window_text_color "${agentTabColor "#{@thm_surface_0}"}"
+          set -g @catppuccin_window_current_number_color "#{@thm_mauve}"
+          set -g @catppuccin_window_current_text_color "#{@thm_surface_1}"
+          set -g @catppuccin_window_text "${agentWindowText}${agentElapsedText (agentElapsedColor "#{@thm_crust}")}${agentCompletedText "#{@thm_crust}"}"
+          set -g @catppuccin_window_current_text "${agentCurrentWindowText}${agentElapsedText (agentElapsedColor "#{@thm_yellow}")}${agentCompletedText "#{@thm_green}"}"
           set -g @catppuccin_window_status_style "slanted"
         '';
       }

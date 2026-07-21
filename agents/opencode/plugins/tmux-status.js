@@ -12,13 +12,22 @@ export const TmuxStatusPlugin = async () => {
       ? ["set-option", "-w", "-u", "-t", pane, name]
       : ["set-option", "-w", "-t", pane, name, String(value)]
 
-  const tmuxArgs = (state, startedAt) => {
-    const timerArgs = setOptionArgs("@opencode_started_at", startedAt)
-    if (state === null) {
-      return [...setOptionArgs("@opencode_status", null), ";", ...timerArgs]
+  const formatDuration = (seconds) => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor(seconds / 60) % 60
+    const remainder = seconds % 60
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`
     }
+    return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`
+  }
+
+  const tmuxArgs = (state, startedAt, duration) => {
+    const timerArgs = setOptionArgs("@opencode_started_at", startedAt)
+    const durationArgs = setOptionArgs("@opencode_duration", duration)
+    let statusArgs = setOptionArgs("@opencode_status", state)
     if (state === "done") {
-      return [
+      statusArgs = [
         "if-shell",
         "-F",
         "-t",
@@ -26,17 +35,15 @@ export const TmuxStatusPlugin = async () => {
         "#{window_active_clients}",
         setStatusCommand("idle"),
         setStatusCommand("done"),
-        ";",
-        ...timerArgs,
       ]
     }
-    return [...setOptionArgs("@opencode_status", state), ";", ...timerArgs]
+    return [...statusArgs, ";", ...timerArgs, ";", ...durationArgs]
   }
 
-  const runTmux = (state, startedAt) =>
+  const runTmux = (state, startedAt, duration) =>
     new Promise((resolve) => {
       try {
-        const child = spawn("tmux", tmuxArgs(state, startedAt), { stdio: "ignore" })
+        const child = spawn("tmux", tmuxArgs(state, startedAt, duration), { stdio: "ignore" })
         child.once("error", resolve)
         child.once("close", resolve)
       } catch {
@@ -48,16 +55,24 @@ export const TmuxStatusPlugin = async () => {
   let appliedState
   let promptStartedAt = null
   let appliedStartedAt
+  let completedDuration = null
+  let appliedDuration
   let stopped = false
   let writes = Promise.resolve()
 
   const flush = async () => {
-    while (appliedState !== requestedState || appliedStartedAt !== promptStartedAt) {
+    while (
+      appliedState !== requestedState ||
+      appliedStartedAt !== promptStartedAt ||
+      appliedDuration !== completedDuration
+    ) {
       const state = requestedState
       const startedAt = promptStartedAt
-      await runTmux(state, startedAt)
+      const duration = completedDuration
+      await runTmux(state, startedAt, duration)
       appliedState = state
       appliedStartedAt = startedAt
+      appliedDuration = duration
     }
   }
 
@@ -67,7 +82,15 @@ export const TmuxStatusPlugin = async () => {
     if (promptActive && promptStartedAt === null) {
       promptStartedAt = Math.floor(Date.now() / 1000)
     }
-    if (!promptActive) promptStartedAt = null
+    if (promptActive) completedDuration = null
+    if (!promptActive) {
+      if (state === "done" && promptStartedAt !== null) {
+        const elapsed = Math.max(0, Math.floor(Date.now() / 1000) - promptStartedAt)
+        completedDuration = formatDuration(elapsed)
+      }
+      if (state !== "done") completedDuration = null
+      promptStartedAt = null
+    }
     if (state === requestedState) return writes
     requestedState = state
     writes = writes.then(flush, flush)
@@ -82,13 +105,22 @@ export const TmuxStatusPlugin = async () => {
   const clearOnExit = () => {
     stopped = true
     promptStartedAt = null
-    if (requestedState === null && appliedState === null && appliedStartedAt === null) return
+    completedDuration = null
+    if (
+      requestedState === null &&
+      appliedState === null &&
+      appliedStartedAt === null &&
+      appliedDuration === null
+    ) {
+      return
+    }
     requestedState = null
     try {
-      spawnSync("tmux", tmuxArgs(null, null), { stdio: "ignore" })
+      spawnSync("tmux", tmuxArgs(null, null, null), { stdio: "ignore" })
     } catch {}
     appliedState = null
     appliedStartedAt = null
+    appliedDuration = null
   }
 
   const childSessions = new Set()
