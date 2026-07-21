@@ -52,7 +52,7 @@
     },
     "opentofu": {
       "type": "remote",
-      "url": "https://mcp.opentofu.org/sse"
+      "url": "https://mcp.opentofu.org/mcp"
     },
     "gitlab": {
       "type": "remote",
