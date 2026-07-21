@@ -167,6 +167,7 @@
       "helm env*": "allow",
       "cmctl*": "ask",
       "istioctl*": "ask",
+      "istioctl validate*": "allow",
       "istioctl proxy-status*": "allow",
       "argocd*": "ask"
     },
