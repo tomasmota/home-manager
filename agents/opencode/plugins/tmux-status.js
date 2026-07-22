@@ -94,6 +94,11 @@ export const TmuxStatusPlugin = async () => {
     if (state === requestedState) return writes
     requestedState = state
     writes = writes.then(flush, flush)
+    if (state === "waiting" || state === "done" || state === "error") {
+      try {
+        process.stdout.write("\x07")
+      } catch {}
+    }
     return writes
   }
 
