@@ -82,8 +82,11 @@
 
       "python3*": "ask",
       "bash*": "ask",
+      "bash -n*": "allow",
+      "bash -o noexec*": "allow",
 
       "node*": "ask",
+      "node -c*": "allow",
       "node --check*": "allow",
 
       "tofu*": "ask",
