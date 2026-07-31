@@ -54,6 +54,8 @@
 
   services.tailscale.enable = true;
 
+  launchd.user.envVariables.OPENCHAMBER_SKIP_LOCAL_SERVER = "1";
+
   launchd.user.agents.openchamber = {
     path = [
       "/Users/tomas/.npm-global/bin"

@@ -45,6 +45,7 @@
     glow
     unzip
     tree
+    worktrunk
     findutils
     atuin
     tree-sitter
@@ -57,6 +58,7 @@
     presenterm # slides in the terminal
     unixtools.watch
     mtr
+    shellcheck
 
     # fonts
     nerd-fonts.geist-mono

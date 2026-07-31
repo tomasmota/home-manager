@@ -81,6 +81,7 @@
       "*": "allow",
 
       "python3*": "ask",
+      "python3 -m py_compile*": "allow",
       "bash*": "ask",
       "bash -n*": "allow",
       "bash -o noexec*": "allow",

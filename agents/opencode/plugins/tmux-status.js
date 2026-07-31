@@ -1,8 +1,44 @@
 import { spawn, spawnSync } from "node:child_process"
+import { closeSync, constants, openSync, writeSync } from "node:fs"
 
 export const TmuxStatusPlugin = async () => {
   const pane = process.env.TMUX_PANE
-  if (!process.env.TMUX || !pane) return {}
+  const hasTmux = Boolean(process.env.TMUX && pane)
+
+  const paneTTY = hasTmux
+    ? spawnSync("tmux", ["display-message", "-p", "-t", pane, "#{pane_tty}"], {
+        encoding: "utf8",
+      }).stdout?.trim()
+    : null
+  let bellFD = null
+  try {
+    if (paneTTY) bellFD = openSync(paneTTY, constants.O_WRONLY)
+  } catch {}
+
+  const ringBell = () => {
+    if (bellFD !== null) {
+      try {
+        writeSync(bellFD, "\x07")
+        return
+      } catch {
+        try {
+          closeSync(bellFD)
+        } catch {}
+        bellFD = null
+      }
+    }
+    try {
+      process.stdout.write("\x07")
+    } catch {}
+  }
+
+  const closeBell = () => {
+    if (bellFD === null) return
+    try {
+      closeSync(bellFD)
+    } catch {}
+    bellFD = null
+  }
 
   const setStatusCommand = (state) =>
     `set-option -w -t ${pane} @opencode_status ${state}`
@@ -40,8 +76,9 @@ export const TmuxStatusPlugin = async () => {
     return [...statusArgs, ";", ...timerArgs, ";", ...durationArgs]
   }
 
-  const runTmux = (state, startedAt, duration) =>
-    new Promise((resolve) => {
+  const runTmux = (state, startedAt, duration) => {
+    if (!hasTmux) return Promise.resolve()
+    return new Promise((resolve) => {
       try {
         const child = spawn("tmux", tmuxArgs(state, startedAt, duration), { stdio: "ignore" })
         child.once("error", resolve)
@@ -50,6 +87,7 @@ export const TmuxStatusPlugin = async () => {
         resolve()
       }
     })
+  }
 
   let requestedState
   let appliedState
@@ -95,9 +133,7 @@ export const TmuxStatusPlugin = async () => {
     requestedState = state
     writes = writes.then(flush, flush)
     if (state === "waiting" || state === "done" || state === "error") {
-      try {
-        process.stdout.write("\x07")
-      } catch {}
+      ringBell()
     }
     return writes
   }
@@ -105,10 +141,12 @@ export const TmuxStatusPlugin = async () => {
   const stop = async () => {
     stopped = true
     await setState(null)
+    closeBell()
   }
 
   const clearOnExit = () => {
     stopped = true
+    closeBell()
     promptStartedAt = null
     completedDuration = null
     if (
@@ -120,9 +158,11 @@ export const TmuxStatusPlugin = async () => {
       return
     }
     requestedState = null
-    try {
-      spawnSync("tmux", tmuxArgs(null, null, null), { stdio: "ignore" })
-    } catch {}
+    if (hasTmux) {
+      try {
+        spawnSync("tmux", tmuxArgs(null, null, null), { stdio: "ignore" })
+      } catch {}
+    }
     appliedState = null
     appliedStartedAt = null
     appliedDuration = null

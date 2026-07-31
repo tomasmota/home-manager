@@ -3,6 +3,7 @@
 - Almost everything is configured using home-manager. All config is located at `~/.config/home-manager/`. If I ask you to change some configuration in home-manager, this is where you will find it. Read `~/.config/home-manager/AGENTS.md` for more information.
 
 # Tips for you
+- Never bypass command-policy decisions with wrappers such as `env`, `command`, or `sh -c`, shell quoting tricks, aliases, or alternate executable paths.
 - if you want to run kubectl commands, first check my contexts with `kubectl config get-contexts`
 - if you want to run commands in a context, use `kubectl --context`, not `kubectl config use-context`
 - For read-only GitLab API requests, always use `glab api --method GET <endpoint>`. Do not rely on the implicit method, add request-body flags, or specify another method later in the command.
