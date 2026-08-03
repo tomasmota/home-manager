@@ -86,6 +86,21 @@
     };
   };
 
+  # Tailscale terminates HTTPS for the MagicDNS hostname and proxies locally.
+  launchd.user.agents.openchamber-tailnet = {
+    command = ''
+      /run/current-system/sw/bin/tailscale serve http://127.0.0.1:3001
+    '';
+    serviceConfig = {
+      KeepAlive = true;
+      RunAtLoad = true;
+      ProcessType = "Background";
+      ThrottleInterval = 5;
+      StandardOutPath = "/Users/tomas/Library/Logs/OpenChamber-tailnet.log";
+      StandardErrorPath = "/Users/tomas/Library/Logs/OpenChamber-tailnet.error.log";
+    };
+  };
+
   homebrew = {
     enable = true;
     casks = [
