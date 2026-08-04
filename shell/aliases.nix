@@ -35,7 +35,6 @@
   gc = "git commit --message";
   gp = "git push";
   gpt = "git push --tags";
-  gpmr = "git push -o merge_request.create";
   gl = "git pull";
   gld = "git log -p --oneline --ext-diff";
   gD = "git diff HEAD~1";

@@ -76,4 +76,30 @@
     git commit -m "$1"
     git push
   }
+
+  gpmr() {
+    local output_file push_status url
+    output_file=$(mktemp) || return
+
+    git push -o merge_request.create "$@" 2>&1 | tee "$output_file"
+    push_status=$pipestatus[1]
+    if ((push_status != 0)); then
+      rm -f "$output_file"
+      return "$push_status"
+    fi
+
+    url=$(rg --only-matching 'https://[^[:space:]]+/-/merge_requests/[0-9]+' "$output_file" | tail -n 1)
+    rm -f "$output_file"
+    if [[ -z "$url" ]]; then
+      echo "Merge request pushed, but its URL was not present in the output."
+      return 0
+    fi
+
+    if command -v pbcopy >/dev/null; then
+      print -rn -- "$url" | pbcopy
+      echo "Copied merge request URL: $url"
+    else
+      echo "Merge request URL: $url"
+    fi
+  }
 ''
