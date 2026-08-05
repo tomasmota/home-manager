@@ -30,11 +30,15 @@
     defaults = {
       NSGlobalDomain = {
         ApplePressAndHoldEnabled = false;
+        AppleSpacesSwitchOnActivate = true;
         InitialKeyRepeat = 15;
         KeyRepeat = 2;
+        NSAutomaticWindowAnimationsEnabled = false;
       };
       dock = {
         autohide = true;
+        autohide-delay = 0.0;
+        autohide-time-modifier = 0.2;
         show-recents = false;
         tilesize = 60;
         mru-spaces = false;
@@ -111,6 +115,7 @@
       "rectangle"
       "vivaldi"
       "bitwarden"
+      "hammerspoon"
     ];
     onActivation = {
       autoUpdate = true;
