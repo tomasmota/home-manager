@@ -24,6 +24,7 @@
   knettool = ''kubectl run --rm  -it --image wbitt/network-multitool tmp-debug -- /bin/bash'';
   oc = ''opencode'';
   ocweb = ''oc web --hostname "$(hostname)" --port 4096'';
+  cda = "cd ${config.home.homeDirectory}/dev/personal/local-agent && opencode";
 
   # Git
   g = "git";

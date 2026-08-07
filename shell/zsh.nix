@@ -63,6 +63,74 @@
           setopt menu_complete
           unsetopt beep
 
+          if [[ -n $TMUX && -n $TMUX_PANE ]]; then
+            zmodload zsh/datetime
+            typeset -gi _tmux_command_started_at=0
+
+            _tmux_command_preexec() {
+              _tmux_command_started_at=0
+
+              local -a command_words
+              command_words=(''${(z)2})
+              local command_name=$command_words[1]
+              command_name=$command_name:t
+
+              # Persistent interactive apps are workspaces, not pending commands.
+              case $command_name in
+                opencode|nvim|vim|vi|view|less|more|most|man|info|ssh|mosh|tmux|top|htop|btop|watch|k9s|lazygit)
+                  return 0
+                  ;;
+              esac
+
+              _tmux_command_started_at=$EPOCHSECONDS
+              tmux set-option -w -t "$TMUX_PANE" @shell_command_status running \; \
+                set-option -w -t "$TMUX_PANE" @shell_command_started_at "$_tmux_command_started_at" \; \
+                set-option -w -u -t "$TMUX_PANE" @shell_command_duration >/dev/null 2>&1
+              return 0
+            }
+
+            _tmux_command_precmd() {
+              local exit_status=$?
+              local started_at=$_tmux_command_started_at
+              _tmux_command_started_at=0
+              ((started_at > 0)) || return 0
+
+              local elapsed=$((EPOCHSECONDS - started_at))
+              local duration state
+              if ((elapsed >= 3600)); then
+                printf -v duration '%d:%02d:%02d' \
+                  $((elapsed / 3600)) \
+                  $(((elapsed / 60) % 60)) \
+                  $((elapsed % 60))
+              else
+                printf -v duration '%02d:%02d' $((elapsed / 60)) $((elapsed % 60))
+              fi
+              if ((exit_status == 0)); then
+                state=done
+              else
+                state=error
+              fi
+
+              local clear_status="set-option -w -t $TMUX_PANE @shell_command_status idle ; set-option -w -u -t $TMUX_PANE @shell_command_started_at ; set-option -w -u -t $TMUX_PANE @shell_command_duration"
+              local completed_status="set-option -w -t $TMUX_PANE @shell_command_status $state ; set-option -w -u -t $TMUX_PANE @shell_command_started_at ; set-option -w -t $TMUX_PANE @shell_command_duration $duration"
+              tmux if-shell -F -t "$TMUX_PANE" '#{window_active_clients}' \
+                "$clear_status" "$completed_status" >/dev/null 2>&1
+              return 0
+            }
+
+            _tmux_command_zshexit() {
+              tmux set-option -w -t "$TMUX_PANE" @shell_command_status idle \; \
+                set-option -w -u -t "$TMUX_PANE" @shell_command_started_at \; \
+                set-option -w -u -t "$TMUX_PANE" @shell_command_duration >/dev/null 2>&1
+              return 0
+            }
+
+            autoload -Uz add-zsh-hook
+            add-zsh-hook preexec _tmux_command_preexec
+            add-zsh-hook precmd _tmux_command_precmd
+            add-zsh-hook zshexit _tmux_command_zshexit
+          fi
+
           # FZF
           _fzf_compgen_path() {
             fd --hidden --follow --exclude ".git" . "$1"

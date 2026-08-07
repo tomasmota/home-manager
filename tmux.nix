@@ -4,6 +4,7 @@
   ...
 }: let
   acknowledgeFinishedAgent = ''if-shell -F "#{&&:#{>:#{window_active_clients},0},#{==:#{@opencode_status},done}}" "set-option -w @opencode_status idle"'';
+  acknowledgeFinishedCommand = ''if-shell -F "#{&&:#{>:#{window_active_clients},0},#{||:#{==:#{@shell_command_status},done},#{==:#{@shell_command_status},error}}}" "set-option -w @shell_command_status idle ; set-option -w -u @shell_command_started_at ; set-option -w -u @shell_command_duration"'';
   formatElapsed = pkgs.writeShellScript "tmux-opencode-elapsed" ''
     case "$1" in
       ""|*[!0-9]*) exit 0 ;;
@@ -28,23 +29,38 @@
       "}"
       "}"
     ];
+  commandTabColor = fallback:
+    builtins.concatStringsSep "" [
+      "#{?#{==:#{@shell_command_status},done},#{@thm_green},"
+      "#{?#{==:#{@shell_command_status},error},#{@thm_red},${fallback}}"
+      "}"
+    ];
+  workTabColor = fallback: "#{?#{@opencode_status},${agentTabColor fallback},${commandTabColor fallback}}";
   agentHasStatus = "#{&&:#{@opencode_status},#{!=:#{@opencode_status},idle}}";
   agentHasAlert = "#{||:#{==:#{@opencode_status},waiting},#{||:#{==:#{@opencode_status},done},#{==:#{@opencode_status},error}}}";
+  commandHasAlert = "#{||:#{==:#{@shell_command_status},done},#{==:#{@shell_command_status},error}}";
+  workHasAlert = "#{?#{@opencode_status},${agentHasAlert},${commandHasAlert}}";
   agentElapsedColor = fallback: "#{?#{==:#{@opencode_status},working},#{@thm_blue},${fallback}}";
   agentStatusText = builtins.concatStringsSep "" [
     "#{?#{==:#{@opencode_status},waiting},◆ ,}"
     "#{?#{==:#{@opencode_status},done},✓ ,}"
     "#{?#{==:#{@opencode_status},error},! ,}"
   ];
+  commandStatusText = builtins.concatStringsSep "" [
+    "#{?#{==:#{@shell_command_status},running},#[fg=#{@thm_blue}]● #[fg=#{@thm_fg}],}"
+    "#{?#{==:#{@shell_command_status},done},✓ ,}"
+    "#{?#{==:#{@shell_command_status},error},! ,}"
+  ];
+  workStatusText = "#{?#{@opencode_status},${agentStatusText},${commandStatusText}}";
   agentCurrentStatusText = builtins.concatStringsSep "" [
     "#{?#{==:#{@opencode_status},waiting},#[fg=#{@thm_yellow}]◆ ,}"
     "#{?#{==:#{@opencode_status},done},#[fg=#{@thm_green}]✓ ,}"
     "#{?#{==:#{@opencode_status},error},#[fg=#{@thm_red}]! ,}"
   ];
-  agentWindowText = builtins.concatStringsSep "" [
+  workWindowText = builtins.concatStringsSep "" [
     " "
-    "#{?${agentHasAlert},#[fg=#{@thm_crust}]#[bold],#[fg=#{@thm_fg}]}"
-    agentStatusText
+    "#{?${workHasAlert},#[fg=#{@thm_crust}]#[bold],#[fg=#{@thm_fg}]}"
+    workStatusText
     "#W"
   ];
   agentCurrentWindowText = builtins.concatStringsSep "" [
@@ -59,12 +75,27 @@
       "#(${formatElapsed} #{@opencode_started_at})"
       ",}"
     ];
+  commandElapsedText = color:
+    builtins.concatStringsSep "" [
+      "#{?#{==:#{@shell_command_status},running},"
+      "#[fg=${color}] · "
+      "#(${formatElapsed} #{@shell_command_started_at})"
+      ",}"
+    ];
+  workElapsedText = fallback: "#{?#{@opencode_status},${agentElapsedText (agentElapsedColor fallback)},${commandElapsedText "#{@thm_blue}"}}";
   agentCompletedText = color:
     builtins.concatStringsSep "" [
       "#{?#{==:#{@opencode_status},done},"
       "#[fg=${color}] · #{@opencode_duration}"
       ",}"
     ];
+  commandCompletedText = color:
+    builtins.concatStringsSep "" [
+      "#{?${commandHasAlert},"
+      "#[fg=${color}] · #{@shell_command_duration}"
+      ",}"
+    ];
+  workCompletedText = color: "#{?#{@opencode_status},${agentCompletedText color},${commandCompletedText color}}";
 in {
   programs.tmux = {
     enable = true;
@@ -83,11 +114,11 @@ in {
         plugin = tmuxPlugins.catppuccin;
         extraConfig = ''
           set -g @catppuccin_window_tabs_enabled on
-          set -g @catppuccin_window_number_color "${agentTabColor "#{@thm_overlay_2}"}"
-          set -g @catppuccin_window_text_color "${agentTabColor "#{@thm_surface_0}"}"
+          set -g @catppuccin_window_number_color "${workTabColor "#{@thm_overlay_2}"}"
+          set -g @catppuccin_window_text_color "${workTabColor "#{@thm_surface_0}"}"
           set -g @catppuccin_window_current_number_color "#{@thm_mauve}"
           set -g @catppuccin_window_current_text_color "#{@thm_surface_1}"
-          set -g @catppuccin_window_text "${agentWindowText}${agentElapsedText (agentElapsedColor "#{@thm_crust}")}${agentCompletedText "#{@thm_crust}"}"
+          set -g @catppuccin_window_text "${workWindowText}${workElapsedText "#{@thm_crust}"}${workCompletedText "#{@thm_crust}"}"
           set -g @catppuccin_window_current_text "${agentCurrentWindowText}${agentElapsedText (agentElapsedColor "#{@thm_yellow}")}${agentCompletedText "#{@thm_green}"}"
           set -g @catppuccin_window_status_style "slanted"
         '';
@@ -116,6 +147,9 @@ in {
       set-hook -g session-window-changed[900] '${acknowledgeFinishedAgent}'
       set-hook -g client-attached[900] '${acknowledgeFinishedAgent}'
       set-hook -g client-session-changed[900] '${acknowledgeFinishedAgent}'
+      set-hook -g session-window-changed[901] '${acknowledgeFinishedCommand}'
+      set-hook -g client-attached[901] '${acknowledgeFinishedCommand}'
+      set-hook -g client-session-changed[901] '${acknowledgeFinishedCommand}'
 
       # Renumber windows to match positions
       set -g renumber-windows on
