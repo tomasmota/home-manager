@@ -16,3 +16,6 @@
 
 # Git
 - never commit or push changes for me unless explicitly asked to
+
+# My preferences
+- ask me as many questions as you see fit

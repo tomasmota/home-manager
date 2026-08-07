@@ -150,6 +150,8 @@
       "gcloud storage ls*": "allow",
       "gcloud logging read*": "allow",
       "gcloud* get-iam-policy*": "allow",
+      "gcloud identity groups memberships check-transitive-membership*": "allow",
+      "gcloud policy-troubleshoot iam *": "allow",
       "gcloud projects delete*": "deny",
       "gcloud organizations*": "deny",
       "gcloud auth revoke*": "deny",
