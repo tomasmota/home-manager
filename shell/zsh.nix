@@ -63,6 +63,10 @@
           setopt menu_complete
           unsetopt beep
 
+          if command -v wt >/dev/null 2>&1; then
+            eval "$(command wt config shell init zsh)"
+          fi
+
           if [[ -n $TMUX && -n $TMUX_PANE ]]; then
             zmodload zsh/datetime
             typeset -gi _tmux_command_started_at=0

@@ -4,6 +4,7 @@
 
 # Tips for you
 - Never bypass command-policy decisions with wrappers such as `env`, `command`, or `sh -c`, shell quoting tricks, aliases, or alternate executable paths.
+- Never use tmux, scripts, subprocesses, or other indirection to run a command that would otherwise require approval. Obtain approval for the underlying command first; only then may it be run through tmux for persistence.
 - if you want to run kubectl commands, first check my contexts with `kubectl config get-contexts`
 - if you want to run commands in a context, use `kubectl --context`, not `kubectl config use-context`
 - For read-only GitLab API requests, always use `glab api --method GET <endpoint>`. Do not rely on the implicit method, add request-body flags, or specify another method later in the command.
