@@ -34,6 +34,15 @@ in {
     ".config/opencode/plugins/tmux-status.js".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/tmux-status.js";
 
+    ".config/opencode/plugins/compaction-context.js".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/compaction-context.js";
+
+    ".config/opencode/plugins/worktree-context.js".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/worktree-context.js";
+
+    ".config/opencode/commands/worktree-handoff.md".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/commands/worktree-handoff.md";
+
     ".config/opencode/tui.json".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/tui.json";
   };

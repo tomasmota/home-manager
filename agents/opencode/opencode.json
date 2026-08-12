@@ -57,5 +57,11 @@
   "experimental": {
     "disable_paste_summary": true,
   },
+  "compaction": {
+    "auto": true,
+    "prune": false,
+    "tail_turns": 4,
+    "preserve_recent_tokens": 12000
+  },
   "permission": "allow"
 }

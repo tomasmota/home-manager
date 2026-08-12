@@ -1,3 +1,4 @@
 secrets.env
 __pycache__/
 *.pyc
+result
