@@ -3,7 +3,7 @@
   xdg,
   ...
 }: let
-  acknowledgeFinishedAgent = ''if-shell -F "#{&&:#{>:#{window_active_clients},0},#{==:#{@opencode_status},done}}" "set-option -w @opencode_status idle"'';
+  acknowledgeFinishedAgent = ''if-shell -F "#{&&:#{>:#{window_active_clients},0},#{||:#{==:#{@opencode_status},done},#{==:#{@opencode_status},error}}}" "set-option -w @opencode_status idle"'';
   acknowledgeFinishedCommand = ''if-shell -F "#{&&:#{>:#{window_active_clients},0},#{||:#{==:#{@shell_command_status},done},#{==:#{@shell_command_status},error}}}" "set-option -w @shell_command_status idle ; set-option -w -u @shell_command_started_at ; set-option -w -u @shell_command_duration"'';
   formatElapsed = pkgs.writeShellScript "tmux-opencode-elapsed" ''
     case "$1" in

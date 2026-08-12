@@ -215,7 +215,10 @@ export const TmuxStatusPlugin = async () => {
           await setState("working")
           break
         case "session.error":
-          if (!isChild(properties.sessionID)) await setState("error")
+          if (!isChild(properties.sessionID)) {
+            // User interrupts are reported as errors by OpenCode, but are not failures.
+            await setState(properties.error?.name === "MessageAbortedError" ? "idle" : "error")
+          }
           break
         case "server.instance.disposed":
           await stop()
