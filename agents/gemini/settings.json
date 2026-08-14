@@ -62,22 +62,6 @@
     "opentofu": {
       "url": "https://mcp.opentofu.org/sse",
       "trust": true
-    },
-    "gitlab": {
-      "httpUrl": "https://gitlab.com/api/v4/mcp",
-      "includeTools": [
-        "get_mcp_server_version",
-        "get_issue",
-        "get_merge_request",
-        "get_merge_request_commits",
-        "get_merge_request_diffs",
-        "get_merge_request_pipelines",
-        "get_pipeline_jobs",
-        "get_workitem_notes",
-        "search",
-        "search_labels",
-        "semantic_code_search"
-      ]
     }
   }
 }

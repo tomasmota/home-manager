@@ -160,6 +160,8 @@ in {
       # split with "v" and "s"
       bind v split-window -h -c "#{pane_current_path}"
       bind s split-window -v -c "#{pane_current_path}"
+      bind V split-window -h -c "#{pane_current_path}" "opencode"
+      bind S split-window -v -c "#{pane_current_path}" "opencode"
       bind h select-pane -L
       bind j select-pane -D
       bind k select-pane -U
