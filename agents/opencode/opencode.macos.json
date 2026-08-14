@@ -9,21 +9,18 @@
       "~/.agents/local-skills"
     ]
   },
-  "plugin": ["opencode-gemini-auth@latest"],
+  "plugin": ["@anthonyhaussman/opencode-agy-auth@1.1.13"],
+  "model": "google-agy/gemini-3.7-flash",
+  "agent": {
+    "build": {
+      "model": "google-agy/gemini-3.7-flash",
+      "variant": "high"
+    }
+  },
   "provider": {
-    "google": {
-      "models": {
-        "gemini-3-pro-preview": {
-          "options": {
-            "thinkingConfig": {
-              "thinkingLevel": "high",
-              "includeThoughts": true
-            }
-          }
-        }
-      },
+    "google-agy": {
       "options": {
-        "projectId": "technology-dev-platform"
+        "projectId": "signicat-gemini-enterprise"
       }
     }
   },
