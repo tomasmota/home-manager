@@ -61,28 +61,6 @@
       (pkgs.google-cloud-sdk.withExtraComponents [pkgs.google-cloud-sdk.components.gke-gcloud-auth-plugin])
     ];
 
-    programs.zsh.initContent = lib.mkOrder 560 ''
-      _gcloud_daily_login() {
-        [[ -z "$SSH_CONNECTION" ]] || return
-
-        local account state_dir stamp today
-        account=$(gcloud config get-value account 2>/dev/null)
-        [[ -n "$account" && "$account" != "(unset)" && "$account" != *.gserviceaccount.com ]] || return
-
-        state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}"
-        stamp="$state_dir/gcloud-daily-login"
-        today=$(date +%F)
-        [[ -r "$stamp" && "$(<"$stamp")" == "$today $account" ]] && return
-
-        print -r -- "Refreshing gcloud authentication for $account..."
-        if gcloud auth login "$account" --force --brief; then
-          mkdir -p "$state_dir"
-          print -r -- "$today $account" >| "$stamp"
-        fi
-      }
-      _gcloud_daily_login
-      unfunction _gcloud_daily_login
-    '';
   };
 
   services.tailscale.enable = true;
