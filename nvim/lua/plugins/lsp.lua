@@ -134,7 +134,11 @@ return {
         -- Linters
         "hadolint",
       })
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+      require('mason-tool-installer').setup {
+        ensure_installed = ensure_installed,
+        -- Avoid a periodic Mason registry refresh while opening Neovim.
+        run_on_start = false,
+      }
 
       require('mason-lspconfig').setup({
         automatic_enable = false,
