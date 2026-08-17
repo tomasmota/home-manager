@@ -43,6 +43,44 @@
     fi
   }
 
+  # show remaining weekly quota for z.ai and chatgpt plus
+  quotas() {
+    {
+      printf 'PROVIDER\tREMAINING\tRESETS\n'
+
+      curl -s 'https://api.z.ai/api/monitor/usage/quota/limit' -H "Authorization: $ZAI_API_KEY" |
+        jq -r '.data.limits | max_by(.nextResetTime) |
+          (.nextResetTime / 1000) as $t |
+          ($t - now) as $d |
+          [ "z.ai",
+            ((100 * .remaining / .usage) | round | tostring) + "%",
+            ($t | localtime | strftime("%a, %b %d at %H:%M")) +
+              " (in " +
+              (if $d < 3600 then "\($d / 60 | round)m"
+               elif $d < 86400 then "\($d / 3600 | round)h"
+               else "\($d / 86400 | round)d" end) + ")" ] | @tsv'
+
+      (
+        printf '%s\n' \
+          '{"method":"initialize","id":0,"params":{"clientInfo":{"name":"quota-check","title":"Quota Check","version":"1.0.0"}}}' \
+          '{"method":"initialized","params":{}}' \
+          '{"method":"account/rateLimits/read","id":1}'
+        sleep 2
+      ) | codex app-server 2>/dev/null |
+        jq -r 'select(.id == 1) | .result.rateLimitsByLimitId |
+          [ .[] | [.primary, .secondary][] | select(. != null) | select(.windowDurationMins == 10080) ][0] |
+          .resetsAt as $t |
+          ($t - now) as $d |
+          [ "chatgpt",
+            (100 - .usedPercent | tostring) + "%",
+            ($t | localtime | strftime("%a, %b %d at %H:%M")) +
+              " (in " +
+              (if $d < 3600 then "\($d / 60 | round)m"
+               elif $d < 86400 then "\($d / 3600 | round)h"
+               else "\($d / 86400 | round)d" end) + ")" ] | @tsv'
+    } | column -t -s $'\t'
+  }
+
   # home-manager switch
   hms() {
     if [[ "$(uname)" == "Darwin" ]]; then

@@ -12,8 +12,8 @@ return {
     local actions = require('telescope.actions')
     local lga_actions = require("telescope-live-grep-args.actions")
     telescope.setup({
-      winblend = 10,
       defaults = {
+        winblend = 10,
         path_display = {
           "filename_first"
         },
