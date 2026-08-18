@@ -5,7 +5,7 @@
 }: let
   agentsDir = "${config.xdg.configHome}/home-manager/agents";
   opencodeConfigFile =
-    if pkgs.stdenv.isLinux
+    if pkgs.stdenv.hostPlatform.isLinux
     then "opencode.json"
     else "opencode.macos.json";
 in {

@@ -14,7 +14,7 @@
     enableZshIntegration = true;
     settings = {
       "theme" = "Catppuccin Mocha";
-      "fullscreen" = lib.mkIf pkgs.stdenv.isLinux true;
+      "fullscreen" = lib.mkIf pkgs.stdenv.hostPlatform.isLinux true;
       "font-size" = fontSize;
       "bell-features" = "no-system,no-audio,attention,title,border";
       "keybind" = [
