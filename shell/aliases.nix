@@ -52,6 +52,8 @@
   gswc = "git switch --create";
   grhh = ''read -q "REPLY?Reset hard and discard local changes? [y/N] " && git reset --hard; echo'';
   cdg = "cd $(git rev-parse --show-toplevel)";
+  wts = "wt switch";
+  wtsc = "wt switch --create";
 
   # Docker
   dprune = ''read -q "REPLY?Prune all Docker images? [y/N] " && docker image prune --all; echo'';
