@@ -1,0 +1,44 @@
+{
+  "name": "quota-watch",
+  "version": "0.1.0",
+  "description": "opencode TUI plugin showing z.ai and OpenAI quota usage in the prompt status row",
+  "type": "module",
+  "main": "./dist/tui.js",
+  "types": "./dist/tui.d.ts",
+  "exports": {
+    "./tui": {
+      "types": "./dist/tui.d.ts",
+      "import": "./dist/tui.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "quota",
+    "zai",
+    "openai"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.14.50 <2",
+    "@opentui/core": ">=0.4.0 <0.6",
+    "@opentui/solid": ">=0.4.0 <0.6",
+    "solid-js": ">=1.9.12 <2"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.15.11",
+    "@opentui/core": "^0.4.5",
+    "@opentui/solid": "^0.4.5",
+    "@types/node": "^22.19.19",
+    "esbuild-plugin-solid": "^0.6.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}

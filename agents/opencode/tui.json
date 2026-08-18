@@ -4,5 +4,8 @@
     "enabled": true,
     "notifications": true,
     "sound": false
-  }
+  },
+  "plugin": [
+    "/Users/tomas/.config/home-manager/agents/opencode/tui-plugins/quota-watch/dist/tui.js"
+  ]
 }

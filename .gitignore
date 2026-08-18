@@ -2,3 +2,5 @@ secrets.env
 __pycache__/
 *.pyc
 result
+agents/opencode/tui-plugins/*/node_modules/
+agents/opencode/tui-plugins/*/dist/
