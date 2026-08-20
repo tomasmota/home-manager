@@ -15,6 +15,16 @@
     "build": {
       "model": "openai/gpt-5.6-terra",
       "variant": "medium"
+    },
+    "infra-investigate": {
+      "description": "Performs bounded, read-only infrastructure and documentation investigations; use for cloud inventory, logs, and diagnostic research whose raw output should stay out of the primary session.",
+      "mode": "subagent",
+      "steps": 12,
+      "permission": {
+        "edit": "deny",
+        "task": "deny"
+      },
+      "prompt": "Perform a read-only investigation. Never modify files or infrastructure, and do not run shell commands that can do so. Use only the narrowest useful queries. Return a concise conclusion, verified evidence with source links or exact bounded commands, unresolved questions, and the next most discriminating action. Do not return raw logs, plans, YAML, or documentation."
     }
   },
   "provider": {
@@ -67,11 +77,23 @@
   "experimental": {
     "disable_paste_summary": true
   },
+  "tool_output": {
+    "max_lines": 500,
+    "max_bytes": 16000
+  },
   "compaction": {
     "auto": true,
     "prune": false,
     "tail_turns": 4,
     "preserve_recent_tokens": 12000
+  },
+  "command": {
+    "research": {
+      "description": "Run a read-only infrastructure or documentation investigation in a child session",
+      "agent": "infra-investigate",
+      "subtask": true,
+      "template": "Investigate: $ARGUMENTS\n\nRead findings.md if it exists. Perform a read-only investigation using only the narrowest useful queries. Do not modify files or infrastructure. Return: conclusion; verified evidence with commands or source links; unresolved questions; recommended next action. Do not return raw logs, plans, YAML, or documentation."
+    }
   },
   "permission": {
     "bash": {
