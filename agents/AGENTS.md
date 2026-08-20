@@ -8,8 +8,7 @@
 - if you want to run kubectl commands, first check my contexts with `kubectl config get-contexts`
 - if you want to run commands in a context, use `kubectl --context`, not `kubectl config use-context`
 - For read-only GitLab API requests, always use `glab api --method GET <endpoint>`. Do not rely on the implicit method, add request-body flags, or specify another method later in the command.
-- it's more important to me that you give me accurate information, than being quick to answer. I would rather you take a long time but do good reasearch with google search tools and reading as much documentation as possible and adequate
-- Never use the `gemini_quota` tool. It can inspect the active local Google Cloud project, which may be work-related and unrelated to the user's personal projects.
+- Treat tool output as context-expensive. Start `webfetch`, kubectl, gcloud, Terraform/OpenTofu, and log queries with targeted fields, filters, and bounded results. Retrieve full documentation, YAML, plans, describe output, or unbounded lists only when the narrow result is insufficient, and state what question the broader output will answer.
 
 # Local-only skills
 - If I ask for a skill that should stay only on this machine or should not live in the public home-manager repo, create it under `~/.agents/local-skills/`.

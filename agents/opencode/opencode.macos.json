@@ -34,30 +34,23 @@
         "--no-usage-statistics",
         "--no-performance-crux"
       ],
-      "timeout": 120000
-    },
-    "kubernetes": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "kubernetes-mcp-server@latest",
-        "--read-only",
-        "--toolsets=config,core"
-      ],
-      "timeout": 120000
+      "timeout": 120000,
+      "enabled": false
     },
     "opentofu": {
       "type": "remote",
-      "url": "https://mcp.opentofu.org/mcp"
-    },
-    "confluence": {
-      "type": "remote",
-      "url": "https://mcp.atlassian.com/v1/mcp/authv2"
+      "url": "https://mcp.opentofu.org/mcp",
+      "enabled": false
     },
     "incident-io": {
       "type": "remote",
-      "url": "https://mcp.incident.io/mcp"
+      "url": "https://mcp.incident.io/mcp",
+      "enabled": false
+    },
+    "confluence": {
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v1/mcp/authv2",
+      "enabled": false
     }
   },
   "tools": {
@@ -66,7 +59,10 @@
     "confluence_getConfluencePage": true,
     "confluence_getJiraIssue": true,
     "confluence_searchConfluenceUsingCql": true,
-    "confluence_searchJiraIssuesUsingJql": true
+    "confluence_searchJiraIssuesUsingJql": true,
+    "chrome-devtools_performance_*": false,
+    "chrome-devtools_lighthouse_audit": false,
+    "chrome-devtools_take_heapsnapshot": false
   },
   "experimental": {
     "disable_paste_summary": true
@@ -192,16 +188,6 @@
       "argocd*": "ask"
     },
     "external_directory": "allow",
-    "chrome-devtools_*": "allow",
-    "kubernetes_*": "ask",
-    "kubernetes_configuration_*": "allow",
-    "kubernetes_*_list*": "allow",
-    "kubernetes_*_get*": "allow",
-    "kubernetes_*_log*": "allow",
-    "kubernetes_*_top*": "allow",
-    "kubernetes_*_stats*": "allow",
-    "kubernetes_events_*": "allow",
-    "kubernetes_namespaces_*": "allow",
-    "kubernetes_*": "ask"
+    "chrome-devtools_*": "allow"
   }
 }
