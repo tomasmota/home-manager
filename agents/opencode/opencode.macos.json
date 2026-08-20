@@ -101,18 +101,22 @@
 
       "python3*": "ask",
       "python3 -m py_compile*": "allow",
+      "python3 --version*": "allow",
       "bash*": "ask",
       "bash -n*": "allow",
       "bash -o noexec*": "allow",
+      "bash --version*": "allow",
 
       "node*": "ask",
       "node -c*": "allow",
       "node --check*": "allow",
+      "node --version*": "allow",
 
       "tofu*": "ask",
       "tofu -help*": "allow",
       "tofu --help*": "allow",
       "tofu -version*": "allow",
+      "tofu --version*": "allow",
       "tofu version*": "allow",
       "tofu plan*": "allow",
       "tofu init*": "allow",
@@ -134,11 +138,14 @@
       "tofu destroy*": "deny",
       "tofu state rm*": "deny",
 
+      "git --version*": "allow",
+      "git version*": "allow",
       "git push --force*": "deny",
       "git push -f*": "deny",
 
       "glab*": "ask",
       "glab help*": "allow",
+      "glab --version*": "allow",
       "glab version*": "allow",
       "glab auth status*": "allow",
       "glab config get*": "allow",
@@ -159,6 +166,7 @@
       "glab* revoke*": "deny",
 
       "gcloud*": "ask",
+      "gcloud version*": "allow",
       "gcloud config list*": "allow",
       "gcloud config get-value*": "allow",
       "gcloud auth list*": "allow",
@@ -176,6 +184,7 @@
       "gcloud auth revoke*": "deny",
 
       "kubectl*": "ask",
+      "kubectl --version*": "allow",
       "kubectl* get*": "allow",
       "kubectl* describe*": "allow",
       "kubectl* explain*": "allow",
@@ -192,6 +201,7 @@
       "kubectl* config get-contexts*": "allow",
 
       "helm*": "ask",
+      "helm --version*": "allow",
       "helm list*": "allow",
       "helm ls*": "allow",
       "helm search*": "allow",
@@ -204,10 +214,16 @@
       "helm lint*": "allow",
       "helm env*": "allow",
       "cmctl*": "ask",
+      "cmctl version*": "allow",
+      "cmctl --version*": "allow",
       "istioctl*": "ask",
+      "istioctl version*": "allow",
+      "istioctl --version*": "allow",
       "istioctl validate*": "allow",
       "istioctl proxy-status*": "allow",
-      "argocd*": "ask"
+      "argocd*": "ask",
+      "argocd version*": "allow",
+      "argocd --version*": "allow"
     },
     "external_directory": "allow",
     "chrome-devtools_*": "allow"
