@@ -135,6 +135,7 @@
       "vivaldi"
       "bitwarden"
       "hammerspoon"
+      "zed"
     ];
     onActivation = {
       autoUpdate = true;
