@@ -89,6 +89,59 @@ async function fetchZaiQuota(key: string): Promise<QuotaView["zai"]> {
   };
 }
 
+interface OpenaiWindow {
+  used_percent?: unknown;
+  limit_window_seconds?: unknown;
+  reset_at?: unknown;
+  reset_after_seconds?: unknown;
+}
+
+function parsePercent(value: unknown): number | undefined {
+  const num = typeof value === "string" ? Number(value) : value;
+  return typeof num === "number" && Number.isFinite(num) ? num : undefined;
+}
+
+function parseSeconds(value: unknown): number | undefined {
+  const num = typeof value === "string" ? Number(value) : value;
+  return typeof num === "number" && Number.isFinite(num) && num >= 0
+    ? num
+    : undefined;
+}
+
+function pickWeeklyWindow(
+  primary?: OpenaiWindow,
+  secondary?: OpenaiWindow,
+): OpenaiWindow | undefined {
+  const candidates = [primary, secondary].filter(
+    (w): w is OpenaiWindow =>
+      w !== undefined && w !== null && typeof w === "object",
+  );
+  if (candidates.length === 0) return undefined;
+  const withSize = candidates
+    .map((w) => ({ window: w, size: parseSeconds(w.limit_window_seconds) }))
+    .filter(
+      (entry): entry is { window: OpenaiWindow; size: number } =>
+        entry.size !== undefined,
+    );
+  if (withSize.length > 0) {
+    withSize.sort((a, b) => b.size - a.size);
+    return withSize[0].window;
+  }
+  return secondary ?? primary;
+}
+
+function daysUntilReset(window: OpenaiWindow): number | undefined {
+  const resetAt = parseSeconds(window.reset_at);
+  if (resetAt !== undefined) {
+    return Math.max(0, Math.ceil((resetAt * 1000 - Date.now()) / 86_400_000));
+  }
+  const resetAfter = parseSeconds(window.reset_after_seconds);
+  if (resetAfter !== undefined) {
+    return Math.max(0, Math.ceil(resetAfter / 86_400));
+  }
+  return undefined;
+}
+
 async function refreshOpenaiToken(refresh: string): Promise<string | undefined> {
   const body = new URLSearchParams({
     grant_type: "refresh_token",
@@ -130,22 +183,22 @@ async function fetchOpenaiQuota(): Promise<QuotaView["openai"]> {
   if (!response.ok) return undefined;
   const body = (await response.json()) as {
     rate_limit?: {
-      primary_window?: {
-        used_percent?: number;
-        reset_after_seconds?: number;
-      };
+      primary_window?: OpenaiWindow;
+      secondary_window?: OpenaiWindow;
     };
   };
-  const window = body.rate_limit?.primary_window;
-  if (
-    typeof window?.used_percent !== "number" ||
-    typeof window.reset_after_seconds !== "number"
-  ) {
-    return undefined;
-  }
+  const window = pickWeeklyWindow(
+    body.rate_limit?.primary_window,
+    body.rate_limit?.secondary_window,
+  );
+  if (!window) return undefined;
+  const used = parsePercent(window.used_percent);
+  if (used === undefined) return undefined;
+  const daysLeft = daysUntilReset(window);
+  if (daysLeft === undefined) return undefined;
   return {
-    percentLeft: Math.max(0, 100 - Math.round(window.used_percent)),
-    daysLeft: Math.max(0, Math.ceil(window.reset_after_seconds / 86_400)),
+    percentLeft: Math.max(0, 100 - Math.round(used)),
+    daysLeft,
   };
 }
 
