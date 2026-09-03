@@ -6,6 +6,7 @@
     "sound": false
   },
   "plugin": [
-    "/Users/tomas/.config/home-manager/agents/opencode/tui-plugins/quota-watch/dist/tui.js"
+    "/home/tomas/.config/home-manager/agents/opencode/tui-plugins/quota-watch/dist/tui.js",
+    ["opencode-auto-permissions@0.2.10", { "model": "openai/gpt-5.6-luna", "debug": "/home/tomas/.local/share/opencode/auto-permissions-debug.jsonl" }]
   ]
 }

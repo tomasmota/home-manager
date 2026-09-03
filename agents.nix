@@ -8,6 +8,10 @@
     if pkgs.stdenv.hostPlatform.isLinux
     then "opencode.json"
     else "opencode.macos.json";
+  tuiConfigFile =
+    if pkgs.stdenv.hostPlatform.isLinux
+    then "tui.json"
+    else "tui.macos.json";
 in {
   # Shared configuration for AI agents (Gemini, Amp, Codex, etc.)
   # Managed via out-of-store symlinks for easy editing.
@@ -35,6 +39,6 @@ in {
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/tmux-status.js";
 
     ".config/opencode/tui.json".source =
-      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/tui.json";
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/${tuiConfigFile}";
   };
 }
