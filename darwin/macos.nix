@@ -132,7 +132,6 @@
       "obsidian"
       "raycast"
       "rectangle"
-      "vivaldi"
       "bitwarden"
       "hammerspoon"
       "zed"
@@ -140,7 +139,7 @@
     onActivation = {
       autoUpdate = true;
       upgrade = true;
-      cleanup = "zap";
+      cleanup = "uninstall";
     };
   };
 }

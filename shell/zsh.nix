@@ -27,6 +27,10 @@
         export PATH="$PATH:${config.home.homeDirectory}/go/bin"
         export PATH="$PATH:${config.home.homeDirectory}/.npm-global/bin"
         export PATH="$PATH:${config.home.homeDirectory}/.opencode/bin"
+        # Homebrew is managed by nix-darwin but not put on PATH; guard so Linux is unaffected.
+        if [[ -d /opt/homebrew/bin ]]; then
+          export PATH="/opt/homebrew/bin:$PATH"
+        fi
         export EDITOR="nvim"
         export TFE_PARALLELISM="100"
         export DIRENV_LOG_FORMAT=""
