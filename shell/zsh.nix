@@ -147,6 +147,10 @@
           if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
             source ${config.xdg.configHome}/home-manager/secrets.env
           fi
+
+          if [[ -f "${config.xdg.configHome}/home-manager/shell/local.zsh" ]]; then
+            source ${config.xdg.configHome}/home-manager/shell/local.zsh
+          fi
         ''
         + import ./functions.nix {inherit config;});
 

@@ -95,6 +95,7 @@
     k6
 
     # work
+    azure-cli
     websocat
   ];
 
