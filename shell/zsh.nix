@@ -33,6 +33,7 @@
         export MANPAGER='nvim +Man!'
         export DOCKER_BUILDKIT="1"
         export RCLONE_FAST_LIST="true"
+        export OPENCODE_WEBSEARCH_PROVIDER="exa"
       '';
 
       plugins = [
