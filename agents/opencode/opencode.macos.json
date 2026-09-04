@@ -10,7 +10,7 @@
     ]
   },
   "plugin": [
-    "@anthonyhaussman/opencode-agy-auth@1.1.25",
+    "@anthonyhaussman/opencode-agy-auth@1.1.26",
     [
       "opencode-auto-permissions@0.2.10",
       {
@@ -19,16 +19,8 @@
       }
     ]
   ],
-  "model": "opencode/muse-spark-1.3-contributor-free",
+  "model": "openai/gpt-5.6-sol#medium",
   "agent": {
-    "build": {
-      "model": "opencode/muse-spark-1.3-contributor-free",
-      "variant": "xhigh"
-    },
-    "plan": {
-      "model": "opencode/muse-spark-1.3-contributor-free",
-      "variant": "xhigh"
-    },
     "infra-investigate": {
       "description": "Performs bounded, read-only infrastructure and documentation investigations; use for cloud inventory, logs, and diagnostic research whose raw output should stay out of the primary session.",
       "mode": "subagent",
@@ -73,7 +65,7 @@
     "confluence": {
       "type": "remote",
       "url": "https://mcp.atlassian.com/v1/mcp/authv2",
-      "enabled": false
+      "enabled": true
     }
   },
   "tools": {
@@ -111,6 +103,8 @@
   "permission": {
     "bash": {
       "*": "ask",
+      "~/.agents/local-skills/show-me/show-mermaid*": "allow",
+      "/Users/tomas/.agents/local-skills/show-me/show-mermaid*": "allow",
       "ls*": "allow",
       "cat*": "allow",
       "head*": "allow",
@@ -190,20 +184,7 @@
       "tofu apply*": "deny",
       "tofu destroy*": "deny",
       "tofu state rm*": "deny",
-      "git --version*": "allow",
-      "git version*": "allow",
-      "git status*": "allow",
-      "git diff*": "allow",
-      "git log*": "allow",
-      "git show*": "allow",
-      "git branch*": "allow",
-      "git remote*": "allow",
-      "git rev-parse*": "allow",
-      "git ls-files*": "allow",
-      "git grep*": "allow",
-      "git blame*": "allow",
-      "git ls-remote*": "allow",
-      "git stash list*": "allow",
+      "git *": "allow",
       "glab help*": "allow",
       "glab --version*": "allow",
       "glab version*": "allow",
@@ -281,7 +262,8 @@
       "tmux list-*": "allow",
       "tmux display-message*": "allow",
       "tmux show-options*": "allow",
-      "tmux show-window-options*": "allow"
+      "tmux show-window-options*": "allow",
+      "/usr/bin/osascript *": "allow"
     },
     "external_directory": "allow",
     "chrome-devtools_*": "allow"
