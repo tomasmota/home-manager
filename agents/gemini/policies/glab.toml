@@ -14,7 +14,8 @@ commandPrefix = [
   "glab config list",
   "glab alias list",
   "glab api --method GET",
-  "glab api -X GET"
+  "glab api -X GET",
+  "glab api --help"
 ]
 decision = "allow"
 priority = 900

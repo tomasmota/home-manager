@@ -38,6 +38,7 @@
     "bash": {
       "*": "ask",
 
+      "*dtp-telemetry*": "allow",
       "ls*": "allow",
       "cat*": "allow",
       "head*": "allow",
@@ -152,6 +153,7 @@
       "glab* lint*": "allow",
       "glab api --method GET*": "allow",
       "glab api -X GET*": "allow",
+      "glab api --help*": "allow",
       "glab auth revoke*": "deny",
       "glab auth logout*": "deny",
       "glab* delete*": "deny",
