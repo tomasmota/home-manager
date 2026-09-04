@@ -19,6 +19,7 @@
 - `tmux.nix`: tmux settings/plugins/keybindings.
 - `nvim/`: Neovim config (lazy.nvim, plugin specs under `nvim/lua/plugins`, core config under `nvim/lua/config`).
 - `agents.nix`, `agents/**`: AI tool configs/policies (Gemini + OpenCode).
+- Default OpenCode subagent definitions live in `agents/opencode/agents/*.md`; update these instead of the `opencode*.json` files.
 - `agents/skills/**`: shared cross-agent skills; each skill lives in `agents/skills/<skill-name>/SKILL.md`.
 - `secrets.env`: local secrets file at repo root, intentionally gitignored.
 
@@ -72,4 +73,3 @@
 ## Commit Hygiene
 - Keep commit messages short, imperative, and lowercase (matches current history style).
 - Never commit `secrets.env` or other credential-bearing local files.
-

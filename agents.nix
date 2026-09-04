@@ -35,6 +35,16 @@ in {
     ".config/opencode/opencode.json".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/${opencodeConfigFile}";
 
+    ".config/opencode/agents/general.md" = {
+      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/agents/general.md";
+      force = true;
+    };
+
+    ".config/opencode/agents/explore.md" = {
+      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/agents/explore.md";
+      force = true;
+    };
+
     ".config/opencode/plugins/tmux-status.js".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/tmux-status.js";
 
