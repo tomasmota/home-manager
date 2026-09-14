@@ -18,6 +18,7 @@ const OPENAI_TOKEN_URL = "https://auth.openai.com/oauth/token";
 const OPENAI_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann";
 
 const WEEKLY_UNIT = 6;
+const HOURLY_WARN_THRESHOLD = 30;
 
 interface ZaiLimit {
   type: string;
@@ -27,9 +28,20 @@ interface ZaiLimit {
   nextResetTime: number;
 }
 
+interface HourlyQuota {
+  percentLeft: number;
+  resetLabel: string;
+}
+
+interface ProviderQuota {
+  percentLeft: number;
+  daysLeft: number;
+  hourly?: HourlyQuota;
+}
+
 interface QuotaView {
-  zai?: { percentLeft: number; daysLeft: number };
-  openai?: { percentLeft: number; daysLeft: number };
+  zai?: ProviderQuota;
+  openai?: ProviderQuota;
 }
 
 function resolveAuthPath(): string {
@@ -74,19 +86,35 @@ async function fetchZaiQuota(key: string): Promise<QuotaView["zai"]> {
   };
   const limits = body.data?.limits;
   if (!Array.isArray(limits)) return undefined;
-  const credit = limits.find(
+  const isValid = (limit: ZaiLimit): boolean =>
+    limit.type === "CREDIT_LIMIT" &&
+    typeof limit.percentage === "number" &&
+    typeof limit.nextResetTime === "number";
+  const weekly = limits.find(
     (limit) =>
-      limit.type === "CREDIT_LIMIT" &&
+      isValid(limit) &&
       limit.unit === WEEKLY_UNIT &&
-      limit.number === 1 &&
-      typeof limit.percentage === "number" &&
-      typeof limit.nextResetTime === "number",
+      limit.number === 1,
   );
-  if (!credit) return undefined;
-  return {
-    percentLeft: Math.max(0, 100 - Math.round(credit.percentage)),
-    daysLeft: formatDaysUntil(credit.nextResetTime),
+  if (!weekly) return undefined;
+  const result: ProviderQuota = {
+    percentLeft: Math.max(0, 100 - Math.round(weekly.percentage)),
+    daysLeft: formatDaysUntil(weekly.nextResetTime),
   };
+  // Best-effort 5h window: nearest-resetting CREDIT_LIMIT that isn't weekly.
+  const hourlyCandidate = limits
+    .filter((limit) => isValid(limit) && limit !== weekly)
+    .sort((a, b) => a.nextResetTime - b.nextResetTime)[0];
+  if (hourlyCandidate) {
+    result.hourly = {
+      percentLeft: Math.max(
+        0,
+        100 - Math.round(hourlyCandidate.percentage),
+      ),
+      resetLabel: formatShortReset(hourlyCandidate.nextResetTime - Date.now()),
+    };
+  }
+  return result;
 }
 
 interface OpenaiWindow {
@@ -108,38 +136,47 @@ function parseSeconds(value: unknown): number | undefined {
     : undefined;
 }
 
-function pickWeeklyWindow(
+function splitWindows(
   primary?: OpenaiWindow,
   secondary?: OpenaiWindow,
-): OpenaiWindow | undefined {
+): { weekly?: OpenaiWindow; hourly?: OpenaiWindow } {
   const candidates = [primary, secondary].filter(
     (w): w is OpenaiWindow =>
       w !== undefined && w !== null && typeof w === "object",
   );
-  if (candidates.length === 0) return undefined;
+  if (candidates.length === 0) return {};
   const withSize = candidates
     .map((w) => ({ window: w, size: parseSeconds(w.limit_window_seconds) }))
     .filter(
       (entry): entry is { window: OpenaiWindow; size: number } =>
         entry.size !== undefined,
     );
-  if (withSize.length > 0) {
+  if (withSize.length === candidates.length && candidates.length === 2) {
     withSize.sort((a, b) => b.size - a.size);
-    return withSize[0].window;
+    if (withSize[0].size === withSize[1].size) {
+      return { weekly: withSize[0].window };
+    }
+    return { weekly: withSize[0].window, hourly: withSize[1].window };
   }
-  return secondary ?? primary;
+  return { weekly: secondary ?? primary };
 }
 
-function daysUntilReset(window: OpenaiWindow): number | undefined {
+function windowMsLeft(window: OpenaiWindow): number | undefined {
   const resetAt = parseSeconds(window.reset_at);
   if (resetAt !== undefined) {
-    return Math.max(0, Math.ceil((resetAt * 1000 - Date.now()) / 86_400_000));
+    return Math.max(0, resetAt * 1000 - Date.now());
   }
   const resetAfter = parseSeconds(window.reset_after_seconds);
   if (resetAfter !== undefined) {
-    return Math.max(0, Math.ceil(resetAfter / 86_400));
+    return Math.max(0, resetAfter * 1000);
   }
   return undefined;
+}
+
+function parseWindowPercent(window: OpenaiWindow): number | undefined {
+  const used = parsePercent(window.used_percent);
+  if (used === undefined) return undefined;
+  return Math.max(0, 100 - Math.round(used));
 }
 
 async function refreshOpenaiToken(refresh: string): Promise<string | undefined> {
@@ -187,19 +224,36 @@ async function fetchOpenaiQuota(): Promise<QuotaView["openai"]> {
       secondary_window?: OpenaiWindow;
     };
   };
-  const window = pickWeeklyWindow(
+  const { weekly, hourly } = splitWindows(
     body.rate_limit?.primary_window,
     body.rate_limit?.secondary_window,
   );
-  if (!window) return undefined;
-  const used = parsePercent(window.used_percent);
-  if (used === undefined) return undefined;
-  const daysLeft = daysUntilReset(window);
-  if (daysLeft === undefined) return undefined;
-  return {
-    percentLeft: Math.max(0, 100 - Math.round(used)),
-    daysLeft,
+  if (!weekly) return undefined;
+  const percentLeft = parseWindowPercent(weekly);
+  if (percentLeft === undefined) return undefined;
+  const weeklyMs = windowMsLeft(weekly);
+  if (weeklyMs === undefined) return undefined;
+  const result: ProviderQuota = {
+    percentLeft,
+    daysLeft: Math.max(0, Math.ceil(weeklyMs / 86_400_000)),
   };
+  if (hourly) {
+    const hourlyPercent = parseWindowPercent(hourly);
+    const hourlyMs = windowMsLeft(hourly);
+    if (hourlyPercent !== undefined && hourlyMs !== undefined) {
+      result.hourly = {
+        percentLeft: hourlyPercent,
+        resetLabel: formatShortReset(hourlyMs),
+      };
+    }
+  }
+  return result;
+}
+
+function formatShortReset(msLeft: number): string {
+  const minutes = Math.max(0, Math.ceil(msLeft / 60_000));
+  if (minutes < 60) return `${minutes}m`;
+  return `${Math.ceil(minutes / 60)}h`;
 }
 
 function formatDaysUntil(resetTime: number): number {
@@ -207,23 +261,32 @@ function formatDaysUntil(resetTime: number): number {
   return Math.max(0, Math.ceil(msLeft / 86_400_000));
 }
 
+function providerPart(name: string, quota: ProviderQuota): string {
+  let part = `${name} ${quota.percentLeft}%·${quota.daysLeft}d`;
+  if (quota.hourly && quota.hourly.percentLeft <= HOURLY_WARN_THRESHOLD) {
+    part += ` 5h${quota.hourly.percentLeft}%·${quota.hourly.resetLabel}`;
+  }
+  return part;
+}
+
 function QuotaText(props: { quota: QuotaView; theme: TuiThemeCurrent }) {
   const parts: string[] = [];
   if (props.quota.zai) {
-    parts.push(
-      `zai ${props.quota.zai.percentLeft}%·${props.quota.zai.daysLeft}d`,
-    );
+    parts.push(providerPart("zai", props.quota.zai));
   }
   if (props.quota.openai) {
-    parts.push(
-      `oai ${props.quota.openai.percentLeft}%·${props.quota.openai.daysLeft}d`,
-    );
+    parts.push(providerPart("oai", props.quota.openai));
   }
   if (parts.length === 0) return null;
-  const danger = (props.quota.zai?.percentLeft ?? 100) <= 10 ||
-    (props.quota.openai?.percentLeft ?? 100) <= 10;
+  const warn = [props.quota.zai, props.quota.openai].some(
+    (q) =>
+      q !== undefined &&
+      (q.percentLeft <= 10 ||
+        (q.hourly !== undefined &&
+          q.hourly.percentLeft <= HOURLY_WARN_THRESHOLD)),
+  );
   return (
-    <text fg={danger ? props.theme.warning : props.theme.textMuted}>
+    <text fg={warn ? props.theme.warning : props.theme.textMuted}>
       {parts.join("  ")}
     </text>
   );
