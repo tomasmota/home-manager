@@ -10,14 +10,7 @@
     ]
   },
   "plugin": [
-    "@anthonyhaussman/opencode-agy-auth@1.1.26",
-    [
-      "opencode-auto-permissions@0.2.10",
-      {
-        "model": "openai/gpt-5.6-luna",
-        "debug": "/Users/tomas/.local/share/opencode/auto-permissions-debug.jsonl"
-      }
-    ]
+    "@anthonyhaussman/opencode-agy-auth@1.1.26"
   ],
   "model": "openai/gpt-5.6-sol#medium",
   "agent": {
@@ -105,7 +98,6 @@
       "*": "ask",
       "~/.agents/local-skills/show-me/show-mermaid*": "allow",
       "/Users/tomas/.agents/local-skills/show-me/show-mermaid*": "allow",
-      "*dtp-telemetry*": "allow",
       "ls*": "allow",
       "wt*": "allow",
       "cat*": "allow",
@@ -266,6 +258,11 @@
       "tmux display-message*": "allow",
       "tmux show-options*": "allow",
       "tmux show-window-options*": "allow",
+      "minions-tools inspect list*": "allow",
+      "minions-tools inspect tools*": "allow",
+      "minions-tools inspect call*": "allow",
+      "minions-tools mcps test*": "allow",
+      "minions-tools auth status*": "allow",
       "/usr/bin/osascript *": "allow"
     },
     "external_directory": "allow",

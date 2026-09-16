@@ -9,9 +9,7 @@
       "~/.agents/local-skills"
     ]
   },
-  "plugin": [
-    ["opencode-auto-permissions@0.2.10", { "model": "openai/gpt-5.6-luna", "debug": "/home/tomas/.local/share/opencode/auto-permissions-debug.jsonl" }]
-  ],
+  "plugin": [],
   "mcp": {
     "chrome-devtools": {
       "type": "local",
@@ -38,7 +36,6 @@
     "bash": {
       "*": "ask",
 
-      "*dtp-telemetry*": "allow",
       "ls*": "allow",
       "cat*": "allow",
       "head*": "allow",
@@ -222,7 +219,12 @@
       "tmux list-*": "allow",
       "tmux display-message*": "allow",
       "tmux show-options*": "allow",
-      "tmux show-window-options*": "allow"
+      "tmux show-window-options*": "allow",
+      "minions-tools inspect list*": "allow",
+      "minions-tools inspect tools*": "allow",
+      "minions-tools inspect call*": "allow",
+      "minions-tools mcps test*": "allow",
+      "minions-tools auth status*": "allow"
     },
     "external_directory": "allow"
   }

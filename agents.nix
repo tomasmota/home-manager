@@ -48,6 +48,9 @@ in {
     ".config/opencode/plugins/tmux-status.js".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/tmux-status.js";
 
+    ".config/opencode/plugins/auto-approve.js".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/auto-approve.js";
+
     ".config/opencode/tui.json".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/${tuiConfigFile}";
   };
