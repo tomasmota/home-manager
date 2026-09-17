@@ -68,6 +68,10 @@
     "confluence_getJiraIssue": true,
     "confluence_searchConfluenceUsingCql": true,
     "confluence_searchJiraIssuesUsingJql": true,
+    "confluence_editJiraIssue": true,
+    "confluence_transitionJiraIssue": true,
+    "confluence_getTransitionsForJiraIssue": true,
+    "confluence_updateConfluencePage": true,
     "chrome-devtools_performance_*": false,
     "chrome-devtools_lighthouse_audit": false,
     "chrome-devtools_take_heapsnapshot": false
