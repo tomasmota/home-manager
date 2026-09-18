@@ -1,8 +1,0 @@
-[[rule]]
-toolName = "run_shell_command"
-commandPrefix = [
-  "git push --force",
-  "git push -f",
-]
-decision = "deny"
-priority = 950

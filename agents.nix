@@ -13,7 +13,7 @@
     then "tui.json"
     else "tui.macos.json";
 in {
-  # Shared configuration for AI agents (Gemini, Amp, Codex, etc.)
+  # Shared configuration for AI agents (OpenCode, etc.)
   # Managed via out-of-store symlinks for easy editing.
 
   home.file = {
@@ -23,13 +23,6 @@ in {
 
     ".agents/AGENTS.md".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/AGENTS.md";
-
-    # Gemini Configuration
-    ".gemini/settings.json".source =
-      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/gemini/settings.json";
-
-    ".gemini/policies".source =
-      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/gemini/policies";
 
     # OpenCode Configuration
     ".config/opencode/opencode.json".source =

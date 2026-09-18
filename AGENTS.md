@@ -18,7 +18,7 @@
 - `git.nix`: git identity/signing, difftastic, activation hook for `allowed_signers` files.
 - `tmux.nix`: tmux settings/plugins/keybindings.
 - `nvim/`: Neovim config (lazy.nvim, plugin specs under `nvim/lua/plugins`, core config under `nvim/lua/config`).
-- `agents.nix`, `agents/**`: AI tool configs/policies (Gemini + OpenCode).
+- `agents.nix`, `agents/**`: AI tool configs (OpenCode).
 - Default OpenCode subagent definitions live in `agents/opencode/agents/*.md`; update these instead of the `opencode*.json` files.
 - `agents/skills/**`: shared cross-agent skills; each skill lives in `agents/skills/<skill-name>/SKILL.md`.
 - `secrets.env`: local secrets file at repo root, intentionally gitignored.
@@ -33,8 +33,6 @@
 - `home.nix` uses out-of-store symlinks for `nvim` and `agents` directories.
   - Editing files in this repo updates live config targets directly after switch.
 - `agents.nix` symlinks repo files into:
-  - `~/.gemini/settings.json`
-  - `~/.gemini/policies`
   - `~/.config/opencode/opencode.json`
 
 ## Apply and Validate Workflows
@@ -62,7 +60,7 @@
   - Keep aliases/functions concise and compatible with zsh.
   - `secrets.env` may be sourced by zsh init; never commit credentials.
 - Agent policies:
-  - Edit policy source files in `agents/gemini/policies/*.toml` and `agents/opencode/opencode.json`.
+  - Edit policy source files in `agents/opencode/opencode.json` (and `opencode.macos.json`).
 - Agent skills:
   - Add new skills under `agents/skills/<skill-name>/SKILL.md`.
   - Keep the existing frontmatter style (`name`, `description`, and `metadata`) and include usage-oriented sections.
