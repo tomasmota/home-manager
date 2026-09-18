@@ -9,6 +9,8 @@
 - Treat tool output as context-expensive. Start `webfetch`, kubectl, gcloud, Terraform/OpenTofu, and log queries with targeted fields, filters, and bounded results. Retrieve full documentation, YAML, plans, describe output, or unbounded lists only when the narrow result is insufficient, and state what question the broader output will answer.
 - When investigating files in a remote public repository (e.g. istio, prometheus), prefer a shallow `git clone --depth 1` into a tmp dir (e.g. `$(mktemp -d)`) and browse locally with read/grep/glob instead of many `webfetch` calls for individual files.
 - Investigate hypothesis-first: ask what uncertainty blocks action, gather discriminating evidence. On failure revise the hypothesis, not just the command. Reproduce bugs before fixing.
+- If `HANDOFF.md` exists in the worktree, trust it only when its recorded worktree/branch match and its `Base:` sha equals `git rev-parse HEAD` (see handoff skill); a file failing this is stale — delete it. Verify fresh contents against the repository's actual state before acting.
+- Before ending a session or changing phase on multi-step work, write or update `HANDOFF.md` following the handoff skill.
 - If I say "open a file", open it in a new tmux pane to the right of the current pane: `tmux split-window -h -c <dir> -t "$TMUX_PANE" 'nvim <file>'`.
 
 # skills
