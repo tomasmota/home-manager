@@ -8,6 +8,8 @@
 //   OPENCODE_REVIEW_TIMEOUT_PRIMARY=15000         # ms per primary model
 //   OPENCODE_REVIEW_TIMEOUT_FALLBACK=30000        # ms for session-model fallback
 //   OPENCODE_REVIEW_ON_EXHAUSTION=allow           # allow|manual|deny
+//   OPENCODE_QUOTA_FLOOR=2                        # pause OpenAI reviewer when weekly % left below this (0 disables)
+//   OPENCODE_QUOTA_TTL_MS=60000                   # how long a fetched OpenAI quota value is reused
 //   OPENCODE_REVIEW_EXTRA="..."                   # appended to reviewer instructions
 //   OPENCODE_REVIEW_DEBUG=1                       # or absolute file path; default path below
 //   OPENCODE_NO_ALLOWLIST=1                       # disable deterministic allowlist
@@ -25,9 +27,13 @@
 //   - Catastrophic commands (rm -rf /, mkfs, dd to disk, ...) deny immediately.
 //   - Deterministic allowlist (read-only diagnostics, tmp mkdir, filtered
 //     python3 -c, safe just/nix recipes, ...) allows instantly.
-//   - Verdict cache replays genuine primary-model verdicts (24h TTL).
-//   - Everything else goes to luna first, then the requesting session's own
-//     model on quota/timeout, then fail-open (allow) except catastrophic.
+// - Verdict cache replays genuine primary-model verdicts (24h TTL).
+// - Everything else goes to luna first, then the requesting session's own
+//   model on quota/timeout, then fail-open (allow) except catastrophic.
+// - Quota floor: when OpenAI weekly quota drops below OPENCODE_QUOTA_FLOOR
+//   (default 2%), OpenAI reviewer candidates are skipped entirely so the
+//   last quota is reserved for the main agent. Allowlist/cache still apply;
+//   non-OpenAI fallbacks still run. Unknown quota never blocks (fail-open).
 //   - Any fallback/exhaustion writes diagnostics + best-effort toast so the
 //     TUI tells you the primary reviewer is degraded.
 
@@ -401,6 +407,8 @@ export const __test = () => ({
   normalizeCommand,
   cacheKey,
   isStructuredOutputError,
+  parseWhamWeeklyPercent,
+  quotaFloor,
 })
 
 function errorText(error) {
@@ -421,6 +429,144 @@ function isQuotaLike(error) {
   // failureCategory); mislabeling them triggers wrong degraded toasts.
   const msg = errorText(error).toLowerCase()
   return /429|402|quota|rate.?limit|credit|insufficient|billing|exhausted|overloaded|unavailable/.test(msg)
+}
+
+// ---- Quota floor: reserve the last OpenAI weekly quota for the main agent ----
+// Reads the same WHAM usage endpoint as the quota-watch TUI plugin. Cached
+// in memory for OPENCODE_QUOTA_TTL_MS so permission asks stay fast; any
+// fetch/parse failure returns undefined and the review proceeds normally.
+
+const OPENAI_WHAM_URL = "https://chatgpt.com/backend-api/wham/usage"
+const OPENAI_TOKEN_URL = "https://auth.openai.com/oauth/token"
+const OPENAI_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann"
+
+const quotaFloorState = { percentLeft: undefined, fetchedAt: 0, inFlight: null }
+
+function quotaFloor() {
+  return numEnv("OPENCODE_QUOTA_FLOOR", 2, 0, 100)
+}
+
+function quotaTtlMs() {
+  return numEnv("OPENCODE_QUOTA_TTL_MS", 60000, 5000, 600000)
+}
+
+function resolveAuthPath() {
+  const base = process.env.XDG_DATA_HOME || `${process.env.HOME || "/tmp"}/.local/share`
+  return `${base}/opencode/auth.json`
+}
+
+function parseWhamPercent(value) {
+  const num = typeof value === "string" ? Number(value) : value
+  return typeof num === "number" && Number.isFinite(num) ? num : undefined
+}
+
+function parseWhamSeconds(value) {
+  const num = typeof value === "string" ? Number(value) : value
+  return typeof num === "number" && Number.isFinite(num) && num >= 0 ? num : undefined
+}
+
+// Weekly window = the one with the largest limit_window_seconds; falls back
+// to secondary ?? primary when sizes are missing (mirrors quota-watch).
+function parseWhamWeeklyPercent(body) {
+  const rec = recordOf(body)
+  const rl = recordOf(rec?.rate_limit)
+  if (!rl) return undefined
+  const wins = [rl.primary_window, rl.secondary_window].filter((w) => recordOf(w))
+  if (wins.length === 0) return undefined
+  let weekly = wins.length === 2 ? (wins[1] ?? wins[0]) : wins[0]
+  const sizes = wins.map((w) => parseWhamSeconds(recordOf(w)?.limit_window_seconds))
+  if (sizes.every((s) => s !== undefined) && wins.length === 2) {
+    weekly = sizes[0] >= sizes[1] ? wins[0] : wins[1]
+  }
+  const used = parseWhamPercent(recordOf(weekly)?.used_percent)
+  if (used === undefined) return undefined
+  return Math.max(0, 100 - Math.round(used))
+}
+
+async function refreshOpenaiToken(refresh) {
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refresh,
+    client_id: OPENAI_CLIENT_ID,
+  }).toString()
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort("token refresh timed out"), 8000)
+  try {
+    const response = await fetch(OPENAI_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      signal: controller.signal,
+    })
+    if (!response.ok) return undefined
+    const json = await response.json()
+    return typeof recordOf(json)?.access_token === "string" ? json.access_token : undefined
+  } catch {
+    return undefined
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function fetchOpenaiQuotaPercent() {
+  let entry
+  try {
+    const { readFile } = await import("node:fs/promises")
+    const auth = JSON.parse(await readFile(resolveAuthPath(), "utf8"))
+    entry = recordOf(recordOf(auth)?.openai)
+  } catch {
+    return undefined
+  }
+  const { access, accountId, refresh, expires } = entry ?? {}
+  if (typeof access !== "string" || typeof accountId !== "string" || typeof refresh !== "string") {
+    return undefined
+  }
+  let token = access
+  if (typeof expires !== "number" || expires < Date.now() + 60_000) {
+    token = (await refreshOpenaiToken(refresh)) ?? access
+  }
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort("quota fetch timed out"), 8000)
+  try {
+    const response = await fetch(OPENAI_WHAM_URL, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "ChatGPT-Account-Id": accountId,
+        "Content-Type": "application/json",
+      },
+      signal: controller.signal,
+    })
+    if (!response.ok) return undefined
+    return parseWhamWeeklyPercent(await response.json())
+  } catch {
+    return undefined
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function getCachedOpenaiQuotaPercent() {
+  const now = Date.now()
+  if (quotaFloorState.percentLeft !== undefined && now - quotaFloorState.fetchedAt < quotaTtlMs()) {
+    return quotaFloorState.percentLeft
+  }
+  if (!quotaFloorState.inFlight) {
+    quotaFloorState.inFlight = fetchOpenaiQuotaPercent().then(
+      (pct) => {
+        if (pct !== undefined) {
+          quotaFloorState.percentLeft = pct
+          quotaFloorState.fetchedAt = Date.now()
+        }
+        quotaFloorState.inFlight = null
+        return pct
+      },
+      () => {
+        quotaFloorState.inFlight = null
+        return undefined
+      },
+    )
+  }
+  return quotaFloorState.inFlight
 }
 
 const DECISION_SCHEMA = {
@@ -1015,6 +1161,28 @@ export const AutoApprovePlugin = async ({ client, directory }) => {
       }
 
       let degraded = false
+      // Quota floor: skip OpenAI reviewer candidates so the last weekly
+      // quota is reserved for the main agent. Unknown quota (undefined)
+      // never blocks; non-OpenAI candidates still run.
+      const floor = quotaFloor()
+      let quotaFloored = false
+      if (floor > 0 && candidates.some((c) => c.model.providerID === "openai")) {
+        const percentLeft = await getCachedOpenaiQuotaPercent()
+        if (percentLeft !== undefined && percentLeft < floor) {
+          const skipped = candidates.filter((c) => c.model.providerID === "openai").length
+          void appendDiagnostic({ event: "quota_floor", percentLeft, floor, skipped, preview })
+          quotaFloored = true
+          degraded = true
+          for (let i = candidates.length - 1; i >= 0; i--) {
+            if (candidates[i].model.providerID === "openai") candidates.splice(i, 1)
+          }
+          if (candidates.length === 0) {
+            void showToast(client, `OpenAI quota ${percentLeft}% — reviewer paused (${onExhaustion === "manual" ? "manual approval" : onExhaustion === "deny" ? "blocking" : "auto-approve"}).`)
+          } else {
+            void showToast(client, `OpenAI quota ${percentLeft}% — reviewer paused (non-OpenAI fallback only).`)
+          }
+        }
+      }
       for (const { model, timeoutMs, source } of candidates) {
         const controller = new AbortController()
         const timer = setTimeout(() => controller.abort("review timed out"), timeoutMs)
@@ -1047,7 +1215,7 @@ export const AutoApprovePlugin = async ({ client, directory }) => {
               void appendDiagnostic({ event: "reply_failed", decision: "allow", errorMessage: errorText(error), preview })
             }
           }
-          if (degraded) void showToast(client, "Primary reviewer degraded — used fallback model.")
+          if (degraded && !quotaFloored) void showToast(client, "Primary reviewer degraded — used fallback model.")
           return
         } catch (error) {
           const quotaLike = isQuotaLike(error)
@@ -1065,9 +1233,10 @@ export const AutoApprovePlugin = async ({ client, directory }) => {
       }
 
       // 2. All models exhausted. Fail-open for everything non-catastrophic
-      // (catastrophic already returned above).
-      void showToast(client, "Reviewer unavailable — auto-approved (non-destructive).")
-      void appendDiagnostic({ event: "exhausted", onExhaustion, preview, elapsedMs: Date.now() - startedAt })
+      // (catastrophic already returned above). When the quota floor caused
+      // this, the floor toast above already explained; don't double-toast.
+      if (!quotaFloored) void showToast(client, "Reviewer unavailable — auto-approved (non-destructive).")
+      void appendDiagnostic({ event: "exhausted", onExhaustion, quotaFloored, preview, elapsedMs: Date.now() - startedAt })
       if (onExhaustion === "deny") {
         try {
           await replyToRequest(client, req, "reject", "Auto-approve blocked this action: reviewer unavailable.", reviewDirectory)

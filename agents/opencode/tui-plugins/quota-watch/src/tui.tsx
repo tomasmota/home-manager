@@ -19,6 +19,12 @@ const OPENAI_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann";
 
 const WEEKLY_UNIT = 6;
 const HOURLY_WARN_THRESHOLD = 30;
+// Mirrors the server plugin's OPENCODE_QUOTA_FLOOR (auto-approve.js): below
+// this OpenAI weekly % the reviewer stops calling OpenAI models.
+const OPENAI_FLOOR_PERCENT = (() => {
+  const n = Number.parseInt(process.env.OPENCODE_QUOTA_FLOOR ?? "", 10);
+  return Number.isInteger(n) ? Math.min(100, Math.max(0, n)) : 2;
+})();
 
 interface ZaiLimit {
   type: string;
@@ -275,18 +281,27 @@ function QuotaText(props: { quota: QuotaView; theme: TuiThemeCurrent }) {
     parts.push(providerPart("zai", props.quota.zai));
   }
   if (props.quota.openai) {
-    parts.push(providerPart("oai", props.quota.openai));
+    let part = providerPart("oai", props.quota.openai);
+    if (props.quota.openai.percentLeft < OPENAI_FLOOR_PERCENT) {
+      part += " REVIEWER PAUSED";
+    }
+    parts.push(part);
   }
   if (parts.length === 0) return null;
-  const warn = [props.quota.zai, props.quota.openai].some(
-    (q) =>
-      q !== undefined &&
-      (q.percentLeft <= 10 ||
-        (q.hourly !== undefined &&
-          q.hourly.percentLeft <= HOURLY_WARN_THRESHOLD)),
-  );
+  const floored =
+    props.quota.openai !== undefined &&
+    props.quota.openai.percentLeft < OPENAI_FLOOR_PERCENT;
+  const warn =
+    floored ||
+    [props.quota.zai, props.quota.openai].some(
+      (q) =>
+        q !== undefined &&
+        (q.percentLeft <= 10 ||
+          (q.hourly !== undefined &&
+            q.hourly.percentLeft <= HOURLY_WARN_THRESHOLD)),
+    );
   return (
-    <text fg={warn ? props.theme.warning : props.theme.textMuted}>
+    <text fg={floored ? props.theme.error : warn ? props.theme.warning : props.theme.textMuted}>
       {parts.join("  ")}
     </text>
   );
