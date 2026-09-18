@@ -394,10 +394,11 @@ function cacheSet(key, decision, reasonCode, reason, model) {
   void persistVerdictCache()
 }
 
-// Test hook: pure helpers exposed for node-based unit tests; the plugin
-// host only reads AutoApprovePlugin and ignores the rest. Shaped as a
-// function because strict loaders reject non-function exports.
-export const __test = () => ({
+// Test hook: pure helpers for node-based unit tests, attached to the plugin
+// function below as AutoApprovePlugin.__test(). Kept out of module exports:
+// the legacy plugin loader treats every named export as a plugin factory,
+// so a second export breaks loading ("Plugin export is not a function").
+const testHelpers = {
   allowlistReason,
   allowResource,
   allowSegment,
@@ -409,7 +410,7 @@ export const __test = () => ({
   isStructuredOutputError,
   parseWhamWeeklyPercent,
   quotaFloor,
-})
+}
 
 function errorText(error) {
   if (error === null || error === undefined) return "unknown error"
@@ -1306,3 +1307,8 @@ export const AutoApprovePlugin = async ({ client, directory }) => {
     },
   }
 }
+
+// Single module export (see note on testHelpers above). Test seam for
+// node-based unit tests: `import { AutoApprovePlugin }` then call
+// `AutoApprovePlugin.__test()` to reach the pure helpers.
+AutoApprovePlugin.__test = () => testHelpers
