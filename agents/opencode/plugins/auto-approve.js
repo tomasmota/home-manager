@@ -3,7 +3,7 @@
 // Replaces opencode-auto-permissions. Local file = single source of truth,
 // no version pin, no 4-file duplication. Tune at runtime via env, no rebuild:
 //
-//   OPENCODE_REVIEW_MODELS="openai/gpt-5.6-luna,opencode/muse-spark-1.3-contributor-free,zai-coding-plan/glm-5.3-flash"  # comma-separated primaries (default)
+//   OPENCODE_REVIEW_MODELS="openai/gpt-5.6-luna,zai-coding-plan/glm-5.3-flash"  # comma-separated primaries (default)
 //   OPENCODE_REVIEW_NO_SESSION_FALLBACK=1         # disable session-model fallback
 //   OPENCODE_REVIEW_TIMEOUT_PRIMARY=15000         # ms per primary model
 //   OPENCODE_REVIEW_TIMEOUT_FALLBACK=45000        # ms for session-model fallback
@@ -28,13 +28,12 @@
 //   - Deterministic allowlist (read-only diagnostics, tmp mkdir, filtered
 //     python3 -c, safe just/nix recipes, ...) allows instantly.
 // - Verdict cache replays genuine primary-model verdicts (24h TTL).
-// - Everything else goes to luna first, then the free zen backup model on
-//   quota/timeout, then glm-5.3-flash, then the requesting session's own
-//   model, then fail-open (allow) except catastrophic. The zen backup
-//   (muse-spark contributor-free) answers in ~5s, so the chain survives
-//   OpenAI quota exhaustion without leaning on the slow session-model
-//   fallback; glm flash is a third net behind it (slow cold starts, so it
-//   runs with the primary timeout and often yields to the session model).
+// - Everything else goes to luna first, then glm-5.3-flash on
+//   quota/timeout, then the requesting session's own model, then fail-open
+//   (allow) except catastrophic. Free zen models (e.g. muse-spark
+//   *-contributor-free) must NOT be added as reviewers: zen rejects them in
+//   plugin-created reviewer sessions ("can only be used inside opencode"),
+//   even though they work as the main session's model.
 // - Quota floor: when ANY OpenAI rate-limit window (e.g. the 5h window at
 //   100% while the weekly window still has headroom) drops below
 //   OPENCODE_QUOTA_FLOOR (default 2%) left, OpenAI reviewer candidates are
@@ -68,7 +67,6 @@ function parseModels(raw) {
   if (!raw || !raw.trim()) {
     return [
       { providerID: "openai", id: "gpt-5.6-luna" },
-      { providerID: "opencode", id: "muse-spark-1.3-contributor-free" },
       { providerID: "zai-coding-plan", id: "glm-5.3-flash" },
     ]
   }
