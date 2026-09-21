@@ -74,6 +74,8 @@
       "~/.agents/local-skills/show-me/show-mermaid*": "allow",
       "/Users/tomas/.agents/local-skills/show-me/show-mermaid*": "allow",
       "ls*": "allow",
+      "dig*": "allow",
+      "delv*": "allow",
       "wt*": "allow",
       "cat*": "allow",
       "head*": "allow",
