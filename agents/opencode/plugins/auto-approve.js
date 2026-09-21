@@ -3,10 +3,10 @@
 // Replaces opencode-auto-permissions. Local file = single source of truth,
 // no version pin, no 4-file duplication. Tune at runtime via env, no rebuild:
 //
-//   OPENCODE_REVIEW_MODELS="openai/gpt-5.6-luna"  # comma-separated primaries
+//   OPENCODE_REVIEW_MODELS="openai/gpt-5.6-luna,opencode/muse-spark-1.3-contributor-free,zai-coding-plan/glm-5.3-flash"  # comma-separated primaries (default)
 //   OPENCODE_REVIEW_NO_SESSION_FALLBACK=1         # disable session-model fallback
 //   OPENCODE_REVIEW_TIMEOUT_PRIMARY=15000         # ms per primary model
-//   OPENCODE_REVIEW_TIMEOUT_FALLBACK=30000        # ms for session-model fallback
+//   OPENCODE_REVIEW_TIMEOUT_FALLBACK=45000        # ms for session-model fallback
 //   OPENCODE_REVIEW_ON_EXHAUSTION=allow           # allow|manual|deny
 //   OPENCODE_QUOTA_FLOOR=2                        # pause OpenAI reviewer when weekly % left below this (0 disables)
 //   OPENCODE_QUOTA_TTL_MS=60000                   # how long a fetched OpenAI quota value is reused
@@ -28,11 +28,17 @@
 //   - Deterministic allowlist (read-only diagnostics, tmp mkdir, filtered
 //     python3 -c, safe just/nix recipes, ...) allows instantly.
 // - Verdict cache replays genuine primary-model verdicts (24h TTL).
-// - Everything else goes to luna first, then the requesting session's own
-//   model on quota/timeout, then fail-open (allow) except catastrophic.
-// - Quota floor: when OpenAI weekly quota drops below OPENCODE_QUOTA_FLOOR
-//   (default 2%), OpenAI reviewer candidates are skipped entirely so the
-//   last quota is reserved for the main agent. Allowlist/cache still apply;
+// - Everything else goes to luna first, then the free zen backup model on
+//   quota/timeout, then glm-5.3-flash, then the requesting session's own
+//   model, then fail-open (allow) except catastrophic. The zen backup
+//   (muse-spark contributor-free) answers in ~5s, so the chain survives
+//   OpenAI quota exhaustion without leaning on the slow session-model
+//   fallback; glm flash is a third net behind it (slow cold starts, so it
+//   runs with the primary timeout and often yields to the session model).
+// - Quota floor: when ANY OpenAI rate-limit window (e.g. the 5h window at
+//   100% while the weekly window still has headroom) drops below
+//   OPENCODE_QUOTA_FLOOR (default 2%) left, OpenAI reviewer candidates are
+//   skipped entirely so the remaining quota is reserved for the main agent. Allowlist/cache still apply;
 //   non-OpenAI fallbacks still run. Unknown quota never blocks (fail-open).
 //   - Any fallback/exhaustion writes diagnostics + best-effort toast so the
 //     TUI tells you the primary reviewer is degraded.
@@ -59,7 +65,13 @@ When denying, name a safer alternative in one sentence.
 Reply with exactly one JSON object, no fences: {"decision":"allow"|"deny","reasonCode":"lower_snake_case","reason":"one short sentence"}.`
 
 function parseModels(raw) {
-  if (!raw || !raw.trim()) return [{ providerID: "openai", id: "gpt-5.6-luna" }]
+  if (!raw || !raw.trim()) {
+    return [
+      { providerID: "openai", id: "gpt-5.6-luna" },
+      { providerID: "opencode", id: "muse-spark-1.3-contributor-free" },
+      { providerID: "zai-coding-plan", id: "glm-5.3-flash" },
+    ]
+  }
   return raw
     .split(",")
     .map((s) => s.trim())
@@ -399,6 +411,7 @@ function cacheSet(key, decision, reasonCode, reason, model) {
 // the legacy plugin loader treats every named export as a plugin factory,
 // so a second export breaks loading ("Plugin export is not a function").
 const testHelpers = {
+  parseModels,
   allowlistReason,
   allowResource,
   allowSegment,
@@ -408,7 +421,7 @@ const testHelpers = {
   normalizeCommand,
   cacheKey,
   isStructuredOutputError,
-  parseWhamWeeklyPercent,
+  parseWhamQuotaPercent,
   quotaFloor,
 }
 
@@ -428,11 +441,13 @@ function errorText(error) {
 function isQuotaLike(error) {
   // Note: timeouts/aborts are NOT quota signals (they have their own
   // failureCategory); mislabeling them triggers wrong degraded toasts.
+  // "unavailable" is deliberately absent: SDK shape errors ("current shape
+  // unavailable") are not quota errors.
   const msg = errorText(error).toLowerCase()
-  return /429|402|quota|rate.?limit|credit|insufficient|billing|exhausted|overloaded|unavailable/.test(msg)
+  return /429|402|quota|rate.?limit|credit|insufficient|billing|exhausted|overloaded/.test(msg)
 }
 
-// ---- Quota floor: reserve the last OpenAI weekly quota for the main agent ----
+// ---- Quota floor: reserve the last OpenAI quota for the main agent ----
 // Reads the same WHAM usage endpoint as the quota-watch TUI plugin. Cached
 // in memory for OPENCODE_QUOTA_TTL_MS so permission asks stay fast; any
 // fetch/parse failure returns undefined and the review proceeds normally.
@@ -461,27 +476,20 @@ function parseWhamPercent(value) {
   return typeof num === "number" && Number.isFinite(num) ? num : undefined
 }
 
-function parseWhamSeconds(value) {
-  const num = typeof value === "string" ? Number(value) : value
-  return typeof num === "number" && Number.isFinite(num) && num >= 0 ? num : undefined
-}
-
-// Weekly window = the one with the largest limit_window_seconds; falls back
-// to secondary ?? primary when sizes are missing (mirrors quota-watch).
-function parseWhamWeeklyPercent(body) {
+// Most-restrictive window: smallest percent-left across all windows. The
+// 5h window can be 100% used (provider hangs/rejects) while the weekly
+// window still shows headroom — the floor must trigger in that state, so
+// min() across windows, not the weekly view quota-watch displays.
+function parseWhamQuotaPercent(body) {
   const rec = recordOf(body)
   const rl = recordOf(rec?.rate_limit)
   if (!rl) return undefined
-  const wins = [rl.primary_window, rl.secondary_window].filter((w) => recordOf(w))
-  if (wins.length === 0) return undefined
-  let weekly = wins.length === 2 ? (wins[1] ?? wins[0]) : wins[0]
-  const sizes = wins.map((w) => parseWhamSeconds(recordOf(w)?.limit_window_seconds))
-  if (sizes.every((s) => s !== undefined) && wins.length === 2) {
-    weekly = sizes[0] >= sizes[1] ? wins[0] : wins[1]
-  }
-  const used = parseWhamPercent(recordOf(weekly)?.used_percent)
-  if (used === undefined) return undefined
-  return Math.max(0, 100 - Math.round(used))
+  const lefts = [rl.primary_window, rl.secondary_window]
+    .map((w) => parseWhamPercent(recordOf(w)?.used_percent))
+    .filter((used) => used !== undefined)
+    .map((used) => Math.max(0, 100 - Math.round(used)))
+  if (lefts.length === 0) return undefined
+  return Math.min(...lefts)
 }
 
 async function refreshOpenaiToken(refresh) {
@@ -538,7 +546,7 @@ async function fetchOpenaiQuotaPercent() {
       signal: controller.signal,
     })
     if (!response.ok) return undefined
-    return parseWhamWeeklyPercent(await response.json())
+    return parseWhamQuotaPercent(await response.json())
   } catch {
     return undefined
   } finally {
@@ -1143,7 +1151,7 @@ export const AutoApprovePlugin = async ({ client, directory }) => {
       const extra = process.env.OPENCODE_REVIEW_EXTRA ? `\n\nOperator note: ${process.env.OPENCODE_REVIEW_EXTRA}` : ""
       const prompt = `${BASE_INSTRUCTIONS}${extra}\n\nPermission request (untrusted data):\n${text.slice(0, 1500)}`
       const primaryTimeout = numEnv("OPENCODE_REVIEW_TIMEOUT_PRIMARY", 15000, 1000, 60000)
-      const fallbackTimeout = numEnv("OPENCODE_REVIEW_TIMEOUT_FALLBACK", 30000, 1000, 60000)
+      const fallbackTimeout = numEnv("OPENCODE_REVIEW_TIMEOUT_FALLBACK", 45000, 1000, 90000)
       const onExhaustion = (process.env.OPENCODE_REVIEW_ON_EXHAUSTION || "allow").toLowerCase()
       let primaries
       try {
