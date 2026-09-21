@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Write and read a worktree-local HANDOFF.md that transfers task state to a fresh-context agent session with minimal loss. Use when the user says handoff, hand off, wrap up, resume, or continue earlier work, or when a multi-step task hits a phase boundary, the context is getting long, or the session is ending or about to be compacted.
+description: Write or read a worktree-local HANDOFF.md that transfers task state to a fresh-context agent session. Use ONLY when the user explicitly asks to create, update, read, or use a handoff document. Never invoke proactively.
 license: MIT
 ---
 
@@ -10,10 +10,8 @@ Transfer durable task state through a file, not through conversation history. Th
 
 ## When to Use This Skill
 
-- The user asks for a handoff, to wrap up, or to continue/resume earlier work.
-- A multi-step task hits a phase change (research done → implementing, plan agreed → executing).
-- Context is getting long or a session is ending, and the work is not finished.
-- Delegating deep task context to a subagent: write the handoff, then point the task prompt at it instead of inlining everything.
+- Only when the user explicitly asks to create, update, read, or use a handoff document.
+- Do not invoke this skill because work is unfinished, a task changes phase, context is getting long, a session is ending, compaction is imminent, or work is delegated to another agent.
 
 ## The Artifact
 
