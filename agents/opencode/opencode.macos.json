@@ -10,7 +10,7 @@
     ]
   },
   "plugin": [],
-  "model": "openai/gpt-5.6-sol#medium",
+  "model": "openai/gpt-5.6-sol",
   "mcp": {
     "chrome-devtools": {
       "type": "local",
