@@ -38,11 +38,28 @@ in {
       force = true;
     };
 
+    ".config/opencode/agents/free.md" = {
+      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/agents/free.md";
+      force = true;
+    };
+
+    ".config/opencode/agents/reviewer.md" = {
+      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/agents/reviewer.md";
+      force = true;
+    };
+
+    # NOTE: infra-investigate.md is intentionally NOT managed here. It is
+    # Signicat-specific and lives only as a local file in
+    # ~/.config/opencode/agents/. Do not add a symlink entry for it.
+
     ".config/opencode/plugins/tmux-status.js".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/tmux-status.js";
 
-    ".config/opencode/plugins/auto-approve.js".source =
-      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/auto-approve.js";
+    ".config/opencode/plugins/auto-approve-jev.js".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/auto-approve-jev.js";
+
+    ".config/opencode/plugins/lib".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/lib";
 
     ".config/opencode/tui.json".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/${tuiConfigFile}";
