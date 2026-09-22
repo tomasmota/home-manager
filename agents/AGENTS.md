@@ -9,7 +9,12 @@
 - Treat tool output as context-expensive. Start `webfetch`, kubectl, gcloud, Terraform/OpenTofu, and log queries with targeted fields, filters, and bounded results. Retrieve full documentation, YAML, plans, describe output, or unbounded lists only when the narrow result is insufficient, and state what question the broader output will answer.
 - When investigating files in a remote public repository (e.g. istio, prometheus), prefer a shallow `git clone --depth 1` into a tmp dir (e.g. `$(mktemp -d)`) and browse locally with read/grep/glob instead of many `webfetch` calls for individual files.
 - Investigate hypothesis-first: ask what uncertainty blocks action, gather discriminating evidence. On failure revise the hypothesis, not just the command. Reproduce bugs before fixing.
+- Answer judgments from available evidence and stop when it supports the decision. Distinguish blockers from optional checks; ask before investigating further.
+- Timebox investigations: after two failed approaches or three unproductive tool rounds, stop. Delegate broad, slow, or output-heavy work to a subagent early; do not duplicate it.
 - If I say "open a file", open it in a new tmux pane to the right of the current pane: `tmux split-window -h -c <dir> -t "$TMUX_PANE" 'nvim <file>'`.
+
+# Handoff files
+- After taking over from a fresh `HANDOFF.md` (scope and freshness checks passed, state verified, mission restated), delete the file immediately and continue without it. Never keep updating it in place; write a new one only when explicitly asked.
 
 # skills
 - If I ask for a skill that should stay only on this machine or should not live in the public home-manager repo, create it under `~/.agents/local-skills/`.

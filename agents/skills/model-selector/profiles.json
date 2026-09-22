@@ -1,0 +1,22 @@
+{
+  "quick": {
+    "model": "zai-coding-plan/glm-5.3-flash",
+    "effort": "high",
+    "description": "Fast, effectively free executor for a small, straightforward change with a clear approach and simple verification. Do not choose when important design or debugging uncertainty remains."
+  },
+  "workhorse": {
+    "model": "openai/gpt-5.6-terra",
+    "effort": "medium",
+    "description": "Default cost-conscious model for planned implementation and sustained multi-turn work. Choose when the path is credible, even if the work uses substantial context or many tool calls."
+  },
+  "workhorse-zai": {
+    "model": "zai-coding-plan/glm-5.3",
+    "effort": "high",
+    "description": "OpenAI-quota-saving replacement for the workhorse. Choose for ordinary planned implementation when the OpenAI 5-hour quota is below 20% or the weekly quota is below 10%."
+  },
+  "deep": {
+    "model": "openai/gpt-6-astra",
+    "effort": "medium",
+    "description": "Very expensive model for hard, consequential decisions: the path is unclear, competing approaches need careful evaluation, or prior attempts failed for uncertain reasons. Do not choose merely because work is long or broad."
+  }
+}
