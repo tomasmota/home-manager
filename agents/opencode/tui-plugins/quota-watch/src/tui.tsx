@@ -6,12 +6,18 @@ import type {
   TuiThemeCurrent,
 } from "@opencode-ai/plugin/tui";
 import { readFileSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { createRoot, createSignal, onCleanup } from "solid-js";
 
 const TUI_PLUGIN_ID = "quota-watch.tui";
 const REFRESH_INTERVAL_MS = 60_000;
+const QUOTA_CACHE_PATH = join(
+  process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"),
+  "opencode",
+  "quota-watch.json",
+);
 const ZAI_QUOTA_URL = "https://api.z.ai/api/monitor/usage/quota/limit";
 const OPENAI_WHAM_URL = "https://chatgpt.com/backend-api/wham/usage";
 const OPENAI_TOKEN_URL = "https://auth.openai.com/oauth/token";
@@ -19,12 +25,6 @@ const OPENAI_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann";
 
 const WEEKLY_UNIT = 6;
 const HOURLY_WARN_THRESHOLD = 30;
-// Mirrors the server plugin's OPENCODE_QUOTA_FLOOR (auto-approve.js): below
-// this OpenAI weekly % the reviewer stops calling OpenAI models.
-const OPENAI_FLOOR_PERCENT = (() => {
-  const n = Number.parseInt(process.env.OPENCODE_QUOTA_FLOOR ?? "", 10);
-  return Number.isInteger(n) ? Math.min(100, Math.max(0, n)) : 2;
-})();
 
 interface ZaiLimit {
   type: string;
@@ -281,27 +281,18 @@ function QuotaText(props: { quota: QuotaView; theme: TuiThemeCurrent }) {
     parts.push(providerPart("zai", props.quota.zai));
   }
   if (props.quota.openai) {
-    let part = providerPart("oai", props.quota.openai);
-    if (props.quota.openai.percentLeft < OPENAI_FLOOR_PERCENT) {
-      part += " REVIEWER PAUSED";
-    }
-    parts.push(part);
+    parts.push(providerPart("oai", props.quota.openai));
   }
   if (parts.length === 0) return null;
-  const floored =
-    props.quota.openai !== undefined &&
-    props.quota.openai.percentLeft < OPENAI_FLOOR_PERCENT;
-  const warn =
-    floored ||
-    [props.quota.zai, props.quota.openai].some(
-      (q) =>
-        q !== undefined &&
-        (q.percentLeft <= 10 ||
-          (q.hourly !== undefined &&
-            q.hourly.percentLeft <= HOURLY_WARN_THRESHOLD)),
-    );
+  const warn = [props.quota.zai, props.quota.openai].some(
+    (q) =>
+      q !== undefined &&
+      (q.percentLeft <= 10 ||
+        (q.hourly !== undefined &&
+          q.hourly.percentLeft <= HOURLY_WARN_THRESHOLD)),
+  );
   return (
-    <text fg={floored ? props.theme.error : warn ? props.theme.warning : props.theme.textMuted}>
+    <text fg={warn ? props.theme.warning : props.theme.textMuted}>
       {parts.join("  ")}
     </text>
   );
@@ -315,7 +306,18 @@ function initializeTui(api: TuiPluginApi): void {
     const key = readZaiKey();
     if (key) next.zai = await fetchZaiQuota(key);
     next.openai = await fetchOpenaiQuota();
-    if (next.zai || next.openai) setQuota(next);
+    if (next.zai || next.openai) {
+      setQuota(next);
+      // Handoffs read this instead of repeating authenticated quota requests.
+      void mkdir(dirname(QUOTA_CACHE_PATH), { recursive: true })
+        .then(() =>
+          writeFile(
+            QUOTA_CACHE_PATH,
+            JSON.stringify({ generatedAt: Date.now(), ...next }),
+          ),
+        )
+        .catch(() => undefined);
+    }
   };
 
   void refresh();
