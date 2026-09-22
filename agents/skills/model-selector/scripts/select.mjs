@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { readFile } from "node:fs/promises"
+import { realpathSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -68,7 +69,8 @@ export async function selectModel(brief, { quota, request = requestJev } = {}) {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+const isCli = process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)
+if (isCli) {
   const chunks = []
   for await (const chunk of process.stdin) chunks.push(chunk)
   const result = await selectModel(Buffer.concat(chunks).toString("utf8"))
