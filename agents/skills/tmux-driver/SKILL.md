@@ -32,7 +32,7 @@ Do not use this skill when a normal one-shot shell command is enough.
 - Prefer `tmux send-keys -l` for command text and raw text. Without `-l`, tmux treats tokens as key names and can mangle quotes, backslashes, or shell syntax.
 - Use plain `tmux send-keys` only for actual key presses such as `C-m`, `Enter`, `Escape`, or `C-c`.
 - For terminal apps, send keys, wait briefly, then inspect with `tmux capture-pane`.
-- Full-screen TUIs may switch to alternate screen. On this machine, `tmux capture-pane` can miss useful content there, so verify with pane state and side effects too.
+- Full-screen TUIs may switch to alternate screen. Capture the **current** visible pane with `tmux capture-pane -p` first. With OpenCode on this machine, `-a` showed the old shell instead of the visible TUI. Verify with pane state and side effects too.
 
 ## Core Workflow
 
@@ -132,7 +132,7 @@ tmux send-keys -l -t "$pane" "nvim path/to/file"
 tmux send-keys -t "$pane" C-m
 sleep 0.8
 tmux display-message -p -t "$pane" '#{pane_current_command}|alt=#{alternate_on}|dead=#{pane_dead}'
-tmux capture-pane -a -p -t "$pane" -S -80
+tmux capture-pane -p -t "$pane" -S -80
 ```
 
 Edit file:
@@ -144,7 +144,7 @@ tmux send-keys -t "$pane" Enter
 tmux send-keys -l -t "$pane" "second line"
 sleep 0.3
 tmux display-message -p -t "$pane" '#{pane_current_command}|alt=#{alternate_on}|dead=#{pane_dead}'
-tmux capture-pane -a -p -t "$pane" -S -80
+tmux capture-pane -p -t "$pane" -S -80
 ```
 
 Save and quit:

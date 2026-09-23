@@ -19,8 +19,7 @@ node ~/.agents/skills/model-selector/scripts/select.mjs <<'EOF'
 EOF
 ```
 
-3. Parse its one-line JSON result. Pass `--model "<model>"` to OpenCode — the bare ID only. Never append `#<effort>`: these models expose no CLI-selectable effort variants, and the suffix makes opencode silently fall back to the configured default model.
-4. Report the selected profile and model in one short sentence. Do not put it in `HANDOFF.md`.
+3. Parse its one-line JSON result (`model`, `effort`). Report the selected profile, model, and effort in one short sentence. Do not put it in `HANDOFF.md`.
 
 ## Profiles
 
