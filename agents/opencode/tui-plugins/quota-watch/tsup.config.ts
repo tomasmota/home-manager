@@ -17,8 +17,8 @@ export default defineConfig({
   clean: true,
   outDir: "dist",
   external: [
-    "@opencode-ai/plugin",
-    "@opencode-ai/plugin/tui",
+    "@opencode/plugin",
+    "@opencode/plugin/tui",
     "@opentui/core",
     "@opentui/solid",
     "solid-js",

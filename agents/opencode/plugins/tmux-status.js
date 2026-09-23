@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process"
 import { closeSync, constants, openSync, writeSync } from "node:fs"
 
+import { Plugin } from "@opencode/plugin"
+
 import { answerChoice, answerNoul, numberEnv, recordOf, requestJev } from "./lib/jev-client.js"
 import { isIgnoredSession } from "./lib/session-registry.js"
 
@@ -68,12 +70,6 @@ function aggregatePaneStates(rows) {
   return { state, startedAt, duration }
 }
 
-function unwrapData(result) {
-  let value = result
-  for (let index = 0; index < 3 && recordOf(value) && "data" in value; index++) value = value.data
-  return value
-}
-
 function boundedText(text, limit) {
   if (text.length <= limit) return { text, truncated: false }
   const marker = "\n...[truncated]...\n"
@@ -83,8 +79,9 @@ function boundedText(text, limit) {
 }
 
 function messageText(message) {
-  return Array.isArray(message.parts)
-    ? message.parts
+  if (message.type === "user") return typeof message.text === "string" ? message.text.trim() : ""
+  return Array.isArray(message.content)
+    ? message.content
       .filter((part) => recordOf(part)?.type === "text" && typeof part.text === "string")
       .map((part) => part.text)
       .join("\n")
@@ -96,13 +93,12 @@ function buildCompletionState(messages) {
   if (!Array.isArray(messages)) return null
   const entries = messages.map((message, index) => {
     const rec = recordOf(message)
-    const info = recordOf(rec?.info) ?? rec
-    const created = Number(recordOf(info?.time)?.created)
+    const created = Number(recordOf(rec?.time)?.created)
     return {
       index,
       created: Number.isFinite(created) ? created : null,
-      role: info?.role,
-      info,
+      role: rec?.type,
+      info: rec,
       text: messageText(rec ?? {}),
     }
   })
@@ -219,7 +215,7 @@ const defaultRuntime = {
   offExit: (listener) => process.off("exit", listener),
 }
 
-async function createTmuxStatusPlugin({ client, directory } = {}, overrides = {}) {
+async function createTmuxStatusPlugin(context = {}, overrides = {}) {
   const runtime = { ...defaultRuntime, ...overrides }
   const pane = runtime.env.TMUX_PANE
   const hasTmux = Boolean(runtime.env.TMUX && pane)
@@ -232,15 +228,12 @@ async function createTmuxStatusPlugin({ client, directory } = {}, overrides = {}
   const classifyAttention = async ({ sessionID, epoch }) => {
     const startedAt = runtime.now()
     try {
-      if (typeof client?.session?.messages !== "function") throw new Error("session.messages unavailable")
-      const rawMessages = unwrapData(await client.session.messages({
-        path: { id: sessionID },
-        query: directory ? { directory, limit: 20 } : { limit: 20 },
-      }))
-      const context = buildCompletionState(rawMessages)
-      if (!context) throw new Error("completion transcript is missing user or assistant text")
+      if (typeof context.session?.context !== "function") throw new Error("session.context unavailable")
+      const rawMessages = await context.session.context({ sessionID })
+      const completion = buildCompletionState(rawMessages)
+      if (!completion) throw new Error("completion transcript is missing user or assistant text")
       const rawResult = await (runtime.requestJev ?? requestJev)({
-        state: context.state,
+        state: completion.state,
         questions: ATTENTION_QUESTIONS,
         apiKey: runtime.env.TYPESAFE_API_KEY,
         model: runtime.env.OPENCODE_JEV_ATTENTION_MODEL || runtime.env.OPENCODE_JEV_MODEL || "jev-latest",
@@ -264,7 +257,7 @@ async function createTmuxStatusPlugin({ client, directory } = {}, overrides = {}
           outcome: { choice: result.outcome.choice, confidence: result.outcome.confidence },
         },
         thresholds: decision.thresholds,
-        transcript: context.summary,
+        transcript: completion.summary,
         inputTokens: result.usage.input_tokens,
         elapsedMs: runtime.now() - startedAt,
       })
@@ -607,25 +600,24 @@ async function createTmuxStatusPlugin({ client, directory } = {}, overrides = {}
   await setState("idle")
 
   return {
-    event: async ({ event }) => {
-      const properties = event.properties ?? {}
+    event: async (event) => {
+      const properties = event.data ?? {}
 
       switch (event.type) {
         case "session.created":
-        case "session.updated":
-          if ((runtime.isIgnoredSession ?? isIgnoredSession)(properties.info?.id)) {
-            sessionStates.delete(properties.info.id)
-            cancelIdleJob(properties.info.id)
+          if ((runtime.isIgnoredSession ?? isIgnoredSession)(properties.sessionID)) {
+            sessionStates.delete(properties.sessionID)
+            cancelIdleJob(properties.sessionID)
             break
           }
-          if (properties.info?.id && properties.info.parentID) {
-            childSessions.add(properties.info.id)
-            sessionStates.delete(properties.info.id)
-            cancelIdleJob(properties.info.id)
+          if (properties.sessionID && properties.parentID) {
+            childSessions.add(properties.sessionID)
+            sessionStates.delete(properties.sessionID)
+            cancelIdleJob(properties.sessionID)
           }
           break
         case "session.deleted": {
-          const sessionID = properties.info?.id ?? properties.sessionID
+          const sessionID = properties.sessionID
           const deletedState = sessionStates.get(sessionID)
           childSessions.delete(sessionID)
           sessionStates.delete(sessionID)
@@ -639,10 +631,14 @@ async function createTmuxStatusPlugin({ client, directory } = {}, overrides = {}
           }
           break
         }
+        case "session.execution.started":
+          if (shouldIgnoreSession(properties.sessionID)) break
+          beginActivity(properties.sessionID)
+          await setLifecycleState("working", properties.sessionID)
+          break
         case "session.status": {
           if (shouldIgnoreSession(properties.sessionID)) break
-          const status =
-            typeof properties.status === "string" ? properties.status : properties.status?.type
+          const status = properties.status?.type
           if (status === "busy" || status === "retry") {
             if (sessionStates.get(properties.sessionID) !== "working") beginActivity(properties.sessionID)
             await setLifecycleState("working", properties.sessionID)
@@ -651,6 +647,7 @@ async function createTmuxStatusPlugin({ client, directory } = {}, overrides = {}
           break
         }
         case "session.idle":
+        case "session.execution.succeeded":
           if (!shouldIgnoreSession(properties.sessionID)) await setLifecycleState("idle", properties.sessionID)
           break
         case "permission.asked":
@@ -658,35 +655,31 @@ async function createTmuxStatusPlugin({ client, directory } = {}, overrides = {}
           if (properties.sessionID != null) sessionStates.set(properties.sessionID, "waiting")
           await setState("waiting")
           break
-        case "question.asked":
-          if (shouldIgnoreSession(properties.sessionID)) break
-          await requestAttention("waiting", properties.sessionID)
+        case "form.created": {
+          const sessionID = properties.form?.sessionID
+          if (!shouldIgnoreSession(sessionID)) await requestAttention("waiting", sessionID)
           break
+        }
         case "permission.replied":
-        case "question.replied":
-        case "question.rejected":
+        case "form.replied":
+        case "form.cancelled":
           if (shouldIgnoreSession(properties.sessionID)) break
           beginActivity(properties.sessionID)
           await setState("working")
           break
-        case "session.error":
-          if (!shouldIgnoreSession(properties.sessionID)) {
-            // User interrupts are reported as errors by OpenCode, but are not failures.
-            if (properties.error?.name === "MessageAbortedError") {
-              cancelIdleJob(properties.sessionID)
-              if (properties.sessionID != null) sessionStates.set(properties.sessionID, "idle")
-              await setState("idle")
-            }
-            else await requestAttention("error", properties.sessionID)
-          }
+        case "session.execution.failed":
+          if (!shouldIgnoreSession(properties.sessionID)) await requestAttention("error", properties.sessionID)
           break
-        case "server.instance.disposed":
+        case "session.execution.interrupted":
+          if (shouldIgnoreSession(properties.sessionID)) break
+          cancelIdleJob(properties.sessionID)
+          if (properties.sessionID != null) sessionStates.set(properties.sessionID, "idle")
+          await setState("idle")
+          break
+        case "global.disposed":
           await stop()
           break
       }
-    },
-    "tool.execute.before": async ({ tool, sessionID }) => {
-      if (tool === "question" && !shouldIgnoreSession(sessionID)) await requestAttention("waiting", sessionID)
     },
     dispose: async () => {
       await stop()
@@ -695,7 +688,26 @@ async function createTmuxStatusPlugin({ client, directory } = {}, overrides = {}
   }
 }
 
-export const TmuxStatusPlugin = async (input) => createTmuxStatusPlugin(input)
+export const TmuxStatusPlugin = Plugin.define({
+  id: "tomas.tmux-status",
+  async setup(context) {
+    const hooks = await createTmuxStatusPlugin(context)
+    const controller = new AbortController()
+    void (async () => {
+      try {
+        for await (const event of context.event.subscribe({ signal: controller.signal })) {
+          await hooks.event(event)
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) console.error("tmux-status event stream failed", error)
+      }
+    })()
+    return async () => {
+      controller.abort()
+      await hooks.dispose()
+    }
+  },
+})
 
 TmuxStatusPlugin.__test = () => ({
   ATTENTION_QUESTIONS,
@@ -705,3 +717,5 @@ TmuxStatusPlugin.__test = () => ({
   aggregatePaneStates,
   parseAttentionResponse,
 })
+
+export default TmuxStatusPlugin

@@ -8,10 +8,6 @@
     if pkgs.stdenv.hostPlatform.isLinux
     then "opencode.json"
     else "opencode.macos.json";
-  tuiConfigFile =
-    if pkgs.stdenv.hostPlatform.isLinux
-    then "tui.json"
-    else "tui.macos.json";
 in {
   # Shared configuration for AI agents (OpenCode, etc.)
   # Managed via out-of-store symlinks for easy editing.
@@ -61,7 +57,12 @@ in {
     ".config/opencode/plugins/lib".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/lib";
 
-    ".config/opencode/tui.json".source =
-      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/${tuiConfigFile}";
+    ".config/opencode/cli.json" = {
+      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/cli.json";
+      force = true;
+    };
+
+    ".config/opencode/tui-plugins/quota-watch".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/tui-plugins/quota-watch";
   };
 }

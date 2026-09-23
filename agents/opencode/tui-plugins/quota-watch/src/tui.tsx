@@ -1,15 +1,9 @@
-import type {
-  TuiPlugin,
-  TuiPluginApi,
-  TuiPluginModule,
-  TuiSlotContext,
-  TuiThemeCurrent,
-} from "@opencode-ai/plugin/tui";
+import { Plugin } from "@opencode/plugin/tui";
 import { readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { createRoot, createSignal, onCleanup } from "solid-js";
+import { createSignal } from "solid-js";
 
 const TUI_PLUGIN_ID = "quota-watch.tui";
 const REFRESH_INTERVAL_MS = 60_000;
@@ -275,7 +269,7 @@ function providerPart(name: string, quota: ProviderQuota): string {
   return part;
 }
 
-function QuotaText(props: { quota: QuotaView; theme: TuiThemeCurrent }) {
+function QuotaText(props: { quota: QuotaView; theme: Plugin.Context["theme"] }) {
   const parts: string[] = [];
   if (props.quota.zai) {
     parts.push(providerPart("zai", props.quota.zai));
@@ -292,13 +286,13 @@ function QuotaText(props: { quota: QuotaView; theme: TuiThemeCurrent }) {
           q.hourly.percentLeft <= HOURLY_WARN_THRESHOLD)),
   );
   return (
-    <text fg={warn ? props.theme.warning : props.theme.textMuted}>
+    <text fg={warn ? props.theme.text.feedback.warning.base : props.theme.text.muted}>
       {parts.join("  ")}
     </text>
   );
 }
 
-function initializeTui(api: TuiPluginApi): void {
+function initializeTui(context: Plugin.Context): () => void {
   const [quota, setQuota] = createSignal<QuotaView | undefined>(undefined);
 
   const refresh = async (): Promise<void> => {
@@ -323,32 +317,22 @@ function initializeTui(api: TuiPluginApi): void {
   void refresh();
   const interval = setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
 
-  api.slots.register({
-    slots: {
-      session_prompt_right(ctx: TuiSlotContext) {
-        const current = quota();
-        if (!current) return null;
-        return <QuotaText quota={current} theme={ctx.theme.current} />;
-      },
+  const unregister = context.ui.slot({
+    append: "prompt.footer.status",
+    render: () => {
+      const current = quota();
+      if (!current) return null;
+      return <QuotaText quota={current} theme={context.theme} />;
     },
   });
 
-  onCleanup(() => {
+  return () => {
     clearInterval(interval);
-  });
-
-  api.lifecycle.onDispose(() => {
-    clearInterval(interval);
-  });
+    unregister();
+  };
 }
 
-const tui: TuiPlugin = async (api: TuiPluginApi) => {
-  createRoot(() => initializeTui(api));
-};
-
-const plugin: TuiPluginModule = {
+export default Plugin.define({
   id: TUI_PLUGIN_ID,
-  tui,
-};
-
-export default plugin;
+  setup: initializeTui,
+});

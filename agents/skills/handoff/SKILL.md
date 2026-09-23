@@ -73,7 +73,7 @@ After writing `HANDOFF.md` (write path only, never on read):
    - Otherwise use the default: `Taking over after handoff. Take over HANDOFF.md with the takeover skill and continue with Next actions.`
 2. Resolve the model and reasoning effort:
    - Parse an optional model clause either adjacent to the handoff phrase or as a standalone clause at the end of the request: `[with | using | on | use] <model> [<effort>]`. A trailing clause must resolve to a full model ID or a known alias below; otherwise treat it as task text. Remove the clause from the follow-up prompt. Examples: `do a handoff with opus high`, `handoff to a new session using gemini-3-flash low`, `handoff to a new agent to plan the migration. use glm 5.3 high`.
-   - No model clause: invoke the `model-selector` skill. Give it a compact factual brief of the remaining work (the completed `HANDOFF.md`, follow-up, unresolved decisions, prior failures, and verification), never raw logs or the full conversation. Use its one-line JSON result's `model` field as the full-TUI default via `OPENCODE_CONFIG_CONTENT` (see step 4). This is one local cache read plus one Jev Choice request with a 3-second timeout; do not run extra model or quota lookups. If it falls back, use its returned workhorse.
+   - No model clause: invoke the `model-selector` skill. Give it a compact factual brief of the remaining work (the completed `HANDOFF.md`, follow-up, unresolved decisions, prior failures, and verification), never raw logs or the full conversation. Use its one-line JSON result's `model` and `effort` fields to build the session `model` object in step 4. This is one local cache read plus one Jev Choice request with a 3-second timeout; do not run extra model or quota lookups. If it falls back, use its returned workhorse.
    - Resolve these aliases first, case-insensitively; spaces and hyphens are equivalent. These are authoritative: do not call `opencode models` or inspect verbose model metadata for them.
      - `glm 5.3` -> `zai-coding-plan/glm-5.3`
      - `glm 5.3 flash` -> `zai-coding-plan/glm-5.3-flash`
@@ -88,23 +88,30 @@ After writing `HANDOFF.md` (write path only, never on read):
    - A full `provider/model` ID is authoritative and used as-is without a model-name lookup; check its variants only when the user also requests an effort.
    - Any other `<model>` is a short name, matched case-insensitively as a substring against one `opencode models` result (full `provider/model` IDs).
      - 1 match: use it.
-     - 0 matches: warn, then spawn the root `opencode` TUI without a model override (the file is still the handoff).
+     - 0 matches: warn, then create the session in step 4 without a `model` field (the prompt still auto-starts on the server default; the file is still the handoff). Do not send an invented or unverified model ID: session creation accepts unknown models without error and the failure only surfaces after the prompt is submitted.
      - Many matches: if one is exact, use it; otherwise stop and ask the user to pick (list at most ~10). Never guess among many.
-   - `<effort>` is an optional space-separated word: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` (case-insensitive). Acknowledge it in your one-line report, but do not pass it to the full TUI: the root default model does not retain a `#variant` (verified live: `#medium` fell back to the model's built-in default effort), and only `mini`/`run` accept `#effort` via `--model`. If no effort is specified, use the bare ID (or preserve a supplied `#variant` for `mini`/`run` contexts). The selector's profiles have supported effort values.
-   - Quote the full `--model` value; IDs can contain `/`, `@`, `#`. Never append a second `#variant` to a full ID that already has one.
+   - `<effort>` is an optional space-separated word: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` (case-insensitive). Acknowledge it in your one-line report, and pass it as `variant` in the session `model` object in step 4 (unlike the root TUI default, a session created with an explicit variant keeps it — verified live). If no effort is specified, omit `variant` (or preserve a `#variant` already on a supplied full ID). The selector's profiles have supported effort values.
+   - Split the resolved model for the session `model` object: `providerID` is the part before the first `/`, `id` is the rest minus any `#variant`. A `#variant` already on a supplied full ID wins over a separate effort word; never send both.
 3. Only spawn if inside tmux (`${TMUX:-}` is non-empty). If not in tmux, skip spawning, report it, and still succeed — the file is the handoff.
-4. Set `initial_prompt` from step 1, then open a new pane to the right, rooted at the worktree containing `HANDOFF.md`, running the **full TUI**. The root TUI has no `--model` flag, so pass a selected model as the default via `OPENCODE_CONFIG_CONTENT` (inline JSON merged over config files at highest precedence; everyday launches without the variable are unaffected). `--prompt` **submits the prompt automatically**, so the next agent begins the takeover without waiting for the user to press Enter:
+4. Set `initial_prompt` from step 1, then create the session server-side with the resolved model, submit the prompt through the API, and attach the **full TUI** to that live session. The root TUI has no `--model` flag, so set the model at session creation; an explicit session model and `variant` are honored, and the API-submitted prompt starts execution automatically:
 
 ```bash
-# model_ref is the resolved bare provider/model (no #variant: the full TUI drops it).
-tmux split-window -h -c "<worktree-path>" -t "$TMUX_PANE" \
-  -e 'OPENCODE_CONFIG_CONTENT={"model":"'"$model_ref"'"}' \
-  opencode --prompt "$initial_prompt" || exit 1
+worktree="<worktree-path>"
+title="Handoff: <short task name>"
+provider="<providerID, or empty when no valid model override exists>"
+model_id="<model ID without #variant, or empty>"
+effort="<effort/variant, or empty>"
 
-# If no valid model override exists, use this instead:
-# tmux split-window -h -c "<worktree-path>" -t "$TMUX_PANE" \
-#   opencode --prompt "$initial_prompt" || exit 1
+payload=$(jq -n --arg title "$title" --arg dir "$worktree" --arg provider "$provider" --arg id "$model_id" --arg variant "$effort" \
+  '{title:$title,location:{directory:$dir}} + (if $provider != "" then {model:{providerID:$provider,id:$id} + (if $variant != "" then {variant:$variant} else {} end)} else {} end)')
+sid=$(opencode api post /api/session -d "$payload" | jq -r .data.id) || exit 1
+[ -n "$sid" ] && [ "$sid" != null ] || exit 1
+body=$(jq -n --arg text "$initial_prompt" '{text:$text}')
+opencode api post /api/session/$sid/prompt --param sessionID=$sid -d "$body" >/dev/null || { opencode session delete "$sid" >/dev/null 2>&1; exit 1; }
+tmux split-window -h -c "$worktree" -t "$TMUX_PANE" opencode --session "$sid" || exit 1
 ```
 
-5. Do not send keys or submit the prompt a second time. Report the model used; the new agent continues automatically in the pane to the right.
-6. A split failure never invalidates the handoff — report it and stop. Do not record the model in `HANDOFF.md`; the spawn command is the only place it appears.
+Pass `"$body"` to `--data` directly as an argument; never pipe it through `echo` in zsh (which rewrites `\n` escapes and corrupts multiline prompts).
+
+5. Do not send keys or submit the prompt a second time. Report the session ID and model used; the new agent is already running in the pane to the right.
+6. A session-creation, prompt-submission, or split failure never invalidates the handoff — report it and stop. Do not record the model in `HANDOFF.md`; the spawn commands are the only place it appears.

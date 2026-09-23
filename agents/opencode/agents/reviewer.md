@@ -1,10 +1,11 @@
 ---
 mode: subagent
 description: Reviews implemented changes for correctness, regressions, risks, and missing tests. Use after an agent finishes an implementation and needs an independent code review.
-model: openai/gpt-5.6-sol
-variant: medium
-permission:
-  edit: deny
+model: openai/gpt-5.6-sol#medium
+permissions:
+  - action: edit
+    resource: "*"
+    effect: deny
 ---
 
 Review the implementation independently. Find concrete bugs, behavioral regressions, security or reliability risks, and missing or inadequate tests.

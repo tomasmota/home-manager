@@ -60,29 +60,39 @@ test("aggregates pane states by severity and matching metadata", () => {
 
 test("permission requests and clean completions are silent", async () => {
   const { bells, hooks } = await harness()
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "busy" } } })
-  await hooks.event({ event: { type: "permission.asked", properties: { sessionID: "ses_1" } } })
-  await hooks.event({ event: { type: "permission.replied", properties: { sessionID: "ses_1" } } })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "idle" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
+  await hooks.event({ type: "permission.asked", data: { sessionID: "ses_1" } })
+  await hooks.event({ type: "permission.replied", data: { sessionID: "ses_1" } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "idle" } } })
+  assert.deepEqual(bells, [])
+  await hooks.dispose()
+})
+
+test("execution events update status without session.status events", async () => {
+  const { bells, hooks, states } = await harness({ env: { OPENCODE_JEV_ATTENTION_MODE: "off" } })
+  await hooks.event({ type: "session.execution.started", data: { sessionID: "ses_1" } })
+  assert.equal(states.at(-1), "working")
+  await hooks.event({ type: "session.execution.succeeded", data: { sessionID: "ses_1" } })
+  assert.equal(states.at(-1), "done")
   assert.deepEqual(bells, [])
   await hooks.dispose()
 })
 
 test("explicit questions ring", async () => {
   const { bells, hooks } = await harness()
-  await hooks.event({ event: { type: "question.asked", properties: { sessionID: "ses_1" } } })
+  await hooks.event({ type: "form.created", data: { form: { sessionID: "ses_1" } } })
   assert.deepEqual(bells, ["\x07"])
   await hooks.dispose()
 })
 
 test("non-abort errors ring while user aborts stay silent", async () => {
   const hardError = await harness()
-  await hardError.hooks.event({ event: { type: "session.error", properties: { sessionID: "ses_1", error: { name: "ProviderError" } } } })
+  await hardError.hooks.event({ type: "session.execution.failed", data: { sessionID: "ses_1", error: { type: "provider", message: "failed" } } })
   assert.deepEqual(hardError.bells, ["\x07"])
   await hardError.hooks.dispose()
 
   const abort = await harness()
-  await abort.hooks.event({ event: { type: "session.error", properties: { sessionID: "ses_1", error: { name: "MessageAbortedError" } } } })
+  await abort.hooks.event({ type: "session.execution.interrupted", data: { sessionID: "ses_1", reason: "user" } })
   assert.deepEqual(abort.bells, [])
   await abort.hooks.dispose()
 })
@@ -102,9 +112,9 @@ test("debounces duplicate idle events", async () => {
       return { state: "done" }
     },
   })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "busy" } } })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "idle" } } })
-  await hooks.event({ event: { type: "session.idle", properties: { sessionID: "ses_1" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "idle" } } })
+  await hooks.event({ type: "session.idle", data: { sessionID: "ses_1" } })
   assert.equal(timers.length, 1)
   await timers[0]()
   assert.equal(classifications, 1)
@@ -124,10 +134,10 @@ test("rejects a late completion result after new activity", async () => {
     clearTimeout: () => {},
     classifyCompletion: () => classification,
   })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "busy" } } })
-  await hooks.event({ event: { type: "session.idle", properties: { sessionID: "ses_1" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
+  await hooks.event({ type: "session.idle", data: { sessionID: "ses_1" } })
   const pending = timers[0]()
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "busy" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
   resolveClassification({ state: "waiting" })
   await pending
   assert.equal(states.at(-1), "working")
@@ -143,22 +153,22 @@ test("suppresses bells for visible windows and during cooldown", async () => {
     now: () => now,
     windowIsVisible: () => visible,
   })
-  await hooks.event({ event: { type: "question.asked", properties: { sessionID: "ses_1" } } })
+  await hooks.event({ type: "form.created", data: { form: { sessionID: "ses_1" } } })
   visible = false
-  await hooks.event({ event: { type: "question.asked", properties: { sessionID: "ses_1" } } })
+  await hooks.event({ type: "form.created", data: { form: { sessionID: "ses_1" } } })
   now += 100
-  await hooks["tool.execute.before"]({ tool: "question", sessionID: "ses_1" })
+  await hooks.event({ type: "form.created", data: { form: { sessionID: "ses_1" } } })
   now += 2000
-  await hooks.event({ event: { type: "session.error", properties: { sessionID: "ses_1", error: { name: "ProviderError" } } } })
+  await hooks.event({ type: "session.execution.failed", data: { sessionID: "ses_1", error: { type: "provider", message: "failed" } } })
   assert.deepEqual(bells, ["\x07", "\x07"])
   await hooks.dispose()
 })
 
 test("suppresses bells when more than one primary session is active", async () => {
   const { bells, hooks } = await harness()
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "busy" } } })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_2", status: "busy" } } })
-  await hooks.event({ event: { type: "question.asked", properties: { sessionID: "ses_1" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_2", status: { type: "busy" } } })
+  await hooks.event({ type: "form.created", data: { form: { sessionID: "ses_1" } } })
   assert.deepEqual(bells, [])
   await hooks.dispose()
 })
@@ -167,24 +177,24 @@ test("records another session completing while the visible state is waiting", as
   const { bells, hooks, states } = await harness({
     env: { OPENCODE_JEV_ATTENTION_MODE: "off", OPENCODE_JEV_ATTENTION_COOLDOWN_MS: "0" },
   })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "busy" } } })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_2", status: "busy" } } })
-  await hooks.event({ event: { type: "permission.asked", properties: { sessionID: "ses_2" } } })
-  await hooks.event({ event: { type: "session.idle", properties: { sessionID: "ses_1" } } })
-  await hooks.event({ event: { type: "permission.replied", properties: { sessionID: "ses_2" } } })
-  await hooks.event({ event: { type: "session.idle", properties: { sessionID: "ses_1" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_2", status: { type: "busy" } } })
+  await hooks.event({ type: "permission.asked", data: { sessionID: "ses_2" } })
+  await hooks.event({ type: "session.idle", data: { sessionID: "ses_1" } })
+  await hooks.event({ type: "permission.replied", data: { sessionID: "ses_2" } })
+  await hooks.event({ type: "session.idle", data: { sessionID: "ses_1" } })
   assert.equal(states.at(-1), "working")
-  await hooks.event({ event: { type: "question.asked", properties: { sessionID: "ses_2" } } })
+  await hooks.event({ type: "form.created", data: { form: { sessionID: "ses_2" } } })
   assert.deepEqual(bells, ["\x07"])
   await hooks.dispose()
 })
 
 test("removes deleted sessions from notification ownership", async () => {
   const { bells, hooks } = await harness({ env: { OPENCODE_JEV_ATTENTION_COOLDOWN_MS: "0" } })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "busy" } } })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_2", status: "busy" } } })
-  await hooks.event({ event: { type: "session.deleted", properties: { info: { id: "ses_1" } } } })
-  await hooks.event({ event: { type: "question.asked", properties: { sessionID: "ses_2" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_2", status: { type: "busy" } } })
+  await hooks.event({ type: "session.deleted", data: { sessionID: "ses_1" } })
+  await hooks.event({ type: "form.created", data: { form: { sessionID: "ses_2" } } })
   assert.deepEqual(bells, ["\x07"])
   await hooks.dispose()
 })
@@ -193,9 +203,9 @@ test("ignores fallback review sessions", async () => {
   const { bells, hooks, states } = await harness({
     isIgnoredSession: (sessionID) => sessionID === "ses_fallback",
   })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_primary", status: "busy" } } })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_fallback", status: "busy" } } })
-  await hooks.event({ event: { type: "session.error", properties: { sessionID: "ses_fallback", error: { name: "ProviderError" } } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_primary", status: { type: "busy" } } })
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_fallback", status: { type: "busy" } } })
+  await hooks.event({ type: "session.execution.failed", data: { sessionID: "ses_fallback", error: { type: "provider", message: "failed" } } })
   assert.equal(states.at(-1), "working")
   assert.deepEqual(bells, [])
   await hooks.dispose()
@@ -204,12 +214,11 @@ test("ignores fallback review sessions", async () => {
 test("builds a bounded transcript without tool output", () => {
   const context = buildCompletionState([
     {
-      info: { role: "user", time: { created: 1 } },
-      parts: [{ type: "text", text: `Please fix this ${"u".repeat(3000)}` }],
+      type: "user", time: { created: 1 }, text: `Please fix this ${"u".repeat(3000)}`,
     },
     {
-      info: { role: "assistant", time: { created: 2 }, finish: "stop" },
-      parts: [
+      type: "assistant", time: { created: 2 }, finish: "stop",
+      content: [
         { type: "tool", output: "SECRET_TOOL_OUTPUT" },
         { type: "text", text: `I need your choice ${"a".repeat(4000)}` },
       ],
@@ -224,10 +233,10 @@ test("builds a bounded transcript without tool output", () => {
 
 test("preserves response ordering when message timestamps are incomplete", () => {
   const context = buildCompletionState([
-    { info: { role: "user", time: { created: 1000 } }, parts: [{ type: "text", text: "old request" }] },
-    { info: { role: "assistant", time: { created: 1001 } }, parts: [{ type: "text", text: "old response" }] },
-    { info: { role: "user" }, parts: [{ type: "text", text: "latest request" }] },
-    { info: { role: "assistant" }, parts: [{ type: "text", text: "latest response" }] },
+    { type: "user", time: { created: 1000 }, text: "old request" },
+    { type: "assistant", time: { created: 1001 }, content: [{ type: "text", text: "old response" }] },
+    { type: "user", text: "latest request" },
+    { type: "assistant", content: [{ type: "text", text: "latest response" }] },
   ])
   assert.equal(context.state.latest_user_request, "latest request")
   assert.equal(context.state.final_assistant_message, "latest response")
@@ -248,12 +257,12 @@ test("dry-run logs an actionable result without changing state or ringing", asyn
   const timers = []
   const diagnostics = []
   const requests = []
-  const client = {
+  const session = {
     session: {
-      messages: async () => ({ data: [
-        { info: { role: "user", time: { created: 1 } }, parts: [{ type: "text", text: "Deploy it" }] },
-        { info: { role: "assistant", time: { created: 2 } }, parts: [{ type: "text", text: "Which environment should I use?" }] },
-      ] }),
+      context: async () => [
+        { type: "user", time: { created: 1 }, text: "Deploy it" },
+        { type: "assistant", time: { created: 2 }, content: [{ type: "text", text: "Which environment should I use?" }] },
+      ],
     },
   }
   const { bells, hooks, states } = await harness({
@@ -268,9 +277,9 @@ test("dry-run logs an actionable result without changing state or ringing", asyn
       return attentionResponse()
     },
     appendDiagnostic: async (record) => diagnostics.push(record),
-  }, { client, directory: "/work/app" })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "busy" } } })
-  await hooks.event({ event: { type: "session.idle", properties: { sessionID: "ses_1" } } })
+  }, session)
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
+  await hooks.event({ type: "session.idle", data: { sessionID: "ses_1" } })
   await timers[0]()
   assert.equal(states.at(-1), "done")
   assert.deepEqual(bells, [])
@@ -284,12 +293,12 @@ test("dry-run logs an actionable result without changing state or ringing", asyn
 
 test("on mode applies actionable classifications", async () => {
   const timers = []
-  const client = {
+  const session = {
     session: {
-      messages: async () => ({ data: [
-        { info: { role: "user" }, parts: [{ type: "text", text: "Finish setup" }] },
-        { info: { role: "assistant" }, parts: [{ type: "text", text: "I am blocked by missing credentials." }] },
-      ] }),
+      context: async () => [
+        { type: "user", text: "Finish setup" },
+        { type: "assistant", content: [{ type: "text", text: "I am blocked by missing credentials." }] },
+      ],
     },
   }
   const { bells, hooks, states } = await harness({
@@ -301,9 +310,9 @@ test("on mode applies actionable classifications", async () => {
     clearTimeout: () => {},
     requestJev: async () => attentionResponse({ outcome: "blocked_failure" }),
     appendDiagnostic: async () => {},
-  }, { client })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "busy" } } })
-  await hooks.event({ event: { type: "session.idle", properties: { sessionID: "ses_1" } } })
+  }, session)
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
+  await hooks.event({ type: "session.idle", data: { sessionID: "ses_1" } })
   await timers[0]()
   assert.equal(states.at(-1), "error")
   assert.deepEqual(bells, ["\x07"])
@@ -313,12 +322,12 @@ test("on mode applies actionable classifications", async () => {
 test("Jev failures stay silent and leave completion done", async () => {
   const timers = []
   const diagnostics = []
-  const client = {
+  const session = {
     session: {
-      messages: async () => ({ data: [
-        { info: { role: "user" }, parts: [{ type: "text", text: "Run checks" }] },
-        { info: { role: "assistant" }, parts: [{ type: "text", text: "Checks could not run." }] },
-      ] }),
+      context: async () => [
+        { type: "user", text: "Run checks" },
+        { type: "assistant", content: [{ type: "text", text: "Checks could not run." }] },
+      ],
     },
   }
   const { bells, hooks, states } = await harness({
@@ -330,9 +339,9 @@ test("Jev failures stay silent and leave completion done", async () => {
     clearTimeout: () => {},
     requestJev: async () => { throw new Error("API unavailable") },
     appendDiagnostic: async (record) => diagnostics.push(record),
-  }, { client })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "busy" } } })
-  await hooks.event({ event: { type: "session.idle", properties: { sessionID: "ses_1" } } })
+  }, session)
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
+  await hooks.event({ type: "session.idle", data: { sessionID: "ses_1" } })
   await timers[0]()
   assert.equal(states.at(-1), "done")
   assert.deepEqual(bells, [])
@@ -342,7 +351,7 @@ test("Jev failures stay silent and leave completion done", async () => {
 
 test("off mode does not schedule classification", async () => {
   const timers = []
-  const client = { session: { messages: async () => { throw new Error("must not fetch messages") } } }
+  const session = { session: { context: async () => { throw new Error("must not fetch messages") } } }
   const { hooks } = await harness({
     env: { OPENCODE_JEV_ATTENTION_MODE: "off" },
     setTimeout: (callback) => {
@@ -350,9 +359,9 @@ test("off mode does not schedule classification", async () => {
       return callback
     },
     clearTimeout: () => {},
-  }, { client })
-  await hooks.event({ event: { type: "session.status", properties: { sessionID: "ses_1", status: "busy" } } })
-  await hooks.event({ event: { type: "session.idle", properties: { sessionID: "ses_1" } } })
+  }, session)
+  await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
+  await hooks.event({ type: "session.idle", data: { sessionID: "ses_1" } })
   assert.equal(timers.length, 0)
   await hooks.dispose()
 })

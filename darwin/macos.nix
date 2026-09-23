@@ -82,6 +82,7 @@
   launchd.user.agents.openchamber = {
     path = [
       "/Users/tomas/.npm-global/bin"
+      "/opt/homebrew/bin"
       "/etc/profiles/per-user/tomas/bin"
       "/run/current-system/sw/bin"
       "/usr/bin"
@@ -91,7 +92,7 @@
     ];
     environment = {
       HOME = "/Users/tomas";
-      OPENCODE_BINARY = "/Users/tomas/.npm-global/bin/opencode";
+      OPENCODE_BINARY = "/opt/homebrew/bin/opencode";
       XDG_CONFIG_HOME = "/Users/tomas/.config";
       XDG_DATA_HOME = "/Users/tomas/.local/share";
     };
@@ -126,6 +127,8 @@
 
   homebrew = {
     enable = true;
+    taps = ["anomalyco/tap"];
+    brews = ["anomalyco/tap/opencode-v2"];
     casks = [
       "ghostty"
       "middleclick"
