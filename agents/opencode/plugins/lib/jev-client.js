@@ -26,6 +26,39 @@ export function answerChoice(value) {
   return { choice: rec.choice, confidence: rec.confidence, probabilities: recordOf(rec.probabilities) ?? {} }
 }
 
+// OpenCode can be launched from contexts that never source the shell env
+// (GUI, launchd, detached serve processes), so plugins miss secrets sourced by
+// zsh. Parse the same env-style secrets file as a fallback.
+let secretsEnvByPath = new Map()
+
+export async function loadSecretsEnv(
+  path = process.env.OPENCODE_SECRETS_FILE || `${process.env.HOME || ""}/.config/home-manager/secrets.env`,
+) {
+  const cached = secretsEnvByPath.get(path)
+  if (cached) return cached
+  const values = {}
+  try {
+    const { readFile } = await import("node:fs/promises")
+    for (const line of (await readFile(path, "utf8")).split("\n")) {
+      const match = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line)
+      if (!match) continue
+      values[match[1]] = unquote(match[2])
+    }
+  } catch {}
+  secretsEnvByPath.set(path, values)
+  return values
+}
+
+function unquote(value) {
+  if (
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))
+  ) {
+    return value.slice(1, -1)
+  }
+  return value
+}
+
 function retryDelay(response) {
   const raw = response.headers.get("retry-after")
   if (!raw) return 200
@@ -38,12 +71,13 @@ function retryDelay(response) {
 export async function requestJev({
   state,
   questions,
-  apiKey = process.env.TYPESAFE_API_KEY,
+  apiKey,
   model = process.env.OPENCODE_JEV_MODEL || "jev-latest",
   timeoutMs = 5000,
   fetchFn = globalThis.fetch,
 }) {
-  if (!apiKey) throw new Error("TYPESAFE_API_KEY is not set")
+  const key = apiKey ?? process.env.TYPESAFE_API_KEY ?? (await loadSecretsEnv()).TYPESAFE_API_KEY
+  if (!key) throw new Error("TYPESAFE_API_KEY is not set")
   if (typeof fetchFn !== "function") throw new Error("fetch is unavailable")
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort("Jev request timed out"), timeoutMs)
@@ -51,7 +85,7 @@ export async function requestJev({
     for (let attempt = 0; attempt < 2; attempt++) {
       const response = await fetchFn(TYPESAFE_API_URL, {
         method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({ model, state, questions }),
         signal: controller.signal,
       })

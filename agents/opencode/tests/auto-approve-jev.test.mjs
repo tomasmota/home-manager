@@ -149,7 +149,9 @@ test("v2 evaluate hook denies catastrophic actions without a reviewer", async ()
 test("v2 stateless fallback returns a validated decision without creating a session", async () => {
   const originalKey = process.env.TYPESAFE_API_KEY
   const originalModels = process.env.OPENCODE_JEV_FALLBACK_MODELS
+  const originalSecretsFile = process.env.OPENCODE_SECRETS_FILE
   delete process.env.TYPESAFE_API_KEY
+  process.env.OPENCODE_SECRETS_FILE = "/nonexistent/jev-test-secrets.env"
   process.env.OPENCODE_JEV_FALLBACK_MODELS = "openai/test-model"
   process.env.OPENCODE_JEV_DEBUG = "0"
   try {
@@ -167,6 +169,8 @@ test("v2 stateless fallback returns a validated decision without creating a sess
     else process.env.TYPESAFE_API_KEY = originalKey
     if (originalModels === undefined) delete process.env.OPENCODE_JEV_FALLBACK_MODELS
     else process.env.OPENCODE_JEV_FALLBACK_MODELS = originalModels
+    if (originalSecretsFile === undefined) delete process.env.OPENCODE_SECRETS_FILE
+    else process.env.OPENCODE_SECRETS_FILE = originalSecretsFile
   }
 })
 

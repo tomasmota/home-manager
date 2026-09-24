@@ -1,7 +1,7 @@
 // Jev-first permission reviewer.
 //
 // Runtime configuration:
-//   TYPESAFE_API_KEY                         required for Jev; falls back to LLM when absent
+//   TYPESAFE_API_KEY                         required for Jev; falls back to ~/.config/home-manager/secrets.env, then LLM
 //   OPENCODE_JEV_MODEL=jev-latest            TypeSafe model alias or version
 //   OPENCODE_JEV_TIMEOUT_MS=5000             total Jev request/retry budget
 //   OPENCODE_JEV_DANGER_MIN=2.5              deny threshold for dangerousness score
