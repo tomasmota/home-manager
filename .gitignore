@@ -5,3 +5,4 @@ __pycache__/
 result
 agents/opencode/tui-plugins/*/node_modules/
 agents/opencode/tui-plugins/*/dist/
+agents/opencode/plugins/node_modules/

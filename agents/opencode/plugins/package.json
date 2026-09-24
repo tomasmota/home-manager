@@ -1,0 +1,17 @@
+{
+  "name": "opencode-auto-approve-jev",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "auto-approve-jev.js",
+  "files": [
+    "auto-approve-jev.js",
+    "lib/jev-client.js"
+  ],
+  "scripts": {
+    "test": "node --test ../tests/auto-approve-jev.test.mjs ../tests/jev-client.test.mjs"
+  },
+  "dependencies": {
+    "@opencode/plugin": "2.0.16"
+  }
+}
