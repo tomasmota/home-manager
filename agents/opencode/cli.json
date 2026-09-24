@@ -14,12 +14,16 @@
     "scrollbar": true,
     "thinking": "hide"
   },
+  "tabs": {
+    "mode": "off"
+  },
   "animations": true,
   "attention": {
     "notifications": true,
     "sound": false
   },
   "plugins": [
-    "./tui-plugins/quota-watch"
+    "./tui-plugins/quota-watch",
+    "./tui-plugins/tmux-status"
   ]
 }

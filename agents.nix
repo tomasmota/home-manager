@@ -21,6 +21,11 @@ in {
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/AGENTS.md";
 
     # OpenCode Configuration
+    ".config/opencode/AGENTS.md" = {
+      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/AGENTS.md";
+      force = true;
+    };
+
     ".config/opencode/opencode.json".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/${opencodeConfigFile}";
 
@@ -48,8 +53,8 @@ in {
     # Signicat-specific and lives only as a local file in
     # ~/.config/opencode/agents/. Do not add a symlink entry for it.
 
-    ".config/opencode/plugins/tmux-status.js".source =
-      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/tmux-status.js";
+    ".config/opencode/tui-plugins/tmux-status".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/tui-plugins/tmux-status";
 
     ".config/opencode/plugins/auto-approve-jev.js".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/auto-approve-jev.js";

@@ -1,10 +1,8 @@
 import { spawnSync } from "node:child_process"
 import { closeSync, constants, openSync, writeSync } from "node:fs"
 
-import { Plugin } from "@opencode/plugin"
-
-import { answerChoice, answerNoul, numberEnv, recordOf, requestJev } from "./lib/jev-client.js"
-import { isIgnoredSession } from "./lib/session-registry.js"
+import { answerChoice, answerNoul, numberEnv, recordOf, requestJev } from "../../plugins/lib/jev-client.js"
+import { isIgnoredSession } from "../../plugins/lib/session-registry.js"
 
 const ATTENTION_QUESTIONS = {
   needs_attention: {
@@ -215,7 +213,7 @@ const defaultRuntime = {
   offExit: (listener) => process.off("exit", listener),
 }
 
-async function createTmuxStatusPlugin(context = {}, overrides = {}) {
+export async function createTmuxStatusPlugin(context = {}, overrides = {}) {
   const runtime = { ...defaultRuntime, ...overrides }
   const pane = runtime.env.TMUX_PANE
   const hasTmux = Boolean(runtime.env.TMUX && pane)
@@ -587,7 +585,7 @@ async function createTmuxStatusPlugin(context = {}, overrides = {}) {
     if (state === "idle") {
       if (requestedState === "working") {
         if (sessionID != null) sessionStates.set(sessionID, "done")
-        const update = setState("done")
+        const update = requestAttention("done", sessionID)
         scheduleCompletion(sessionID)
         return update
       }
@@ -688,34 +686,11 @@ async function createTmuxStatusPlugin(context = {}, overrides = {}) {
   }
 }
 
-export const TmuxStatusPlugin = Plugin.define({
-  id: "tomas.tmux-status",
-  async setup(context) {
-    const hooks = await createTmuxStatusPlugin(context)
-    const controller = new AbortController()
-    void (async () => {
-      try {
-        for await (const event of context.event.subscribe({ signal: controller.signal })) {
-          await hooks.event(event)
-        }
-      } catch (error) {
-        if (!controller.signal.aborted) console.error("tmux-status event stream failed", error)
-      }
-    })()
-    return async () => {
-      controller.abort()
-      await hooks.dispose()
-    }
-  },
-})
-
-TmuxStatusPlugin.__test = () => ({
+export const tmuxStatusInternals = {
   ATTENTION_QUESTIONS,
   buildCompletionState,
   composeAttentionDecision,
   createTmuxStatusPlugin,
   aggregatePaneStates,
   parseAttentionResponse,
-})
-
-export default TmuxStatusPlugin
+}

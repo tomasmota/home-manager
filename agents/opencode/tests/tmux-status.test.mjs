@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { TmuxStatusPlugin } from "../plugins/tmux-status.js"
+import { tmuxStatusInternals } from "../tui-plugins/tmux-status/core.js"
 
 const {
   aggregatePaneStates,
@@ -9,7 +9,7 @@ const {
   composeAttentionDecision,
   createTmuxStatusPlugin,
   parseAttentionResponse,
-} = TmuxStatusPlugin.__test()
+} = tmuxStatusInternals
 
 async function harness(overrides = {}, input = {}) {
   const bells = []
@@ -58,13 +58,13 @@ test("aggregates pane states by severity and matching metadata", () => {
   ]), { state: "error", startedAt: null, duration: null })
 })
 
-test("permission requests and clean completions are silent", async () => {
+test("permission requests are silent; background completions ring", async () => {
   const { bells, hooks } = await harness()
   await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "busy" } } })
   await hooks.event({ type: "permission.asked", data: { sessionID: "ses_1" } })
   await hooks.event({ type: "permission.replied", data: { sessionID: "ses_1" } })
   await hooks.event({ type: "session.status", data: { sessionID: "ses_1", status: { type: "idle" } } })
-  assert.deepEqual(bells, [])
+  assert.deepEqual(bells, ["\x07"])
   await hooks.dispose()
 })
 
@@ -74,7 +74,7 @@ test("execution events update status without session.status events", async () =>
   assert.equal(states.at(-1), "working")
   await hooks.event({ type: "session.execution.succeeded", data: { sessionID: "ses_1" } })
   assert.equal(states.at(-1), "done")
-  assert.deepEqual(bells, [])
+  assert.deepEqual(bells, ["\x07"])
   await hooks.dispose()
 })
 
@@ -141,7 +141,7 @@ test("rejects a late completion result after new activity", async () => {
   resolveClassification({ state: "waiting" })
   await pending
   assert.equal(states.at(-1), "working")
-  assert.deepEqual(bells, [])
+  assert.deepEqual(bells, ["\x07"])
   await hooks.dispose()
 })
 
@@ -253,7 +253,7 @@ test("composes only strong actionable attention results", () => {
   }, {}).state, "done")
 })
 
-test("dry-run logs an actionable result without changing state or ringing", async () => {
+test("dry-run logs an actionable result without changing completion state", async () => {
   const timers = []
   const diagnostics = []
   const requests = []
@@ -282,7 +282,7 @@ test("dry-run logs an actionable result without changing state or ringing", asyn
   await hooks.event({ type: "session.idle", data: { sessionID: "ses_1" } })
   await timers[0]()
   assert.equal(states.at(-1), "done")
-  assert.deepEqual(bells, [])
+  assert.deepEqual(bells, ["\x07"])
   assert.equal(requests.length, 1)
   assert.deepEqual(requests[0].state.latest_user_request, "Deploy it")
   assert.equal(diagnostics[0].predictedState, "waiting")
@@ -319,7 +319,7 @@ test("on mode applies actionable classifications", async () => {
   await hooks.dispose()
 })
 
-test("Jev failures stay silent and leave completion done", async () => {
+test("Jev failures leave completion done", async () => {
   const timers = []
   const diagnostics = []
   const session = {
@@ -344,7 +344,7 @@ test("Jev failures stay silent and leave completion done", async () => {
   await hooks.event({ type: "session.idle", data: { sessionID: "ses_1" } })
   await timers[0]()
   assert.equal(states.at(-1), "done")
-  assert.deepEqual(bells, [])
+  assert.deepEqual(bells, ["\x07"])
   assert.equal(diagnostics[0].event, "failure")
   await hooks.dispose()
 })
