@@ -4,6 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { createSignal } from "solid-js";
+import { fetchOpenaiQuota, formatShortReset } from "./openaiQuota";
 
 const TUI_PLUGIN_ID = "quota-watch.tui";
 const REFRESH_INTERVAL_MS = 60_000;
@@ -13,12 +14,10 @@ const QUOTA_CACHE_PATH = join(
   "quota-watch.json",
 );
 const ZAI_QUOTA_URL = "https://api.z.ai/api/monitor/usage/quota/limit";
-const OPENAI_WHAM_URL = "https://chatgpt.com/backend-api/wham/usage";
-const OPENAI_TOKEN_URL = "https://auth.openai.com/oauth/token";
-const OPENAI_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann";
 
 const WEEKLY_UNIT = 6;
 const HOURLY_WARN_THRESHOLD = 30;
+const OPENAI_FETCH_INTERVAL_MS = 300_000;
 
 interface ZaiLimit {
   type: string;
@@ -117,145 +116,6 @@ async function fetchZaiQuota(key: string): Promise<QuotaView["zai"]> {
   return result;
 }
 
-interface OpenaiWindow {
-  used_percent?: unknown;
-  limit_window_seconds?: unknown;
-  reset_at?: unknown;
-  reset_after_seconds?: unknown;
-}
-
-function parsePercent(value: unknown): number | undefined {
-  const num = typeof value === "string" ? Number(value) : value;
-  return typeof num === "number" && Number.isFinite(num) ? num : undefined;
-}
-
-function parseSeconds(value: unknown): number | undefined {
-  const num = typeof value === "string" ? Number(value) : value;
-  return typeof num === "number" && Number.isFinite(num) && num >= 0
-    ? num
-    : undefined;
-}
-
-function splitWindows(
-  primary?: OpenaiWindow,
-  secondary?: OpenaiWindow,
-): { weekly?: OpenaiWindow; hourly?: OpenaiWindow } {
-  const candidates = [primary, secondary].filter(
-    (w): w is OpenaiWindow =>
-      w !== undefined && w !== null && typeof w === "object",
-  );
-  if (candidates.length === 0) return {};
-  const withSize = candidates
-    .map((w) => ({ window: w, size: parseSeconds(w.limit_window_seconds) }))
-    .filter(
-      (entry): entry is { window: OpenaiWindow; size: number } =>
-        entry.size !== undefined,
-    );
-  if (withSize.length === candidates.length && candidates.length === 2) {
-    withSize.sort((a, b) => b.size - a.size);
-    if (withSize[0].size === withSize[1].size) {
-      return { weekly: withSize[0].window };
-    }
-    return { weekly: withSize[0].window, hourly: withSize[1].window };
-  }
-  return { weekly: secondary ?? primary };
-}
-
-function windowMsLeft(window: OpenaiWindow): number | undefined {
-  const resetAt = parseSeconds(window.reset_at);
-  if (resetAt !== undefined) {
-    return Math.max(0, resetAt * 1000 - Date.now());
-  }
-  const resetAfter = parseSeconds(window.reset_after_seconds);
-  if (resetAfter !== undefined) {
-    return Math.max(0, resetAfter * 1000);
-  }
-  return undefined;
-}
-
-function parseWindowPercent(window: OpenaiWindow): number | undefined {
-  const used = parsePercent(window.used_percent);
-  if (used === undefined) return undefined;
-  return Math.max(0, 100 - Math.round(used));
-}
-
-async function refreshOpenaiToken(refresh: string): Promise<string | undefined> {
-  const body = new URLSearchParams({
-    grant_type: "refresh_token",
-    refresh_token: refresh,
-    client_id: OPENAI_CLIENT_ID,
-  }).toString();
-  const response = await fetch(OPENAI_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-  if (!response.ok) return undefined;
-  const json = (await response.json()) as { access_token?: string };
-  return typeof json.access_token === "string" ? json.access_token : undefined;
-}
-
-async function fetchOpenaiQuota(): Promise<QuotaView["openai"]> {
-  const entry = providerEntry(readAuth(), "openai");
-  if (!entry) return undefined;
-  const { access, accountId, refresh, expires } = entry;
-  if (
-    typeof access !== "string" ||
-    typeof accountId !== "string" ||
-    typeof refresh !== "string"
-  ) {
-    return undefined;
-  }
-  let token = access;
-  if (typeof expires !== "number" || expires < Date.now() + 60_000) {
-    token = (await refreshOpenaiToken(refresh)) ?? access;
-  }
-  const response = await fetch(OPENAI_WHAM_URL, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "ChatGPT-Account-Id": accountId,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!response.ok) return undefined;
-  const body = (await response.json()) as {
-    rate_limit?: {
-      primary_window?: OpenaiWindow;
-      secondary_window?: OpenaiWindow;
-    };
-  };
-  const { weekly, hourly } = splitWindows(
-    body.rate_limit?.primary_window,
-    body.rate_limit?.secondary_window,
-  );
-  if (!weekly) return undefined;
-  const percentLeft = parseWindowPercent(weekly);
-  if (percentLeft === undefined) return undefined;
-  const weeklyMs = windowMsLeft(weekly);
-  if (weeklyMs === undefined) return undefined;
-  const result: ProviderQuota = {
-    percentLeft,
-    daysLeft: Math.max(0, Math.ceil(weeklyMs / 86_400_000)),
-  };
-  if (hourly) {
-    const hourlyPercent = parseWindowPercent(hourly);
-    const hourlyMs = windowMsLeft(hourly);
-    if (hourlyPercent !== undefined && hourlyMs !== undefined) {
-      result.hourly = {
-        percentLeft: hourlyPercent,
-        resetLabel: formatShortReset(hourlyMs),
-      };
-    }
-  }
-  return result;
-}
-
-function formatShortReset(msLeft: number): string {
-  const minutes = Math.max(0, Math.ceil(msLeft / 60_000));
-  if (minutes < 60) return `${minutes}m`;
-  return `${Math.ceil(minutes / 60)}h`;
-}
-
 function formatDaysUntil(resetTime: number): number {
   const msLeft = resetTime - Date.now();
   return Math.max(0, Math.ceil(msLeft / 86_400_000));
@@ -294,12 +154,19 @@ function QuotaText(props: { quota: QuotaView; theme: Plugin.Context["theme"] }) 
 
 function initializeTui(context: Plugin.Context): () => void {
   const [quota, setQuota] = createSignal<QuotaView | undefined>(undefined);
+  let lastOpenai: QuotaView["openai"];
+  let openaiFetchedAt = 0;
 
   const refresh = async (): Promise<void> => {
     const next: QuotaView = {};
     const key = readZaiKey();
     if (key) next.zai = await fetchZaiQuota(key);
-    next.openai = await fetchOpenaiQuota();
+    // codex app-server is a full process spawn; poll it less often than z.ai.
+    if (Date.now() - openaiFetchedAt >= OPENAI_FETCH_INTERVAL_MS) {
+      openaiFetchedAt = Date.now();
+      lastOpenai = await fetchOpenaiQuota();
+    }
+    if (lastOpenai) next.openai = lastOpenai;
     if (next.zai || next.openai) {
       setQuota(next);
       // Handoffs read this instead of repeating authenticated quota requests.

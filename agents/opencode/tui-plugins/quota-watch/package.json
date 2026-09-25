@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "test": "node --test ../../tests/quota-watch.test.mjs"
   },
   "keywords": [
     "opencode",
