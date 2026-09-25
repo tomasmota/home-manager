@@ -6,10 +6,11 @@
   "main": "auto-approve-jev.js",
   "files": [
     "auto-approve-jev.js",
+    "lib/decision-audit.js",
     "lib/jev-client.js"
   ],
   "scripts": {
-    "test": "node --test ../tests/auto-approve-jev.test.mjs ../tests/jev-client.test.mjs"
+    "test": "node --test ../tests/auto-approve-jev.test.mjs ../tests/decision-audit.test.mjs ../tests/jev-client.test.mjs"
   },
   "dependencies": {
     "@opencode/plugin": "2.0.16"

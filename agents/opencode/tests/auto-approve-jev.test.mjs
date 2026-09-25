@@ -1,4 +1,7 @@
 import assert from "node:assert/strict"
+import { mkdtemp, readFile, rm } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import test from "node:test"
 
 import { JevAutoApprovePlugin } from "../plugins/auto-approve-jev.js"
@@ -107,8 +110,10 @@ function harness(generate = { text: async () => { throw new Error("fallback shou
 test("v2 evaluate hook allows a safe Jev result", async () => {
   const originalFetch = globalThis.fetch
   const originalKey = process.env.TYPESAFE_API_KEY
+  const originalDebug = process.env.OPENCODE_JEV_DEBUG
+  const auditDirectory = await mkdtemp(join(tmpdir(), "jev-decisions-"))
   process.env.TYPESAFE_API_KEY = "test-key"
-  process.env.OPENCODE_JEV_DEBUG = "0"
+  process.env.OPENCODE_JEV_DEBUG = join(auditDirectory, "decisions.jsonl")
   try {
     globalThis.fetch = async () => new Response(JSON.stringify({
       model: "jev-1.13.0",
@@ -121,13 +126,26 @@ test("v2 evaluate hook allows a safe Jev result", async () => {
       usage: { input_tokens: 850 },
     }), { status: 200 })
     const evaluate = await harness()
-    const event = { sessionID: "ses_1", action: "shell", resources: ["rm -rf ./build"], effect: "ask" }
+    const command = `bash -c '${"x".repeat(4096)}'`
+    const event = { sessionID: "ses_1", action: "shell", resources: [command], effect: "ask" }
     await evaluate(event)
     assert.equal(event.effect, "allow")
+    const day = new Date().toISOString().slice(0, 10)
+    const log = JSON.parse((await readFile(join(auditDirectory, `decisions-${day}.jsonl`), "utf8")).trim())
+    assert.equal(log.sessionID, "ses_1")
+    assert.deepEqual(log.resources, [command])
+    assert.equal(log.initialEffect, "ask")
+    assert.equal(log.decision, "allow")
+    assert.equal(log.source, "jev")
+    assert.equal(log.model, "jev-1.13.0")
+    assert.equal(log.jevOutcome, "reviewed")
   } finally {
     globalThis.fetch = originalFetch
     if (originalKey === undefined) delete process.env.TYPESAFE_API_KEY
     else process.env.TYPESAFE_API_KEY = originalKey
+    if (originalDebug === undefined) delete process.env.OPENCODE_JEV_DEBUG
+    else process.env.OPENCODE_JEV_DEBUG = originalDebug
+    await rm(auditDirectory, { recursive: true, force: true })
   }
 })
 
@@ -150,10 +168,12 @@ test("v2 stateless fallback returns a validated decision without creating a sess
   const originalKey = process.env.TYPESAFE_API_KEY
   const originalModels = process.env.OPENCODE_JEV_FALLBACK_MODELS
   const originalSecretsFile = process.env.OPENCODE_SECRETS_FILE
+  const originalDebug = process.env.OPENCODE_JEV_DEBUG
+  const auditDirectory = await mkdtemp(join(tmpdir(), "jev-decisions-"))
   delete process.env.TYPESAFE_API_KEY
   process.env.OPENCODE_SECRETS_FILE = "/nonexistent/jev-test-secrets.env"
   process.env.OPENCODE_JEV_FALLBACK_MODELS = "openai/test-model"
-  process.env.OPENCODE_JEV_DEBUG = "0"
+  process.env.OPENCODE_JEV_DEBUG = join(auditDirectory, "decisions.jsonl")
   try {
     const calls = []
     const evaluate = await harness({ text: async (args) => {
@@ -164,6 +184,12 @@ test("v2 stateless fallback returns a validated decision without creating a sess
     await evaluate(event)
     assert.equal(event.effect, "allow")
     assert.deepEqual(calls[0].model, { providerID: "openai", id: "test-model" })
+    const day = new Date().toISOString().slice(0, 10)
+    const log = JSON.parse((await readFile(join(auditDirectory, `decisions-${day}.jsonl`), "utf8")).trim())
+    assert.equal(log.source, "llm-fallback")
+    assert.equal(log.jevOutcome, "unavailable")
+    assert.equal(log.model, "openai/test-model")
+    assert.deepEqual(log.resources, ["custom-command"])
   } finally {
     if (originalKey === undefined) delete process.env.TYPESAFE_API_KEY
     else process.env.TYPESAFE_API_KEY = originalKey
@@ -171,6 +197,9 @@ test("v2 stateless fallback returns a validated decision without creating a sess
     else process.env.OPENCODE_JEV_FALLBACK_MODELS = originalModels
     if (originalSecretsFile === undefined) delete process.env.OPENCODE_SECRETS_FILE
     else process.env.OPENCODE_SECRETS_FILE = originalSecretsFile
+    if (originalDebug === undefined) delete process.env.OPENCODE_JEV_DEBUG
+    else process.env.OPENCODE_JEV_DEBUG = originalDebug
+    await rm(auditDirectory, { recursive: true, force: true })
   }
 })
 

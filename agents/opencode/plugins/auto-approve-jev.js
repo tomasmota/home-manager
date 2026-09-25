@@ -11,7 +11,7 @@
 //   OPENCODE_JEV_FALLBACK_MODELS="openai/gpt-5.6-luna,zai-coding-plan/glm-5.3-flash"
 //   OPENCODE_JEV_FALLBACK_TIMEOUT_MS=15000   timeout per fallback model
 //   OPENCODE_JEV_ON_EXHAUSTION=allow         allow|manual|deny
-//   OPENCODE_JEV_DEBUG=0                     disable diagnostics; path or 1 enables
+//   OPENCODE_JEV_DEBUG=1                     opt in to 30-day private audit; unset/0 disables, or use an absolute .jsonl base path
 
 import {
   answerChoice,
@@ -21,6 +21,7 @@ import {
   recordOf,
   requestJev,
 } from "./lib/jev-client.js"
+import { writeDecisionAudit } from "./lib/decision-audit.js"
 
 import { Plugin } from "@opencode/plugin"
 
@@ -209,26 +210,28 @@ async function jevReview(req, directory) {
 
 function diagnosticsPath() {
   const raw = process.env.OPENCODE_JEV_DEBUG
-  if (raw === "0" || raw === "false") return null
+  if (!raw || raw === "0" || raw === "false") return null
   if (raw && raw !== "1" && raw !== "true") return raw
   const base = process.env.XDG_STATE_HOME || `${process.env.HOME || "/tmp"}/.local/state`
   return `${base}/opencode/jev-auto-approve/decisions.jsonl`
 }
 
-async function appendDiagnostic(record) {
-  try {
-    const path = diagnosticsPath()
-    if (!path) return
-    const { appendFile, mkdir, readFile, stat, writeFile } = await import("node:fs/promises")
-    const { dirname } = await import("node:path")
-    await mkdir(dirname(path), { recursive: true })
-    await appendFile(path, `${JSON.stringify({ timestamp: new Date().toISOString(), ...record })}\n`, "utf8")
-    const info = await stat(path)
-    if (info.size > 512 * 1024) {
-      const text = await readFile(path, "utf8")
-      await writeFile(path, text.split("\n").slice(-400).join("\n"), "utf8")
-    }
-  } catch {}
+let auditWrites = Promise.resolve()
+let lastAuditError
+function appendDiagnostic(record) {
+  const path = diagnosticsPath()
+  if (!path) return Promise.resolve()
+  const now = new Date()
+  // Serialize evaluations in this process; wait for the final decision record
+  // before returning it to OpenCode so a restart does not silently lose it.
+  auditWrites = auditWrites.then(() => writeDecisionAudit(path, record, now)).then(() => {
+    lastAuditError = undefined
+  }).catch((error) => {
+    const code = typeof error?.code === "string" ? error.code : "invalid_path_or_permissions"
+    if (code !== lastAuditError) console.warn(`Jev decision audit write failed (${code})`)
+    lastAuditError = code
+  })
+  return auditWrites
 }
 
 function errorText(error) {
@@ -284,15 +287,6 @@ async function fallbackChain(generate, req, models) {
   throw new Error(errors.join(" | ") || "all fallback models failed")
 }
 
-function signals(result) {
-  return {
-    dangerousness: { score: result.dangerousness.score, confidence: result.dangerousness.confidence },
-    blastRadius: { score: result.blastRadius.score, confidence: result.blastRadius.confidence },
-    purpose: result.purpose,
-    category: { choice: result.category.choice, confidence: result.category.confidence },
-  }
-}
-
 const testHelpers = {
   QUESTIONS,
   AUTO_ALLOW_ACTIONS,
@@ -317,19 +311,33 @@ export const JevAutoApprovePlugin = Plugin.define({
   } catch (error) {
     fallbackConfigError = error
   }
-  void appendDiagnostic({ event: "plugin_loaded", model: process.env.OPENCODE_JEV_MODEL || "jev-latest" })
-
   await context.permission.hook("evaluate", async (event) => {
     const startedAt = Date.now()
     const req = normalizeRequest(event)
     if (!req) return
-    const preview = permissionText(req).slice(0, 120)
+    const initialEffect = event.effect
     const reviewDirectory = process.env.OPENCODE_REVIEW_DIR || context.location.directory || undefined
+    let jevOutcome = "not_called"
+    const audit = (decision, source, reasonCode, model) => appendDiagnostic({
+      event: "decision",
+      sessionID: req.sessionID,
+      action: req.action,
+      resources: req.resources,
+      ...(req.title ? { title: req.title } : {}),
+      projectDirectory: reviewDirectory,
+      initialEffect,
+      decision,
+      source,
+      reasonCode,
+      ...(model ? { model } : {}),
+      jevOutcome,
+      elapsedMs: Date.now() - startedAt,
+    })
     try {
       if (isAutoAllowable(req)) {
         event.effect = "allow"
         event.message = undefined
-        void appendDiagnostic({ event: "decision", source: "auto-allow", decision: "allow", reasonCode: "read_only_action", preview, elapsedMs: Date.now() - startedAt })
+        await audit("allow", "auto-allow", "read_only_action")
         return
       }
 
@@ -337,35 +345,28 @@ export const JevAutoApprovePlugin = Plugin.define({
         const reason = DENY_REASONS.broad_data_destruction
         event.effect = "deny"
         event.message = `Jev auto-approve blocked this action: ${reason}`
-        void appendDiagnostic({ event: "decision", source: "policy", decision: "deny", reasonCode: "catastrophic", preview, elapsedMs: Date.now() - startedAt })
+        await audit("deny", "policy", "catastrophic")
         return
       }
 
       let decision
+      let jevModel
       try {
         const result = await jevReview(req, reviewDirectory)
         decision = composeJevDecision(result)
-        void appendDiagnostic({
-          event: "jev_result",
-          model: result.model,
-          decision: decision.decision,
-          reasonCode: decision.reasonCode,
-          signals: signals(result),
-          inputTokens: result.usage.input_tokens,
-          preview,
-          elapsedMs: Date.now() - startedAt,
-        })
+        jevModel = result.model
+        jevOutcome = decision.decision === "fallback" ? "borderline" : "reviewed"
       } catch (error) {
         decision = { decision: "fallback", reasonCode: "jev_unavailable", reason: errorText(error) }
-        void appendDiagnostic({ event: "failure", source: "jev", errorMessage: errorText(error), preview, elapsedMs: Date.now() - startedAt })
+        jevOutcome = "unavailable"
       }
 
       let source = "jev"
-      let model = process.env.OPENCODE_JEV_MODEL || "jev-latest"
+      let model = jevModel
       if (decision.decision === "fallback") {
         if (fallbackConfigError) {
-          void appendDiagnostic({ event: "failure", source: "config", errorMessage: errorText(fallbackConfigError), preview })
           event.effect = "ask"
+          await audit("ask", "config", "invalid_fallback_config")
           return
         }
         try {
@@ -373,11 +374,11 @@ export const JevAutoApprovePlugin = Plugin.define({
           decision = fallback.decision
           source = "llm-fallback"
           model = `${fallback.model.providerID}/${fallback.model.modelID}`
-        } catch (error) {
+        } catch {
           const onExhaustion = (process.env.OPENCODE_JEV_ON_EXHAUSTION || "allow").toLowerCase()
-          void appendDiagnostic({ event: "exhausted", errorMessage: errorText(error), onExhaustion, preview, elapsedMs: Date.now() - startedAt })
           if (onExhaustion === "manual") {
             event.effect = "ask"
+            await audit("ask", "exhaustion", "reviewers_unavailable")
             return
           }
           decision = onExhaustion === "deny"
@@ -390,10 +391,10 @@ export const JevAutoApprovePlugin = Plugin.define({
 
       event.effect = decision.decision === "deny" ? "deny" : "allow"
       if (event.effect === "deny") event.message = `Jev auto-approve blocked this action: ${decision.reason}`
-      void appendDiagnostic({ event: "decision", source, model, decision: decision.decision, reasonCode: decision.reasonCode, preview, elapsedMs: Date.now() - startedAt })
+      await audit(event.effect, source, decision.reasonCode, model)
     } catch (error) {
-      void appendDiagnostic({ event: "hook_error", errorMessage: errorText(error), preview, elapsedMs: Date.now() - startedAt })
       event.effect = "ask"
+      await audit("ask", "hook-error", "hook_error")
     }
   })
   },
