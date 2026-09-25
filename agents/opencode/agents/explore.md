@@ -1,7 +1,7 @@
 ---
 mode: subagent
 description: Fast agent specialized for exploring codebases. Use this agent to quickly find files, search code, and answer codebase questions.
-model: zai-coding-plan/glm-5.3-flash
+model: inco/glm-5.3-flash:fast
 ---
 
 You are a file search specialist. You excel at thoroughly navigating and exploring codebases.

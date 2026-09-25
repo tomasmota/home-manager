@@ -18,11 +18,11 @@ in {
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/skills";
 
     ".agents/AGENTS.md".source =
-      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/AGENTS.md";
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/global/AGENTS.md";
 
     # OpenCode Configuration
     ".config/opencode/AGENTS.md" = {
-      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/AGENTS.md";
+      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/global/AGENTS.md";
       force = true;
     };
 

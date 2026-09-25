@@ -18,7 +18,7 @@
 - `git.nix`: git identity/signing, difftastic, activation hook for `allowed_signers` files.
 - `tmux.nix`: tmux settings/plugins/keybindings.
 - `nvim/`: Neovim config (lazy.nvim, plugin specs under `nvim/lua/plugins`, core config under `nvim/lua/config`).
-- `agents.nix`, `agents/**`: AI tool configs (OpenCode).
+- `agents.nix`, `agents/**`: AI tool configs (OpenCode). `agents/global/AGENTS.md` is installed as the global agent instructions; `agents/AGENTS.md` applies only while working in the tracked `agents/` tree.
 - Default OpenCode subagent definitions live in `agents/opencode/agents/*.md`; update these instead of the `opencode*.json` files.
 - `agents/skills/**`: shared cross-agent skills; each skill lives in `agents/skills/<skill-name>/SKILL.md`.
 - `secrets.env`: local secrets file at repo root, intentionally gitignored.
