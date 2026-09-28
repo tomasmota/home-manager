@@ -56,12 +56,6 @@ in {
     ".config/opencode/tui-plugins/tmux-status".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/tui-plugins/tmux-status";
 
-    ".config/opencode/plugins/auto-approve-jev.js".source =
-      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/auto-approve-jev.js";
-
-    ".config/opencode/plugins/lib".source =
-      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/lib";
-
     ".config/opencode/cli.json" = {
       source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/cli.json";
       force = true;

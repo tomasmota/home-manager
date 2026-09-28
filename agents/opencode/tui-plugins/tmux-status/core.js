@@ -1,8 +1,8 @@
 import { spawnSync } from "node:child_process"
 import { closeSync, constants, openSync, writeSync } from "node:fs"
 
-import { answerChoice, answerNoul, numberEnv, recordOf, requestJev } from "../../plugins/lib/jev-client.js"
-import { isIgnoredSession } from "../../plugins/lib/session-registry.js"
+import { answerChoice, answerNoul, numberEnv, recordOf, requestJev } from "../../lib/jev-client.js"
+import { isIgnoredSession } from "../../lib/session-registry.js"
 
 const ATTENTION_QUESTIONS = {
   needs_attention: {

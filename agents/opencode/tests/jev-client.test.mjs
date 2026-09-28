@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { loadSecretsEnv, answerChoice, answerNoul, answerScore, requestJev } from "../plugins/lib/jev-client.js"
+import { loadSecretsEnv, answerChoice, answerNoul, answerScore, requestJev } from "../lib/jev-client.js"
 
 test("parses Jev primitive answers", () => {
   assert.equal(answerNoul({ type: "noul", noul: 0.8 }), 0.8)
