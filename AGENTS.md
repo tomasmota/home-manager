@@ -35,7 +35,7 @@
   - Editing files in this repo updates live config targets directly after switch.
 - `agents.nix` symlinks repo files into:
   - `~/.config/opencode/opencode.json`
-- OpenCode server plugins (Jev permission reviewer, stuck-command watchdog) live in the private `tomasmota/agents` repo under `opencode/plugins/`, not here. `opencode*.json` load them as Git packages tracking `main`; run `opencode plugin update` to install newly pushed commits.
+- Packaged OpenCode plugins (Jev permission reviewer, stuck-command watchdog, and tmux title renamer) live in the private `tomasmota/agents` repo under `opencode/plugins/`, not here. `opencode*.json` load them as Git packages tracking `main`; run `opencode plugin update` to install newly pushed commits.
 - `agents/opencode/lib/` holds the Jev client and session registry used by the `tmux-status` TUI plugin and the `model-selector` skill.
 
 ## Apply and Validate Workflows
