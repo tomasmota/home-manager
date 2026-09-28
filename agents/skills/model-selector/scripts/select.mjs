@@ -5,7 +5,7 @@ import { realpathSync } from "node:fs"
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
-import { answerChoice, requestJev } from "../../../opencode/plugins/lib/jev-client.js"
+import { answerChoice, requestJev } from "../../../opencode/lib/jev-client.js"
 
 const here = dirname(fileURLToPath(import.meta.url))
 const profiles = JSON.parse(await readFile(join(here, "..", "profiles.json"), "utf8"))
