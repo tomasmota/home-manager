@@ -1354,7 +1354,7 @@ func runOnce() -> Int32 {
 func snapDropdown(to path: String) -> Int32 {
     do {
         let client = try CodexClient()
-        let (limits, credits) = try client.fetch()
+        let (limits, _) = try client.fetch()
 
         var views: [NSView] = []
         let plan = limits.planType.map { "\($0.prefix(1).uppercased())\($0.dropFirst()) plan" } ?? "Codex"
