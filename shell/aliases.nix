@@ -1,7 +1,9 @@
 {config}: {
   # home-manager
   hm = "home-manager";
-  hmcd = "cd ${config.xdg.configHome}/home-manager";
+  hmcd = ''cd ${config.xdg.configHome}/home-manager \
+            && [[ -n $TMUX ]] \
+            && tmux rename-window "home-manager"'';
   hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && home-manager switch --impure && popd";
 
   # nix-darwin
