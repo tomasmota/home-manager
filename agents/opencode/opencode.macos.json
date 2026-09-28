@@ -18,6 +18,11 @@
           }
         }
       }
+    },
+    "inco": {
+      "body": {
+        "reasoning_effort": "high"
+      }
     }
   },
   "mcp": {
