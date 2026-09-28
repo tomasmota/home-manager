@@ -6,7 +6,7 @@ import { selectModel } from "../../skills/model-selector/scripts/select.mjs"
 const healthyQuota = { openai: { percentLeft: 50, hourly: { percentLeft: 50 } } }
 const lowQuota = { openai: { percentLeft: 50, hourly: { percentLeft: 19 } } }
 
-test("selects Terra workhorse while OpenAI quota is healthy", async () => {
+test("selects Sol workhorse while OpenAI quota is healthy", async () => {
   const result = await selectModel("A concrete planned implementation.", {
     quota: healthyQuota,
     request: async ({ questions }) => {
@@ -15,7 +15,7 @@ test("selects Terra workhorse while OpenAI quota is healthy", async () => {
       return { answers: { profile: { type: "choice", choice: "workhorse", confidence: 0.9 } } }
     },
   })
-  assert.equal(result.model, "openai/gpt-5.6-terra")
+  assert.equal(result.model, "openai/gpt-5.6-sol")
   assert.equal(result.effort, "medium")
 })
 

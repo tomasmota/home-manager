@@ -24,8 +24,8 @@ EOF
 ## Profiles
 
 - `quick`: GLM 5.3 Flash high for small, obvious work. Treat as effectively free.
-- `workhorse`: GPT 5.6 Terra medium for planned, sustained implementation.
+- `workhorse`: GPT 5.6 Sol medium for planned, sustained implementation.
 - `workhorse-zai`: GLM 5.3 high when OpenAI quota is low.
-- `deep`: GPT 6 Astra medium for genuinely hard, consequential decisions only.
+- `deep`: GPT 5.6 Sol xhigh for genuinely hard, consequential decisions only.
 
-The selector treats OpenAI as low when either the 5-hour remaining quota is below 20% or the weekly remaining quota is below 10%. It then excludes Terra from the candidates, while Astra remains available for hard decisions. If quota state is missing or Jev is unavailable, it falls back immediately to the appropriate workhorse.
+The selector treats OpenAI as low when either the 5-hour remaining quota is below 20% or the weekly remaining quota is below 10%. It then offers workhorse-zai instead of the Sol workhorse, while deep (Sol xhigh) remains available for hard decisions. If quota state is missing or Jev is unavailable, it falls back immediately to the appropriate workhorse.

@@ -79,11 +79,12 @@ After writing `HANDOFF.md` (write path only, never on read):
      - `glm 5.3 flash` -> `zai-coding-plan/glm-5.3-flash`
      - `glm 5.3 highspeed` -> `zai-coding-plan/glm-5.3-highspeed`
      - `gpt 5.6 terra` / `terra` -> `openai/gpt-5.6-terra`
+     - `gpt 5.6 sol` / `sol` -> `openai/gpt-5.6-sol`
      - `gpt 6 astra` / `astra` -> `openai/gpt-6-astra`
      - `quick` -> `zai-coding-plan/glm-5.3-flash`
-     - `workhorse` -> `openai/gpt-5.6-terra`
+     - `workhorse` -> `openai/gpt-5.6-sol`
      - `workhorse zai` -> `zai-coding-plan/glm-5.3`
-     - `deep` -> `openai/gpt-6-astra`
+     - `deep` -> `openai/gpt-5.6-sol#xhigh`
    - Match the longest known alias, so `glm 5.3 flash` never resolves as `glm 5.3`. A trailing effort word (`high`, `medium`, ...) is consumed as an effort, never as part of the model name; only the word `highspeed` selects the highspeed model.
    - A full `provider/model` ID is authoritative and used as-is without a model-name lookup; check its variants only when the user also requests an effort.
    - Any other `<model>` is a short name, matched case-insensitively as a substring against one `opencode models` result (full `provider/model` IDs).
