@@ -4,6 +4,9 @@
 - This repo manages Tomás' local developer environment with Nix, using Home Manager on Linux and nix-darwin + Home Manager on macOS.
 - Treat this repo as the source of truth for shell, terminal, editor, git, tmux, and AI-agent config.
 
+## Public Repository
+- This repository is public. Never add sensitive personal or company information, including credentials, tokens, private URLs, customer data, internal infrastructure details, or confidential business information.
+
 ## Host Targets
 - macOS target: `darwinConfigurations.macbook` (`aarch64-darwin`, home `/Users/tomas`).
 - Linux target: `homeConfigurations.linux` (`x86_64-linux`, home `/home/tomas`).
