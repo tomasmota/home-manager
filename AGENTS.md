@@ -13,6 +13,7 @@
 - `flake.nix`, `flake.lock`: flake entrypoint and pinned inputs (`nixpkgs`, `home-manager`, `nix-darwin`).
 - `home.nix`: shared Home Manager module; imports most local modules and declares common packages.
 - `darwin/macos.nix`: macOS-only nix-darwin config (system defaults, Homebrew casks, Tailscale).
+- `darwin/codex-usage/`: Codex Usage menu bar app (Swift). Built into `~/Applications/CodexUsage.app` by `install.sh` via a home-manager activation script when sources change; kept running by the `codex-usage` launchd agent.
 - `terminal/ghostty.nix`: Ghostty config; expects `fontSize` from flake `extraSpecialArgs`.
 - `shell/zsh.nix`, `shell/aliases.nix`, `shell/functions.nix`: shell behavior, aliases, helper functions.
 - `git.nix`: git identity/signing, difftastic, activation hook for `allowed_signers` files.

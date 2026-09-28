@@ -56,10 +56,22 @@
 
   environment.shells = [pkgs.zsh];
 
-  home-manager.users.tomas = {
+  home-manager.users.tomas = {lib, ...}: {
     home.packages = [
       (pkgs.google-cloud-sdk.withExtraComponents [pkgs.google-cloud-sdk.components.gke-gcloud-auth-plugin])
     ];
+
+    # Codex Usage menu bar app: build with the system Swift toolchain and
+    # install to ~/Applications when sources in this repo change.
+    home.activation.codexUsage = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      APP_BIN="$HOME/Applications/CodexUsage.app/Contents/MacOS/CodexUsage"
+      SRC_DIR="/Users/tomas/.config/home-manager/darwin/codex-usage"
+      if [ ! -x "$APP_BIN" ] \
+        || [ -n "$(find "$SRC_DIR" -name '*.swift' -newer "$APP_BIN" -print -quit 2>/dev/null)" ] \
+        || [ "$SRC_DIR/Info.plist" -nt "$APP_BIN" ]; then
+        $DRY_RUN_CMD "$SRC_DIR/install.sh"
+      fi
+    '';
 
   };
 
@@ -120,6 +132,25 @@
       ProcessType = "Background";
       StandardOutPath = "/Users/tomas/Library/Logs/OpenChamber-tailnet.log";
       StandardErrorPath = "/Users/tomas/Library/Logs/OpenChamber-tailnet.error.log";
+    };
+  };
+
+  # Codex Usage menu bar app (built from darwin/codex-usage in this repo).
+  # Restart on crash, but stay dead after an explicit Quit from the menu.
+  launchd.user.agents.codex-usage = {
+    environment = {
+      HOME = "/Users/tomas";
+      PATH = "/Users/tomas/.local/bin:/usr/bin:/bin";
+    };
+    command = ''
+      /Users/tomas/Applications/CodexUsage.app/Contents/MacOS/CodexUsage
+    '';
+    serviceConfig = {
+      KeepAlive = {Crashed = true; SuccessfulExit = false;};
+      RunAtLoad = true;
+      ProcessType = "Background";
+      StandardOutPath = "/Users/tomas/Library/Logs/CodexUsage.log";
+      StandardErrorPath = "/Users/tomas/Library/Logs/CodexUsage.error.log";
     };
   };
 
