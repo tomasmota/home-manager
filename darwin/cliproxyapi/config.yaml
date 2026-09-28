@@ -1,0 +1,25 @@
+# Rendered by Home Manager with a generated client key. The live file is
+# secret-bearing and must never be copied into this repository.
+host: "127.0.0.1"
+port: 8317
+trusted-proxies: []
+tls:
+  enable: false
+remote-management:
+  allow-remote: false
+  secret-key: ""
+  disable-control-panel: true
+auth-dir: "/Users/tomas/.local/share/cliproxyapi/auth"
+api-keys:
+  - "__CLIPROXYAPI_API_KEY__"
+debug: false
+pprof:
+  enable: false
+discovery:
+  enabled: false
+plugins:
+  enabled: false
+logging-to-file: false
+usage-statistics-enabled: false
+disable-claude-cloak-mode: false
+ws-auth: true

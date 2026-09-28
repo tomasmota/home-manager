@@ -24,6 +24,26 @@
       "body": {
         "reasoning_effort": "high"
       }
+    },
+    "claude-subscription": {
+      "name": "Claude Subscription (CLIProxyAPI)",
+      "env": [
+        "CLIPROXYAPI_API_KEY"
+      ],
+      "canonical": "anthropic",
+      "package": "@opencode/ai/providers/anthropic",
+      "settings": {
+        "baseURL": "http://127.0.0.1:8317/v1",
+        "apiKey": "{env:CLIPROXYAPI_API_KEY}"
+      },
+      "models": {
+        "claude-opus-5-5": { "cost": { "input": 0, "output": 0 } },
+        "claude-opus-5": { "cost": { "input": 0, "output": 0 } },
+        "claude-sonnet-5": { "cost": { "input": 0, "output": 0 } },
+        "claude-opus-4-6": { "cost": { "input": 0, "output": 0 } },
+        "claude-sonnet-4-6": { "cost": { "input": 0, "output": 0 } },
+        "claude-haiku-4-5-20251001": { "cost": { "input": 0, "output": 0 } }
+      }
     }
   },
   "mcp": {

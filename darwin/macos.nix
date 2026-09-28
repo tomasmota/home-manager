@@ -4,6 +4,8 @@
   pkgs,
   ...
 }: {
+  imports = [./cliproxyapi.nix];
+
   nixpkgs.hostPlatform = "aarch64-darwin";
 
   programs.zsh.enable = true;
@@ -72,7 +74,6 @@
         $DRY_RUN_CMD "$SRC_DIR/install.sh"
       fi
     '';
-
   };
 
   services.tailscale.enable = true;
@@ -88,37 +89,6 @@
       KeepAlive = true;
       RunAtLoad = true;
       ProcessType = "Interactive";
-    };
-  };
-
-  launchd.user.agents.openchamber = {
-    path = [
-      "/Users/tomas/.npm-global/bin"
-      "/opt/homebrew/bin"
-      "/etc/profiles/per-user/tomas/bin"
-      "/run/current-system/sw/bin"
-      "/usr/bin"
-      "/bin"
-      "/usr/sbin"
-      "/sbin"
-    ];
-    environment = {
-      HOME = "/Users/tomas";
-      OPENCODE_BINARY = "/opt/homebrew/bin/opencode";
-      XDG_CONFIG_HOME = "/Users/tomas/.config";
-      XDG_DATA_HOME = "/Users/tomas/.local/share";
-    };
-    command = ''
-      ${pkgs.nodejs_24}/bin/node /Users/tomas/.npm-global/lib/node_modules/@openchamber/web/bin/cli.js serve --foreground --host 127.0.0.1 --port 3001
-    '';
-    serviceConfig = {
-      KeepAlive = true;
-      RunAtLoad = true;
-      ProcessType = "Background";
-      ThrottleInterval = 5;
-      WorkingDirectory = "/Users/tomas";
-      StandardOutPath = "/Users/tomas/Library/Logs/OpenChamber.log";
-      StandardErrorPath = "/Users/tomas/Library/Logs/OpenChamber.error.log";
     };
   };
 
@@ -146,7 +116,10 @@
       /Users/tomas/Applications/CodexUsage.app/Contents/MacOS/CodexUsage
     '';
     serviceConfig = {
-      KeepAlive = {Crashed = true; SuccessfulExit = false;};
+      KeepAlive = {
+        Crashed = true;
+        SuccessfulExit = false;
+      };
       RunAtLoad = true;
       ProcessType = "Background";
       StandardOutPath = "/Users/tomas/Library/Logs/CodexUsage.log";

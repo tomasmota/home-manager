@@ -151,6 +151,10 @@
             source ${config.xdg.configHome}/home-manager/secrets.env
           fi
 
+          if [[ -f "${config.xdg.configHome}/cliproxyapi/client.env" ]]; then
+            source ${config.xdg.configHome}/cliproxyapi/client.env
+          fi
+
           if [[ -f "${config.xdg.configHome}/home-manager/shell/local.zsh" ]]; then
             source ${config.xdg.configHome}/home-manager/shell/local.zsh
           fi
