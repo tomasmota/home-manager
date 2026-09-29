@@ -49,6 +49,11 @@
       }
     }
   },
+  "experimental": {
+    "policies": [
+      { "action": "provider.use", "resource": "google-vertex", "effect": "deny" }
+    ]
+  },
   "mcp": {
     "servers": {
       "chrome-devtools": {
