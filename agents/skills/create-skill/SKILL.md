@@ -106,7 +106,7 @@ Include examples of inputs and expected outputs.
 6. **Validate the skill:** After creating all relevant files, validate using the skills-ref library. Do NOT validate until you have finished preparing all files. Pass the skill directory (not a single file or ZIP) to the validate command:
 
    ```bash
-   pip install -q skills-ref && agentskills validate {skills_dir}/{skill-name}/
+   uvx --from skills-ref agentskills validate {skills_dir}/{skill-name}/
    ```
 
    If validation fails, read the error message and fix before proceeding.
@@ -115,7 +115,7 @@ Include examples of inputs and expected outputs.
    - If the skill directory contains a SKILL.md only and has no other bundled resources, share the SKILL.md file directly
    - If the skill has any bundled resources (scripts, references, assets): zip the entire skill directory. Do NOT extract just the SKILL.md — the bundled files are part of the skill. Use `.zip` format, not `.tar` or `.tar.gz`
 
-8. **Inform the user:** Let the user know the skill has been created and validated successfully, and they can download it for use or manage it via their settings at https://www.perplexity.ai/computer/skills.
+8. **Inform the user:** Let the user know the skill has been created and validated successfully. It is available under `~/.agents/skills/` through the existing `agents.nix` symlink. Tracked edits belong in `~/.config/home-manager/agents/skills/`; machine-only changes belong in `~/.agents/local-skills/`.
 
 ## Example: Creating a Code Review Skill
 

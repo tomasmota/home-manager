@@ -86,6 +86,7 @@ After writing `HANDOFF.md` (write path only, never on read):
      - `workhorse zai` -> `zai-coding-plan/glm-5.3`
      - `deep` -> `openai/gpt-5.6-sol#xhigh`
    - Match the longest known alias, so `glm 5.3 flash` never resolves as `glm 5.3`. A trailing effort word (`high`, `medium`, ...) is consumed as an effort, never as part of the model name; only the word `highspeed` selects the highspeed model.
+   - Keep this table in sync with `model-selector/SKILL.md` (its profiles are the Jev fallback); update both files together.
    - A full `provider/model` ID is authoritative and used as-is without a model-name lookup; check its variants only when the user also requests an effort.
    - Any other `<model>` is a short name, matched case-insensitively as a substring against one `opencode models` result (full `provider/model` IDs).
      - 1 match: use it.

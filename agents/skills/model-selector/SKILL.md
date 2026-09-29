@@ -28,4 +28,6 @@ EOF
 - `workhorse-zai`: GLM 5.3 high when OpenAI quota is low.
 - `deep`: GPT 5.6 Sol xhigh for genuinely hard, consequential decisions only.
 
+Keep these profiles in sync with the `handoff` skill's alias table (authoritative for spawn aliases); update both files together.
+
 The selector treats OpenAI as low when either the 5-hour remaining quota is below 20% or the weekly remaining quota is below 10%. It then offers workhorse-zai instead of the Sol workhorse, while deep (Sol xhigh) remains available for hard decisions. If quota state is missing or Jev is unavailable, it falls back immediately to the appropriate workhorse.
