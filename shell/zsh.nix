@@ -37,6 +37,9 @@
         export DOCKER_BUILDKIT="1"
         export RCLONE_FAST_LIST="true"
         export OPENCODE_WEBSEARCH_PROVIDER="exa"
+        # Jev auto-approve plugin: write 30-day permission decision audit to
+        # ~/.local/state/opencode/jev-auto-approve/decisions-<date>.jsonl
+        export OPENCODE_JEV_DEBUG=1
       '';
 
       plugins = [

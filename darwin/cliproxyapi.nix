@@ -87,6 +87,7 @@ in {
     environment = {
       HOME = "/Users/tomas";
       OPENCODE_BINARY = "/opt/homebrew/bin/opencode";
+      OPENCODE_JEV_DEBUG = "1";
       XDG_CONFIG_HOME = "/Users/tomas/.config";
       XDG_DATA_HOME = "/Users/tomas/.local/share";
     };

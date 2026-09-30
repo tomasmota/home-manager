@@ -225,7 +225,6 @@
     { "action": "shell", "resource": "gcloud identity groups memberships check-transitive-membership*", "effect": "allow" },
     { "action": "shell", "resource": "gcloud policy-troubleshoot iam *", "effect": "allow" },
     { "action": "shell", "resource": "gcloud projects delete*", "effect": "deny" },
-    { "action": "shell", "resource": "gcloud organizations*", "effect": "deny" },
     { "action": "shell", "resource": "gcloud auth revoke*", "effect": "deny" },
     { "action": "shell", "resource": "kubectl --version*", "effect": "allow" },
     { "action": "shell", "resource": "kubectl* get*", "effect": "allow" },
