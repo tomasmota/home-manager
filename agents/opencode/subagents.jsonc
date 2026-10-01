@@ -36,7 +36,7 @@
     "coder": {
       "mode": "all",
       "model": "claude-subscription/claude-opus-5-5#high",
-      "description": "Implementation agent for writing, refactoring, and debugging code, including UI and frontend work. Use it when the task's main output is code changes."
+      "description": "Go-to agent for real coding: writing, refactoring, and debugging code, including Terraform, scripts, and UI work."
     },
     "terminal": {
       "mode": "all",
@@ -46,7 +46,7 @@
     "quick": {
       "mode": "all",
       "model": "inco/glm-5.3-flash:fast",
-      "description": "Fast, cheap agent for small, straightforward tasks with an obvious approach: simple edits, lookups, mechanical changes. Do not use it when design or debugging uncertainty remains."
+      "description": "Fast, cheap agent for small tasks with an obvious approach: lookups, mechanical edits, and value changes in config files like YAML, JSON, or TOML, including committing and opening an MR. Do not use it when design or debugging uncertainty remains."
     },
     "deep": {
       "mode": "all",
