@@ -88,7 +88,7 @@
       ]
     },
     "reviewer": {
-      "model": "openai/gpt-5.6-sol#medium",
+      "model": "openai/gpt-6.1-sol#xhigh",
       "description": "Reviews implemented changes for correctness, regressions, risks, and missing tests. Use after an agent finishes an implementation and needs an independent code review.",
       "permissions": [{ "action": "edit", "resource": "*", "effect": "deny" }],
       "system": [
