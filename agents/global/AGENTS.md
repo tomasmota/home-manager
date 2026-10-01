@@ -11,9 +11,17 @@
 - When investigating files in a remote public repository (e.g. istio, prometheus), prefer a shallow `git clone --depth 1` into a tmp dir (e.g. `$(mktemp -d)`) and browse locally with read/grep/glob instead of many `webfetch` calls for individual files.
 - Investigate hypothesis-first: ask what uncertainty blocks action, gather discriminating evidence. On failure revise the hypothesis, not just the command. Reproduce bugs before fixing.
 - Answer judgments from available evidence and stop when it supports the decision. Distinguish blockers from optional checks; ask before investigating further.
-- Timebox investigations: after two failed approaches or three unproductive tool rounds, stop. Delegate broad, slow, or output-heavy work to a subagent early; do not duplicate it.
+- Timebox investigations: after two failed approaches or three unproductive tool rounds, stop.
 - Tool availability and names are model-specific. Use every direct tool's exact advertised name and input schema from the current turn: Claude normally has `write`/`edit`, while GPT may have `patch`. On the Claude subscription gateway, direct tools may be advertised as `mcp__...` aliases whose final semantic suffix identifies the ordinary tool. If the current tool list contains such aliases, the one ending in `_subagent` is the subagent spawner. Invoke the complete advertised name verbatim—never remove its prefix or opaque tool word, shorten it to a suffix, or invent an alias. When plain names are advertised, use the plain names. Gateway aliases do not rename Code Mode's `tools` catalog. Inside `execute`, use only catalog paths or paths returned by `search`; search by namespace when a broad query misses a tool. Serialize edits and the tests that depend on them, even if independent tool calls can run in parallel.
 - If I say "open a file", open it in a new tmux pane to the right of the current pane: `tmux split-window -h -c <dir> -t "$TMUX_PANE" 'nvim <file>'`.
+
+# Delegation
+- Use subagents proactively. These instructions explicitly authorize delegation without waiting for the user to request it.
+- Delegate substantial exploration to `explore`, independent investigations and implementation chunks to suitable agents, and nontrivial change reviews to `reviewer`.
+- Choose the agent whose advertised description best fits the task; use `general` when no specialist clearly fits.
+- Parallelize independent work. Avoid duplicating delegated effort or overlapping edits.
+- Give agents clear objectives, context, and constraints. Keep responsibility for integration, validation, and user communication.
+- Keep trivial work inline; do not spawn agents merely to meet a quota.
 
 # skills
 - If I ask for a skill that should stay only on this machine or should not live in the public home-manager repo, create it under `~/.agents/local-skills/`.
