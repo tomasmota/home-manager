@@ -105,22 +105,6 @@
     };
   };
 
-  # Vivaldi with remote debugging for chrome-devtools-mcp.
-  # MCP connects via --browser-url=http://127.0.0.1:9222 (see agents/opencode/opencode.macos.json).
-  # Only applies when launched by launchd; Dock/Finder launches won't have the flag.
-  launchd.user.agents.vivaldi-debug = {
-    command = ''
-      /Applications/Vivaldi.app/Contents/MacOS/Vivaldi --remote-debugging-port=9222
-    '';
-    serviceConfig = {
-      RunAtLoad = true;
-      KeepAlive = false;
-      ProcessType = "Interactive";
-      StandardOutPath = "/Users/tomas/Library/Logs/Vivaldi-debug.log";
-      StandardErrorPath = "/Users/tomas/Library/Logs/Vivaldi-debug.error.log";
-    };
-  };
-
   # Codex Usage menu bar app (built from darwin/codex-usage in this repo).
   # Restart on crash, but stay dead after an explicit Quit from the menu.
   launchd.user.agents.codex-usage = {

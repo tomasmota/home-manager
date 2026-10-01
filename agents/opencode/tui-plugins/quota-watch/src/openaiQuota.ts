@@ -94,11 +94,11 @@ export function parseCodexQuota(
   return quota;
 }
 
-export function requestCodexRateLimits(): Promise<unknown> {
+export function requestCodexRateLimits(command = "codex"): Promise<unknown> {
   return new Promise((resolve) => {
     let child: ReturnType<typeof spawn>;
     try {
-      child = spawn("codex", ["app-server"], {
+      child = spawn(command, ["app-server"], {
         stdio: ["pipe", "pipe", "ignore"],
       });
     } catch {
@@ -161,6 +161,6 @@ export function requestCodexRateLimits(): Promise<unknown> {
   });
 }
 
-export async function fetchOpenaiQuota(): Promise<OpenaiQuota | undefined> {
-  return parseCodexQuota(await requestCodexRateLimits());
+export async function fetchOpenaiQuota(command = "codex"): Promise<OpenaiQuota | undefined> {
+  return parseCodexQuota(await requestCodexRateLimits(command));
 }

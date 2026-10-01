@@ -11,7 +11,7 @@ Use this only to choose a model for a new session. The user's explicit model and
 ## Select
 
 1. Assemble a compact factual brief of the remaining work: requested outcome, plan status, unresolved decisions, prior failed attempts, expected breadth, and verification. Use `HANDOFF.md` when present. Do not include raw logs or the whole conversation.
-2. Pipe the brief to the selector. It reads the local quota-watch cache and makes one Jev Choice request with a 3-second timeout:
+2. Pipe the brief to the selector. It makes one Jev Choice request with a 3-second timeout:
 
 ```bash
 node ~/.agents/skills/model-selector/scripts/select.mjs <<'EOF'
@@ -19,15 +19,12 @@ node ~/.agents/skills/model-selector/scripts/select.mjs <<'EOF'
 EOF
 ```
 
-3. Parse its one-line JSON result (`model`, `effort`). Report the selected profile, model, and effort in one short sentence. Do not put it in `HANDOFF.md`.
+3. Parse its one-line JSON result (`agent`, `model`, optional `effort`, optional `fallbackFrom`). Report the agent, model, and effort in one short sentence. Do not put it in `HANDOFF.md`.
 
-## Profiles
+To resolve a named agent without Jev, run `node ~/.agents/skills/model-selector/scripts/select.mjs --agent <name>`. It prints the same JSON shape.
 
-- `quick`: GLM 5.3 Flash high for small, obvious work. Treat as effectively free.
-- `workhorse`: GPT 5.6 Sol medium for planned, sustained implementation.
-- `workhorse-zai`: GLM 5.3 high when OpenAI quota is low.
-- `deep`: GPT 5.6 Sol xhigh for genuinely hard, consequential decisions only.
+## Agents
 
-Keep these profiles in sync with the `handoff` skill's alias table (authoritative for spawn aliases); update both files together.
+The candidates are the agents with `mode: "all"` in `~/.config/home-manager/agents/opencode/subagents.jsonc`, and their descriptions are the selection criteria. Change agents, models, or descriptions there, not in this skill.
 
-The selector treats OpenAI as low when either the 5-hour remaining quota is below 20% or the weekly remaining quota is below 10%. It then offers workhorse-zai instead of the Sol workhorse, while deep (Sol xhigh) remains available for hard decisions. If quota state is missing or Jev is unavailable, it falls back immediately to the appropriate workhorse.
+Each result uses the model the agent-routes plugin currently assigns that agent, after quota and availability fallbacks (read from `~/.cache/opencode/agent-routes.json`). When that state is stale or missing, the configured model is used. If Jev is unavailable, the selector returns `general`.

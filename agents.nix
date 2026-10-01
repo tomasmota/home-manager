@@ -29,29 +29,10 @@ in {
     ".config/opencode/opencode.json".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/${opencodeConfigFile}";
 
-    ".config/opencode/agents/general.md" = {
-      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/agents/general.md";
-      force = true;
-    };
-
-    ".config/opencode/agents/explore.md" = {
-      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/agents/explore.md";
-      force = true;
-    };
-
-    ".config/opencode/agents/free.md" = {
-      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/agents/free.md";
-      force = true;
-    };
-
-    ".config/opencode/agents/reviewer.md" = {
-      source = config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/agents/reviewer.md";
-      force = true;
-    };
-
-    # NOTE: infra-investigate.md is intentionally NOT managed here. It is
-    # Signicat-specific and lives only as a local file in
-    # ~/.config/opencode/agents/. Do not add a symlink entry for it.
+    # Generates the shared agents (general, coder, explore, ...) from
+    # opencode/subagents.jsonc; edits to that file apply without a switch.
+    ".config/opencode/plugins/agent-routes".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/plugins/agent-routes";
 
     ".config/opencode/tui-plugins/tmux-status".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsDir}/opencode/tui-plugins/tmux-status";

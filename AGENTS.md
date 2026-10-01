@@ -23,7 +23,7 @@
 - `tmux.nix`: tmux settings/plugins/keybindings.
 - `nvim/`: Neovim config (lazy.nvim, plugin specs under `nvim/lua/plugins`, core config under `nvim/lua/config`).
 - `agents.nix`, `agents/**`: AI tool configs (OpenCode). `agents/global/AGENTS.md` is installed as the global agent instructions; `agents/AGENTS.md` applies only while working in the tracked `agents/` tree.
-- Default OpenCode subagent definitions live in `agents/opencode/agents/*.md`; update these instead of the `opencode*.json` files.
+- Shared OpenCode agents live in `agents/opencode/subagents.jsonc` and are loaded by the `agents/opencode/plugins/agent-routes` server plugin; update that file instead of the `opencode*.json` files or Markdown agents.
 - `agents/skills/**`: shared cross-agent skills; each skill lives in `agents/skills/<skill-name>/SKILL.md`.
 - `secrets.env`: local secrets file at repo root, intentionally gitignored.
 
@@ -39,7 +39,8 @@
 - `agents.nix` symlinks repo files into:
   - `~/.config/opencode/opencode.json`
 - Packaged OpenCode plugins (Jev permission reviewer, stuck-command watchdog, and tmux title renamer) live in the private `tomasmota/agents` repo under `opencode/plugins/`, not here. `opencode*.json` load them as Git packages tracking `main`; run `opencode plugin update` to install newly pushed commits.
-- `agents/opencode/lib/` holds the Jev client and session registry used by the `tmux-status` TUI plugin and the `model-selector` skill.
+- `agents/opencode/lib/` holds the Jev client and session registry used by the `tmux-status` TUI plugin and the `model-selector` skill, plus the agent-routes logic shared by the `agent-routes` plugin and `model-selector`.
+- The `agent-routes` server plugin is the exception to the private-repo rule: it lives here in `agents/opencode/plugins/agent-routes/` and is symlinked into `~/.config/opencode/plugins/`, where OpenCode auto-discovers it.
 
 ## Apply and Validate Workflows
 - Preferred validation before applying:

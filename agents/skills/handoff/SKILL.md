@@ -73,20 +73,17 @@ After writing `HANDOFF.md` (write path only, never on read):
    - Otherwise use the default: `Taking over after handoff. Take over HANDOFF.md with the takeover skill and continue with Next actions.`
 2. Resolve the model and reasoning effort:
    - Parse an optional model clause either adjacent to the handoff phrase or as a standalone clause at the end of the request: `[with | using | on | use] <model> [<effort>]`. A trailing clause must resolve to a full model ID or a known alias below; otherwise treat it as task text. Remove the clause from the follow-up prompt. Examples: `do a handoff with opus high`, `handoff to a new session using gemini-3-flash low`, `handoff to a new agent to plan the migration. use glm 5.3 high`.
-   - No model clause: invoke the `model-selector` skill. Give it a compact factual brief of the remaining work (the completed `HANDOFF.md`, follow-up, unresolved decisions, prior failures, and verification), never raw logs or the full conversation. Use its one-line JSON result's `model` and `effort` fields to build the session `model` object in step 4. This is one local cache read plus one Jev Choice request with a 3-second timeout; do not run extra model or quota lookups. If it falls back, use its returned workhorse.
-   - Resolve these aliases first, case-insensitively; spaces and hyphens are equivalent. These are authoritative: do not call `opencode models` or inspect verbose model metadata for them.
+   - No model clause: invoke the `model-selector` skill. Give it a compact factual brief of the remaining work (the completed `HANDOFF.md`, follow-up, unresolved decisions, prior failures, and verification), never raw logs or the full conversation. Use its one-line JSON result's `agent`, `model`, and `effort` fields for the session in step 4. This is one local state read plus one Jev Choice request with a 3-second timeout; do not run extra model or quota lookups. If it falls back, use its returned `general` agent.
+   - Agent names (`general`, `coder`, `terminal`, `quick`, `deep`, or any other `mode: "all"` agent in `~/.config/home-manager/agents/opencode/subagents.jsonc`): resolve with `node ~/.agents/skills/model-selector/scripts/select.mjs --agent <name>` and use its `agent`, `model`, and `effort` fields. A trailing effort word overrides its `effort`.
+   - Otherwise resolve these model aliases, case-insensitively; spaces and hyphens are equivalent. These are authoritative: do not call `opencode models` or inspect verbose model metadata for them.
      - `glm 5.3` -> `zai-coding-plan/glm-5.3`
      - `glm 5.3 flash` -> `zai-coding-plan/glm-5.3-flash`
      - `glm 5.3 highspeed` -> `zai-coding-plan/glm-5.3-highspeed`
      - `gpt 5.6 terra` / `terra` -> `openai/gpt-5.6-terra`
      - `gpt 5.6 sol` / `sol` -> `openai/gpt-5.6-sol`
      - `gpt 6 astra` / `astra` -> `openai/gpt-6-astra`
-     - `quick` -> `zai-coding-plan/glm-5.3-flash`
-     - `workhorse` -> `openai/gpt-5.6-sol`
-     - `workhorse zai` -> `zai-coding-plan/glm-5.3`
-     - `deep` -> `openai/gpt-5.6-sol#xhigh`
    - Match the longest known alias, so `glm 5.3 flash` never resolves as `glm 5.3`. A trailing effort word (`high`, `medium`, ...) is consumed as an effort, never as part of the model name; only the word `highspeed` selects the highspeed model.
-   - Keep this table in sync with `model-selector/SKILL.md` (its profiles are the Jev fallback); update both files together.
+   - Never copy agent models into this table; `subagents.jsonc` is their only source.
    - A full `provider/model` ID is authoritative and used as-is without a model-name lookup; check its variants only when the user also requests an effort.
    - Any other `<model>` is a short name, matched case-insensitively as a substring against one `opencode models` result (full `provider/model` IDs).
      - 1 match: use it.
@@ -100,12 +97,13 @@ After writing `HANDOFF.md` (write path only, never on read):
 ```bash
 worktree="<worktree-path>"
 title="Handoff: <short task name>"
+agent="<agent from model-selector or an agent alias, or empty>"
 provider="<providerID, or empty when no valid model override exists>"
 model_id="<model ID without #variant, or empty>"
 effort="<effort/variant, or empty>"
 
-payload=$(jq -n --arg title "$title" --arg dir "$worktree" --arg provider "$provider" --arg id "$model_id" --arg variant "$effort" \
-  '{title:$title,location:{directory:$dir}} + (if $provider != "" then {model:{providerID:$provider,id:$id} + (if $variant != "" then {variant:$variant} else {} end)} else {} end)')
+payload=$(jq -n --arg title "$title" --arg dir "$worktree" --arg agent "$agent" --arg provider "$provider" --arg id "$model_id" --arg variant "$effort" \
+  '{title:$title,location:{directory:$dir}} + (if $agent != "" then {agent:$agent} else {} end) + (if $provider != "" then {model:{providerID:$provider,id:$id} + (if $variant != "" then {variant:$variant} else {} end)} else {} end)')
 sid=$(opencode api post /api/session -d "$payload" | jq -r .data.id) || exit 1
 [ -n "$sid" ] && [ "$sid" != null ] || exit 1
 body=$(jq -n --arg text "$initial_prompt" '{text:$text}')

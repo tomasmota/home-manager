@@ -28,6 +28,9 @@
       }
     }
   },
+  "experimental": {
+    "subagent_depth": 2
+  },
   "mcp": {
     "servers": {
       "chrome-devtools": {

@@ -1,78 +1,62 @@
 #!/usr/bin/env node
 
-import { readFile } from "node:fs/promises"
 import { realpathSync } from "node:fs"
-import { homedir } from "node:os"
-import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { answerChoice, requestJev } from "../../../opencode/lib/jev-client.js"
+import { loadRoutes, parseModelRef, primaryAgents, readState } from "../../../opencode/lib/agent-routes.js"
 
-const here = dirname(fileURLToPath(import.meta.url))
-const profiles = JSON.parse(await readFile(join(here, "..", "profiles.json"), "utf8"))
 const maxBriefChars = 8_000
-const maxCacheAgeMs = 3 * 60_000
+const defaultAgent = "general"
 
-function quotaCachePath() {
-  return join(process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache"), "opencode", "quota-watch.json")
-}
-
-async function quotaState() {
-  try {
-    const cached = JSON.parse(await readFile(quotaCachePath(), "utf8"))
-    if (typeof cached.generatedAt !== "number" || Date.now() - cached.generatedAt > maxCacheAgeMs) return undefined
-    return cached
-  } catch {
-    return undefined
+// The agent-routes plugin's state holds each agent's model after quota fallbacks;
+// without fresh state, the configured model is used.
+export function resolveAgent(routes, id, state) {
+  const agent = routes.agents[id]
+  if (!agent) throw new Error(`unknown agent: ${id}`)
+  const live = state?.agents?.[id]
+  const ref = parseModelRef(live?.model ?? agent.model)
+  return {
+    agent: id,
+    model: `${ref.providerID}/${ref.id}`,
+    ...(ref.variant ? { effort: ref.variant } : {}),
+    ...(live?.fallbackFrom ? { fallbackFrom: live.fallbackFrom } : {}),
   }
 }
 
-function openaiQuotaLow(quota) {
-  const openai = quota?.openai
-  return openai && (openai.hourly?.percentLeft < 20 || openai.percentLeft < 10)
-}
-
-function selectionCriteria(quota) {
-  const low = openaiQuotaLow(quota)
-  const candidates = {
-    quick: profiles.quick.description,
-    [low ? "workhorse-zai" : "workhorse"]: profiles[low ? "workhorse-zai" : "workhorse"].description,
-    deep: profiles.deep.description,
-  }
-  return candidates
-}
-
-export async function selectModel(brief, { quota, request = requestJev } = {}) {
-  quota ??= await quotaState()
-  const criteria = selectionCriteria(quota)
+export async function selectModel(brief, { routes, state, request = requestJev } = {}) {
+  routes ??= await loadRoutes()
+  state ??= await readState()
+  const criteria = Object.fromEntries(primaryAgents(routes).map((agent) => [agent.id, agent.description]))
   try {
     const response = await request({
-      state: {
-        remaining_work: brief.slice(0, maxBriefChars),
-        quota: quota ?? "Unavailable. Do not make quota assumptions; choose by task fit.",
-      },
+      state: { remaining_work: brief.slice(0, maxBriefChars) },
       questions: {
-        profile: {
+        agent: {
           type: "choice",
-          instructions: "Which execution profile best fits the remaining work? Choose the cheapest profile that is sufficient. A long task with a credible plan is workhorse work, not deep work. Quota is current resource context: if OpenAI quota is low, the workhorse-zai option preserves it; deep remains available only for genuinely hard decisions.",
+          instructions: `Which agent should run the remaining work? Match the work against each agent's description. Choose ${defaultAgent} when no other agent clearly fits.`,
           criteria,
         },
       },
       timeoutMs: 3_000,
     })
-    const answer = answerChoice(response.answers?.profile)
-    if (!answer || !Object.hasOwn(profiles, answer.choice) || !Object.hasOwn(criteria, answer.choice)) throw new Error("invalid Jev profile response")
-    const profile = profiles[answer.choice]
-    return { ...profile, profile: answer.choice, confidence: answer.confidence, quota, source: "jev" }
+    const answer = answerChoice(response.answers?.agent)
+    if (!answer || !Object.hasOwn(criteria, answer.choice)) throw new Error("invalid Jev agent response")
+    return { ...resolveAgent(routes, answer.choice, state), confidence: answer.confidence, source: "jev" }
   } catch (error) {
-    const profile = profiles[openaiQuotaLow(quota) ? "workhorse-zai" : "workhorse"]
-    return { ...profile, profile: openaiQuotaLow(quota) ? "workhorse-zai" : "workhorse", quota, source: "fallback", error: String(error) }
+    return { ...resolveAgent(routes, defaultAgent, state), source: "fallback", error: String(error) }
   }
 }
 
 const isCli = process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)
 if (isCli) {
-  const chunks = []
-  for await (const chunk of process.stdin) chunks.push(chunk)
-  const result = await selectModel(Buffer.concat(chunks).toString("utf8"))
+  const named = process.argv.indexOf("--agent")
+  let result
+  if (named !== -1) {
+    result = resolveAgent(await loadRoutes(), process.argv[named + 1], await readState())
+  } else {
+    const chunks = []
+    for await (const chunk of process.stdin) chunks.push(chunk)
+    result = await selectModel(Buffer.concat(chunks).toString("utf8"))
+  }
   process.stdout.write(`${JSON.stringify(result)}\n`)
 }
