@@ -178,6 +178,7 @@
     { "action": "shell", "resource": "glab* delete*", "effect": "deny" },
     { "action": "shell", "resource": "glab* archive*", "effect": "deny" },
     { "action": "shell", "resource": "glab* revoke*", "effect": "deny" },
+    { "action": "shell", "resource": "glab mr*", "effect": "allow" },
 
     { "action": "shell", "resource": "gh* list*", "effect": "allow" },
     { "action": "shell", "resource": "gh* view*", "effect": "allow" },
