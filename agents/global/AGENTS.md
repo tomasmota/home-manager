@@ -15,10 +15,8 @@
 - Tool availability and names are model-specific. Use every direct tool's exact advertised name and input schema from the current turn: Claude normally has `write`/`edit`, while GPT may have `patch`. On the Claude subscription gateway, direct tools may be advertised as `mcp__...` aliases whose final semantic suffix identifies the ordinary tool. If the current tool list contains such aliases, the one ending in `_subagent` is the subagent spawner. Invoke the complete advertised name verbatim—never remove its prefix or opaque tool word, shorten it to a suffix, or invent an alias. When plain names are advertised, use the plain names. Gateway aliases do not rename Code Mode's `tools` catalog. Inside `execute`, use only catalog paths or paths returned by `search`; search by namespace when a broad query misses a tool. Serialize edits and the tests that depend on them, even if independent tool calls can run in parallel.
 - If I say "open a file", open it in a new tmux pane to the right of the current pane: `tmux split-window -h -c <dir> -t "$TMUX_PANE" 'nvim <file>'`.
 
-# Handoff files
-- After taking over from a fresh `HANDOFF.md` (scope and freshness checks passed, state verified, mission restated), delete the file immediately and continue without it. Never keep updating it in place; write a new one only when explicitly asked.
-
 # skills
 - If I ask for a skill that should stay only on this machine or should not live in the public home-manager repo, create it under `~/.agents/local-skills/`.
 - Only put shared/public skills in `~/.config/home-manager/agents/skills/`.
+- `~/.agents/team-skills/` links to my work team's skills repo checkout. Edit team skills there and deliver them through that repo; never copy them into `local-skills`.
 - If not clear, when i ask to add a skill, ask if it's local or tracked

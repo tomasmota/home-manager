@@ -10,7 +10,7 @@ Use this only to choose a model for a new session. The user's explicit model and
 
 ## Select
 
-1. Assemble a compact factual brief of the remaining work: requested outcome, plan status, unresolved decisions, prior failed attempts, expected breadth, and verification. Use `HANDOFF.md` when present. Do not include raw logs or the whole conversation.
+1. Assemble a compact factual brief of the remaining work: requested outcome, plan status, unresolved decisions, prior failed attempts, expected breadth, and verification. For a handoff, use the drafted document's Mission, Open questions, Next actions, and Verify, not the whole document: the selector keeps only the first 8,000 characters. Do not include raw logs or the whole conversation.
 2. Pipe the brief to the selector. It makes one Jev Choice request with a 3-second timeout:
 
 ```bash
@@ -19,7 +19,7 @@ node ~/.agents/skills/model-selector/scripts/select.mjs <<'EOF'
 EOF
 ```
 
-3. Parse its one-line JSON result (`agent`, `model`, optional `effort`, optional `fallbackFrom`). Report the agent, model, and effort in one short sentence. Do not put it in `HANDOFF.md`.
+3. Parse its one-line JSON result (`agent`, `model`, optional `effort`, optional `fallbackFrom`). Report the agent, model, and effort in one short sentence. Do not put it in the handoff document.
 
 To resolve a named agent without Jev, run `node ~/.agents/skills/model-selector/scripts/select.mjs --agent <name>`. It prints the same JSON shape.
 
