@@ -117,7 +117,12 @@ After writing the document:
      - Many matches: if one is exact, use it; otherwise stop and ask the user to pick (list at most ~10). Never guess among many.
    - `<effort>` is an optional space-separated word: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` (case-insensitive). Acknowledge it in your one-line report, and pass it as `variant` in the session `model` object in step 4 (unlike the root TUI default, a session created with an explicit variant keeps it — verified live). If no effort is specified, omit `variant` (or preserve a `#variant` already on a supplied full ID). The selector's profiles have supported effort values.
    - Split the resolved model for the session `model` object: `providerID` is the part before the first `/`, `id` is the rest minus any `#variant`. A `#variant` already on a supplied full ID wins over a separate effort word; never send both.
-3. Only spawn if inside tmux (`${TMUX:-}` is non-empty). If not in tmux, skip spawning, report it with the document path and the ready-to-paste line from "When to Use This Skill", and still succeed — the document is the handoff.
+3. Spawning is client-dependent, so decide from the environment rather than assuming tmux:
+   - **Inside tmux** (`${TMUX:-}` is non-empty): follow step 4. The new session gets its own pane, which is what the user expects from "do a handoff".
+   - **Outside tmux, but on a server with a session API** (OpenChamber, or any client that can address server-side sessions): still create the session in step 4 and submit the document, but run no `tmux` command. The new session is already live and appears in the client's session list. Report its ID and the document path; use that client's own tooling to surface or open the session if it has a way to do so.
+   - **Neither** (no tmux and no session API): skip creating a session, report the document path and the ready-to-paste line from "When to Use This Skill", and still succeed — the document is the handoff.
+
+   The document is the handoff in every case. A pane or a listed session is a convenience, never the deliverable.
 4. Create the session server-side with the resolved model, submit the document as the prompt through the API, and attach the **full TUI** to that live session. The root TUI has no `--model` flag, so set the model at session creation; an explicit session model and `variant` are honored, and the API-submitted prompt starts execution automatically:
 
 ```bash
