@@ -10,7 +10,8 @@
     "git+ssh://git@github.com/tomasmota/agents.git#main::path:opencode/plugins/auto-approve-jev",
     "git+ssh://git@github.com/tomasmota/agents.git#main::path:opencode/plugins/stuck-command",
     "git+ssh://git@github.com/tomasmota/agents.git#main::path:opencode/plugins/tmux-title-jev",
-    "git+ssh://git@github.com/tomasmota/agents.git#main::path:opencode/plugins/gcloud-auth-healer"
+    "git+ssh://git@github.com/tomasmota/agents.git#main::path:opencode/plugins/gcloud-auth-healer",
+    "git+ssh://git@github.com/tomasmota/agents.git#main::path:opencode/plugins/compaction-preserve"
   ],
   "model": "openai/gpt-6.1-sol#high",
   "providers": {
