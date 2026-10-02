@@ -1026,24 +1026,24 @@
   },
   "plugins": [
     {
-      "package": "git+ssh://git@github.com/tomasmota/agents.git#7add8af7820e8fbcf2e439c5e0aefaa574827d04::path:opencode/plugins/agent-routes",
+      "package": "git+ssh://git@github.com/tomasmota/agents.git#f745f8153c6e7e853f1538e761a104488ea86800::path:opencode/plugins/agent-routes",
       "options": {
         "routesFile": "/Users/tomas/.config/opencode/subagents.jsonc",
         "quotaAdapter": "file:///Users/tomas/.config/home-manager/agents/opencode/plugins/agent-routes/quota.js"
       }
     },
     {
-      "package": "git+ssh://git@github.com/tomasmota/agents.git#7add8af7820e8fbcf2e439c5e0aefaa574827d04::path:opencode/plugins/auto-retitle",
+      "package": "git+ssh://git@github.com/tomasmota/agents.git#f745f8153c6e7e853f1538e761a104488ea86800::path:opencode/plugins/auto-retitle",
       "options": {
         "model": "openai/gpt-6-luna#low"
       }
     },
-    "git+ssh://git@github.com/tomasmota/agents.git#7add8af7820e8fbcf2e439c5e0aefaa574827d04::path:opencode/plugins/auto-approve-jev",
-    "git+ssh://git@github.com/tomasmota/agents.git#7add8af7820e8fbcf2e439c5e0aefaa574827d04::path:opencode/plugins/stuck-command",
-    "git+ssh://git@github.com/tomasmota/agents.git#7add8af7820e8fbcf2e439c5e0aefaa574827d04::path:opencode/plugins/tmux-title-jev",
-    "git+ssh://git@github.com/tomasmota/agents.git#7add8af7820e8fbcf2e439c5e0aefaa574827d04::path:opencode/plugins/gcloud-auth-healer",
+    "git+ssh://git@github.com/tomasmota/agents.git#f745f8153c6e7e853f1538e761a104488ea86800::path:opencode/plugins/auto-approve-jev",
+    "git+ssh://git@github.com/tomasmota/agents.git#f745f8153c6e7e853f1538e761a104488ea86800::path:opencode/plugins/stuck-command",
+    "git+ssh://git@github.com/tomasmota/agents.git#f745f8153c6e7e853f1538e761a104488ea86800::path:opencode/plugins/tmux-title-jev",
+    "git+ssh://git@github.com/tomasmota/agents.git#f745f8153c6e7e853f1538e761a104488ea86800::path:opencode/plugins/gcloud-auth-healer",
     {
-      "package": "git+ssh://git@github.com/tomasmota/agents.git#7add8af7820e8fbcf2e439c5e0aefaa574827d04::path:opencode/plugins/auto-handoff",
+      "package": "git+ssh://git@github.com/tomasmota/agents.git#f745f8153c6e7e853f1538e761a104488ea86800::path:opencode/plugins/auto-handoff",
       "options": {
         "threshold": 250000
       }
