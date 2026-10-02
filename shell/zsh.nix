@@ -31,6 +31,11 @@
           export PATH="/opt/homebrew/bin:$PATH"
         fi
         export EDITOR="nvim"
+        # Vivaldi profile dirs from ~/Library/Application Support/Vivaldi/Local State
+        # -> profile.info_cache: "Default" = Work, "Profile 1" = Personal.
+        # Default is the Work profile, so pin it explicitly so BROWSER never
+        # falls through to whichever profile Vivaldi last used.
+        export BROWSER='/Applications/Vivaldi.app/Contents/MacOS/Vivaldi --profile-directory=Default'
         export TFE_PARALLELISM="100"
         export DIRENV_LOG_FORMAT=""
         export MANPAGER='nvim +Man!'
