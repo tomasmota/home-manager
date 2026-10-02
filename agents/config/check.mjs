@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url"
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex")
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 const require = (ok, message) => { if (!ok) throw new Error(message) }
-const packages = ["agent-routes", "auto-retitle", "auto-approve-jev", "stuck-command", "tmux-title-jev", "gcloud-auth-healer", "auto-handoff", "child-policy"]
+const packages = ["agent-routes", "auto-retitle", "auto-approve-jev", "stuck-command", "tmux-title-jev", "gcloud-auth-healer", "auto-handoff"]
 const skills = { hey: ["SKILL.md"], "typesafe-ai": ["LICENSE", "SKILL.md"], handoff: ["SKILL.md"], "model-selector": ["SKILL.md", "scripts/select.mjs"], "use-uvx": ["SKILL.md"] }
 export async function check(root) {
   const safe = async (path) => {
@@ -45,7 +45,6 @@ export async function check(root) {
     require(equal(config.permissions, base.permissions) && config.experimental.subagent_depth === 2 && config.websearch.provider === "exa" && equal(config.tool_output, { max_lines: 500, max_bytes: 16000 }) && equal(config.compaction, { auto: true, keep: { tokens: 12000 } }), "portable settings drift")
     for (const [id, selection] of Object.entries(adapter.models)) {
       require(config.agents[id].model === selection.model && config.agents[id].mode === selection.mode && routes.agents[id].model === selection.model, "role selection drift")
-      if (selection.mode === "subagent") require(selection.model === "opencode/space-bunny-free", "paid child selection")
     }
   }
   const runtime = await json("agents/runtime/package.json"), runtimeLock = await json("agents/runtime/package-lock.json")

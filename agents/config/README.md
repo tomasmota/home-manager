@@ -82,9 +82,8 @@ inventory does not prove project overrides or hook-modified requests. Record
 exact installed versions, central pin, active packages and skill source results
 for the intended locations, without raw configuration/environment/auth dumps.
 
-Use disposable fictional sessions to verify: primary choices unchanged; default,
-explicit paid override and nested child calls actually select Space Bunny, with
-no paid fallback; unavailable child fails clearly; app handoff produces one
+Use disposable fictional sessions to verify: primary choices unchanged; default and explicit child calls (explore, reviewer, quick, free, nested) select the
+models configured in `subagents.jsonc`, and the quota fallbacks behave as configured; app handoff produces one
 successor without a tmux pane; confirmed TUI handoff targets only its owning
 pane. CLI quotas/status/notifications remain terminal-only, not Android parity.
 Verify explicit desktop Quit stays closed, crash restarts, reconnect uses only

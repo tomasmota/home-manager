@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "central": {
     "schemaVersion": 1,
-    "revision": "e9d28f5c0ce8dddb34161d8fbdab80346d3e912f",
+    "revision": "1c424133561085cbe099cd208296b411b9bc9914",
     "pluginApi": "2.0",
     "opencode": "2.0.16"
   },
   "profile": "mac",
   "inputs": {
-    "adapter": "6379285e81b8c746bebbb5cb930fde35c33efd730570811c5d37d90976525767",
+    "adapter": "87331d60f2b5238bd9fba44dce02fd91d28eff72ea591dfb2baa512f8eff21d0",
     "files": {
       "agents/config/platform.macos.json": "8c00f9c4285be33d976b66a456b05c330783d9c494e69ebaac651b01e3ca4e32",
       "agents/config/platform.md": "b3fb51f4bbba565baa3ff00d027ec18f49ec5d34822a56a245f301b0a70f5abf",
@@ -51,11 +51,6 @@
       "id": "auto-handoff",
       "path": "opencode/plugins/auto-handoff",
       "capability": "automatic-handoff"
-    },
-    {
-      "id": "child-policy",
-      "path": "opencode/plugins/child-policy",
-      "capability": "free-child-dispatch"
     }
   ],
   "skills": {
@@ -109,9 +104,9 @@
     }
   },
   "artifacts": {
-    "agents/opencode/opencode.macos.json": "8f0446359d44bd8822f7ab795b5fc4e3b9caf1f7511f7774e8661c8f6221194e",
-    "agents/opencode/subagents.jsonc": "820824d4ec8b917640d81bfbaed577f15469b5baba9f2244c9c07b362b108afd",
-    "agents/global/AGENTS.md": "5e5abaa9a1de436175c3738e913a95e54dd8dab433f9d04bbdba3f01f40f8f59",
+    "agents/opencode/opencode.macos.json": "24a05fbd38ffb8ced984fd7edfb0521805eb6181da506e5515f8eec1a249721c",
+    "agents/opencode/subagents.jsonc": "cbcd65cc1404c537a681c08f592f8f75dc01c5cfa009b33daf9d6f2b03528be7",
+    "agents/global/AGENTS.md": "6e99ea98c04c4b5974a61a2711ec6c1a0fedd4ac8455685dfd6152d0aeedd14e",
     "agents/opencode/cli.json": "ea2a176fd832d50186327a510b228dc6a231355fb265883647b51e4841a71503",
     "agents/skills/hey/SKILL.md": "94363fb6a29f14814b8bf01205f9be105661507a6d12ec7b11af9c71d2c4e69f",
     "agents/skills/typesafe-ai/LICENSE": "835f233f1d6ed84a9b9a351aba0689b47644a4137d6316911fc7957bde523b02",

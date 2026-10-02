@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "central": {
     "schemaVersion": 1,
-    "revision": "e9d28f5c0ce8dddb34161d8fbdab80346d3e912f",
+    "revision": "1c424133561085cbe099cd208296b411b9bc9914",
     "pluginApi": "2.0",
     "opencode": "2.0.16"
   },
   "profile": "home-linux",
   "inputs": {
-    "adapter": "20052315709f21831384e47037f7ef2d272660af429b45da80795742e8ed2b9c",
+    "adapter": "a9b9ef4f12e6008162e6b725c38c4da26d4fd9022b144b00f56e98d762960be6",
     "files": {
       "agents/config/platform.linux.json": "c75c5a4cd1fd6150b1b92587f7c0dd939ca05e4f1650637d6a1ac8fce0a83340",
       "agents/config/platform.md": "b3fb51f4bbba565baa3ff00d027ec18f49ec5d34822a56a245f301b0a70f5abf",
@@ -51,11 +51,6 @@
       "id": "auto-handoff",
       "path": "opencode/plugins/auto-handoff",
       "capability": "automatic-handoff"
-    },
-    {
-      "id": "child-policy",
-      "path": "opencode/plugins/child-policy",
-      "capability": "free-child-dispatch"
     }
   ],
   "skills": {
@@ -109,9 +104,9 @@
     }
   },
   "artifacts": {
-    "agents/opencode/opencode.json": "9f5096f8e2a075475cc3e9377b3feddf8f89eb62e197be5682f2fad65230af4b",
-    "agents/opencode/subagents.jsonc": "820824d4ec8b917640d81bfbaed577f15469b5baba9f2244c9c07b362b108afd",
-    "agents/global/AGENTS.md": "5e5abaa9a1de436175c3738e913a95e54dd8dab433f9d04bbdba3f01f40f8f59",
+    "agents/opencode/opencode.json": "5012b3ec0ebd9232123233cb321ff44ef9277036bf9975e74a7d6b7231bdeef9",
+    "agents/opencode/subagents.jsonc": "cbcd65cc1404c537a681c08f592f8f75dc01c5cfa009b33daf9d6f2b03528be7",
+    "agents/global/AGENTS.md": "6e99ea98c04c4b5974a61a2711ec6c1a0fedd4ac8455685dfd6152d0aeedd14e",
     "agents/opencode/cli.json": "ea2a176fd832d50186327a510b228dc6a231355fb265883647b51e4841a71503",
     "agents/skills/hey/SKILL.md": "94363fb6a29f14814b8bf01205f9be105661507a6d12ec7b11af9c71d2c4e69f",
     "agents/skills/typesafe-ai/LICENSE": "835f233f1d6ed84a9b9a351aba0689b47644a4137d6316911fc7957bde523b02",

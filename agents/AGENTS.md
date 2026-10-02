@@ -21,7 +21,7 @@
 - Before setting an OpenCode model, use the available OpenCode models listing tool and copy the exact `providerID/modelID` it returns. Do not infer or normalize model IDs.
 - A colon may be part of the literal model ID, such as `inco/glm-5.3-flash:fast`; preserve it exactly.
 - Append `#variant` only when the models listing exposes that variant for the selected model. Never convert a colon suffix in a model ID into a `#variant`.
-- After rendering an adapter model change, check `~/.cache/opencode/agent-routes.json`: `errors` must be empty and the primary mapping must match. Actual child executor calls are forced to Space Bunny by the central policy; richer `mode: all` primary choices stay intact.
+- After rendering an adapter model change, check `~/.cache/opencode/agent-routes.json`: `errors` must be empty and the primary mapping must match.
 
 ## Tests
 

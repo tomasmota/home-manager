@@ -34,12 +34,12 @@ test("a later profile validation failure publishes nothing", { skip }, async (t)
   await writeFile(join(root, "agents/opencode/opencode.macos.json"), "fictional stale marker")
   const path = join(root, "agents/config/linux.json")
   const adapter = JSON.parse(await readFile(path))
-  adapter.models.explore.model = "claude-subscription/claude-opus-5-5"
+  adapter.models.explore.model = "no-provider"
   await writeFile(path, JSON.stringify(adapter, null, 2) + "\n")
   const before = await snapshot(root, watched)
   const result = manage(root, "--render")
   assert.notEqual(result.status, 0)
-  assert.match(result.stderr, /space-bunny|child|subagent/i)
+  assert.match(result.stderr, /invalid selection/)
   assert.deepEqual(await snapshot(root, watched), before)
 })
 

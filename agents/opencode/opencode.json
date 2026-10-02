@@ -955,33 +955,26 @@
   },
   "plugins": [
     {
-      "package": "git+ssh://git@github.com/tomasmota/agents.git#e9d28f5c0ce8dddb34161d8fbdab80346d3e912f::path:opencode/plugins/agent-routes",
+      "package": "git+ssh://git@github.com/tomasmota/agents.git#1c424133561085cbe099cd208296b411b9bc9914::path:opencode/plugins/agent-routes",
       "options": {
         "routesFile": "/home/tomas/.config/opencode/subagents.jsonc",
         "quotaAdapter": "file:///home/tomas/.config/home-manager/agents/opencode/plugins/agent-routes/quota.js"
       }
     },
     {
-      "package": "git+ssh://git@github.com/tomasmota/agents.git#e9d28f5c0ce8dddb34161d8fbdab80346d3e912f::path:opencode/plugins/auto-retitle",
+      "package": "git+ssh://git@github.com/tomasmota/agents.git#1c424133561085cbe099cd208296b411b9bc9914::path:opencode/plugins/auto-retitle",
       "options": {
         "model": "openai/gpt-6-luna#low"
       }
     },
-    "git+ssh://git@github.com/tomasmota/agents.git#e9d28f5c0ce8dddb34161d8fbdab80346d3e912f::path:opencode/plugins/auto-approve-jev",
-    "git+ssh://git@github.com/tomasmota/agents.git#e9d28f5c0ce8dddb34161d8fbdab80346d3e912f::path:opencode/plugins/stuck-command",
-    "git+ssh://git@github.com/tomasmota/agents.git#e9d28f5c0ce8dddb34161d8fbdab80346d3e912f::path:opencode/plugins/tmux-title-jev",
-    "git+ssh://git@github.com/tomasmota/agents.git#e9d28f5c0ce8dddb34161d8fbdab80346d3e912f::path:opencode/plugins/gcloud-auth-healer",
+    "git+ssh://git@github.com/tomasmota/agents.git#1c424133561085cbe099cd208296b411b9bc9914::path:opencode/plugins/auto-approve-jev",
+    "git+ssh://git@github.com/tomasmota/agents.git#1c424133561085cbe099cd208296b411b9bc9914::path:opencode/plugins/stuck-command",
+    "git+ssh://git@github.com/tomasmota/agents.git#1c424133561085cbe099cd208296b411b9bc9914::path:opencode/plugins/tmux-title-jev",
+    "git+ssh://git@github.com/tomasmota/agents.git#1c424133561085cbe099cd208296b411b9bc9914::path:opencode/plugins/gcloud-auth-healer",
     {
-      "package": "git+ssh://git@github.com/tomasmota/agents.git#e9d28f5c0ce8dddb34161d8fbdab80346d3e912f::path:opencode/plugins/auto-handoff",
+      "package": "git+ssh://git@github.com/tomasmota/agents.git#1c424133561085cbe099cd208296b411b9bc9914::path:opencode/plugins/auto-handoff",
       "options": {
         "threshold": 250000
-      }
-    },
-    {
-      "package": "git+ssh://git@github.com/tomasmota/agents.git#e9d28f5c0ce8dddb34161d8fbdab80346d3e912f::path:opencode/plugins/child-policy",
-      "options": {
-        "maxConcurrent": 4,
-        "forceForeground": false
       }
     }
   ],
@@ -1063,7 +1056,7 @@
         }
       ],
       "mode": "subagent",
-      "model": "opencode/space-bunny-free"
+      "model": "inco/glm-5.3-flash:fast"
     },
     "reviewer": {
       "description": "Independent adversarial review for concrete bugs, regressions, risks and missing tests. Does not edit; shell checks are permitted, so it is not a strict read-only sandbox.",
@@ -1086,13 +1079,13 @@
         }
       ],
       "mode": "subagent",
-      "model": "opencode/space-bunny-free"
+      "model": "openai/gpt-6.1-sol#xhigh"
     },
     "free": {
       "description": "General-purpose free delegated work. All actual children use the same free model regardless of role.",
       "system": "Handle the bounded task autonomously, verify proportionately and report the outcome concisely.",
       "mode": "subagent",
-      "model": "opencode/space-bunny-free"
+      "model": "opencode/muse-spark-1.3-contributor-free"
     }
   }
 }
