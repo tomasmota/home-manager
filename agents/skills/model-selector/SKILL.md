@@ -25,6 +25,6 @@ To resolve a named agent without Jev, run `node ~/.agents/skills/model-selector/
 
 ## Agents
 
-The candidates are the agents with `mode: "all"` in `~/.config/home-manager/agents/opencode/subagents.jsonc`, and their descriptions are the selection criteria. Change agents, models, or descriptions there, not in this skill.
+The candidates are primary-capable agents in `~/.config/opencode/subagents.jsonc` (or `OPENCODE_ROUTES_FILE`), and their descriptions are the selection criteria. Change shared descriptions in the central `agents` repository and primary models in the consumer adapter; render and deploy rather than editing the generated route file.
 
 Each result uses the model the agent-routes plugin currently assigns that agent, after quota and availability fallbacks (read from `~/.cache/opencode/agent-routes.json`). When that state is stale or missing, the configured model is used. If Jev is unavailable, the selector returns `general`.

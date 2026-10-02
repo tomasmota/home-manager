@@ -1,0 +1,33 @@
+{
+  "profile": "home-linux",
+  "server": "agents/config/platform.linux.json",
+  "instructions": "agents/config/platform.md",
+  "cli": "agents/config/cli.json",
+  "models": {
+    "general": { "mode": "all", "model": "claude-subscription/claude-sonnet-5-5#high" },
+    "coder": { "mode": "all", "model": "claude-subscription/claude-opus-5-5#high" },
+    "terminal": { "mode": "all", "model": "openai/gpt-6.1-sol#xhigh" },
+    "quick": { "mode": "all", "model": "inco/glm-5.3-flash:fast" },
+    "deep": { "mode": "all", "model": "claude-subscription/claude-opus-5-5#xhigh" },
+    "explore": { "mode": "subagent", "model": "opencode/space-bunny-free" },
+    "reviewer": { "mode": "subagent", "model": "opencode/space-bunny-free" },
+    "free": { "mode": "subagent", "model": "opencode/space-bunny-free" }
+  },
+  "fallbacks": { "openai": "claude-subscription/claude-opus-5-5", "claude-subscription": "openai/gpt-6.1-sol#high" },
+  "pluginOptions": {
+    "agent-routes": {
+      "routesFile": "/home/tomas/.config/opencode/subagents.jsonc",
+      "quotaAdapter": "file:///home/tomas/.config/home-manager/agents/opencode/plugins/agent-routes/quota.js"
+    }
+  },
+  "outputs": {
+    "server": "agents/opencode/opencode.json",
+    "instructions": "agents/global/AGENTS.md",
+    "routes": "agents/opencode/subagents.jsonc",
+    "cli": "agents/opencode/cli.json",
+    "inventory": "agents/config/inventory.linux.json",
+    "inventoryTool": "agents/opencode/lib/inventory.mjs",
+    "skills": "agents/skills",
+    "helpers": "agents/opencode/lib"
+  }
+}

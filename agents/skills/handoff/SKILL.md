@@ -94,17 +94,9 @@ After writing the document:
 2. Resolve the model and reasoning effort:
    - Parse an optional model clause either adjacent to the handoff phrase or as a standalone clause at the end of the request: `[with | using | on | use] <model> [<effort>]`. A trailing clause must resolve to a full model ID or a known alias below; otherwise treat it as task text. Remove the clause from the follow-up. Examples: `do a handoff with opus high`, `handoff to a new session using gemini-3-flash low`, `handoff to a new agent to plan the migration. use glm 5.3 high`.
    - No model clause: invoke the `model-selector` skill. Give it a compact factual brief, not the whole document: mission, unresolved decisions, prior failures, next actions, and verification. The selector keeps only the first 8,000 characters, and never wants raw logs or the full conversation. Use its one-line JSON result's `agent`, `model`, and `effort` fields for the session in step 4. This is one local state read plus one Jev Choice request with a 3-second timeout; do not run extra model or quota lookups. If it falls back, use its returned `general` agent.
-   - Agent names (`general`, `coder`, `terminal`, `quick`, `deep`, or any other `mode: "all"` agent in `~/.config/home-manager/agents/opencode/subagents.jsonc`): resolve with `node ~/.agents/skills/model-selector/scripts/select.mjs --agent <name>` and use its `agent`, `model`, and `effort` fields. A trailing effort word overrides its `effort`.
-   - Otherwise resolve these model aliases, case-insensitively; spaces, dots, and hyphens are equivalent. These are authoritative: do not call `opencode models` or inspect verbose model metadata for them.
-     - `glm 5.3` -> `zai-coding-plan/glm-5.3`
-     - `glm 5.3 flash` -> `zai-coding-plan/glm-5.3-flash`
-     - `glm 5.3 highspeed` -> `zai-coding-plan/glm-5.3-highspeed`
-     - `gpt 5.6 terra` / `terra` -> `openai/gpt-5.6-terra`
-     - `gpt 5.6 sol` / `sol` -> `openai/gpt-5.6-sol`
-     - `gpt 6 astra` / `astra` -> `openai/gpt-6-astra`
-   - Match the longest known alias, so `glm 5.3 flash` never resolves as `glm 5.3`. A trailing effort word (`high`, `medium`, ...) is consumed as an effort, never as part of the model name; only the word `highspeed` selects the highspeed model.
-   - Never copy agent models into this table; `subagents.jsonc` is their only source.
-   - A full `provider/model` ID is authoritative and used as-is without a model-name lookup; check its variants only when the user also requests an effort.
+   - Agent names (`general`, `coder`, `terminal`, `quick`, `deep`, or any other `mode: "all"` agent in `~/.config/opencode/subagents.jsonc`): resolve with `node ~/.agents/skills/model-selector/scripts/select.mjs --agent <name>` and use its `agent`, `model`, and `effort` fields. A trailing effort word overrides its `effort`.
+   - Do not maintain a second model-alias table in this skill. Agent routes belong in `subagents.jsonc`; family names such as `sol` are resolved against the current catalog, never silently mapped to an older generation.
+   - A full `provider/model` ID must be available in the current model catalog. Check the exact ID and any requested variant with the models listing tool; do not infer or normalize identifiers.
    - Any other `<model>` is a short name. Compare it to the `opencode models` output (full `provider/model` IDs) as a case-insensitive substring, with spaces, dots, underscores, and hyphens all treated as the same separator, so `claude opus 5.5` matches `claude-subscription/claude-opus-5-5`:
 
      ```bash
@@ -117,8 +109,8 @@ After writing the document:
      - Many matches: if one is exact, use it; otherwise stop and ask the user to pick (list at most ~10). Never guess among many.
    - `<effort>` is an optional space-separated word: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` (case-insensitive). Acknowledge it in your one-line report, and pass it as `variant` in the session `model` object in step 4 (unlike the root TUI default, a session created with an explicit variant keeps it — verified live). If no effort is specified, omit `variant` (or preserve a `#variant` already on a supplied full ID). The selector's profiles have supported effort values.
    - Split the resolved model for the session `model` object: `providerID` is the part before the first `/`, `id` is the rest minus any `#variant`. A `#variant` already on a supplied full ID wins over a separate effort word; never send both.
-3. Spawning is client-dependent, so decide from the environment rather than assuming tmux:
-   - **Inside tmux** (`${TMUX:-}` is non-empty): follow step 4. The new session gets its own pane, which is what the user expects from "do a handoff".
+3. Spawning is client-dependent. A shared server's inherited tmux variables do not prove this session came from a TUI; use the current client's context, and default to session-list presentation when uncertain:
+    - **Confirmed tmux TUI** (the current client is in tmux and both `TMUX` and `TMUX_PANE` are present): follow step 4 with `attach_tmux=true`. The new session gets its own pane, which is what the user expects from "do a handoff".
    - **Outside tmux, but on a server with a session API** (OpenChamber, or any client that can address server-side sessions): still create the session in step 4 and submit the document, but run no `tmux` command. The new session is already live and appears in the client's session list. Report its ID and the document path; use that client's own tooling to surface or open the session if it has a way to do so.
    - **Neither** (no tmux and no session API): skip creating a session, report the document path and the ready-to-paste line from "When to Use This Skill", and still succeed — the document is the handoff.
 
@@ -133,17 +125,26 @@ agent="<agent from model-selector or an agent alias, or empty>"
 provider="<providerID, or empty when no valid model override exists>"
 model_id="<model ID without #variant, or empty>"
 effort="<effort/variant, or empty>"
+attach_tmux=false # Set true only for the confirmed tmux TUI branch in step 3.
 
 payload=$(jq -n --arg title "$title" --arg dir "$worktree" --arg agent "$agent" --arg provider "$provider" --arg id "$model_id" --arg variant "$effort" \
   '{title:$title,location:{directory:$dir}} + (if $agent != "" then {agent:$agent} else {} end) + (if $provider != "" then {model:{providerID:$provider,id:$id} + (if $variant != "" then {variant:$variant} else {} end)} else {} end)')
 sid=$(opencode api post /api/session -d "$payload" | jq -r .data.id) || exit 1
 [ -n "$sid" ] && [ "$sid" != null ] || exit 1
 body=$(jq -n --rawfile text "$file" '{text:$text}')
-opencode api post /api/session/$sid/prompt --param sessionID=$sid -d "$body" >/dev/null || { opencode session delete "$sid" >/dev/null 2>&1; exit 1; }
-tmux split-window -h -c "$worktree" -t "$TMUX_PANE" opencode --session "$sid" || exit 1
+if ! opencode api post /api/session/$sid/prompt --param sessionID=$sid -d "$body" >/dev/null; then
+  printf 'Prompt receipt uncertain for session %s; preserve it and inspect before retrying. Document: %s\n' "$sid" "$file" >&2
+  exit 1
+fi
+if [ "$attach_tmux" = true ] && [ -n "${TMUX:-}" ] && [ -n "${TMUX_PANE:-}" ]; then
+  if ! tmux split-window -h -c "$worktree" -t "$TMUX_PANE" opencode --session "$sid"; then
+    printf 'Session %s is already running; opening a tmux pane failed. Open it from the session list.\n' "$sid" >&2
+  fi
+fi
+printf 'Handoff session: %s\n' "$sid"
 ```
 
 Pass `"$body"` to `--data` directly as an argument; never pipe it through `echo` in zsh (which rewrites `\n` escapes and corrupts multiline prompts). Build it from the file with `jq --rawfile` so the document is never re-quoted by the shell.
 
-5. Do not send keys or submit the prompt a second time. Report the session ID, the model used, and the document path; the new agent is already running in the pane to the right.
-6. A session-creation, prompt-submission, or split failure never loses the handoff — the document is still at its path. Report the failure and the path, then stop. Leave the file in place after a successful spawn too; the temp dir is disposable. Do not write the model into the document; the spawn commands are the only place it appears.
+5. Do not send keys or submit the prompt a second time. Report the session ID, the model used, and the document path. In tmux the new agent normally has a pane to the right; in OpenChamber it appears in the session list. A missing pane does not mean the successor failed.
+6. A session-creation or prompt-submission failure never loses the handoff — the document is still at its path. Report that failure and the path, then stop. A pane failure is only a presentation warning: report the already-running successor's ID and do not create another session. Leave the file in place after a successful spawn too; the temp dir is disposable. Do not write the model into the document; the spawn commands are the only place it appears.

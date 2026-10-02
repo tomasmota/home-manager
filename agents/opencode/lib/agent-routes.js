@@ -1,9 +1,8 @@
 import { readFile } from "node:fs/promises"
 import { homedir } from "node:os"
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
+import { join } from "node:path"
 
-export const ROUTES_FILE = join(dirname(fileURLToPath(import.meta.url)), "..", "subagents.jsonc")
+export const ROUTES_FILE = process.env.OPENCODE_ROUTES_FILE ?? join(process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config"), "opencode", "subagents.jsonc")
 export const STATE_MAX_AGE_MS = 15 * 60_000
 
 // Written by the agent-routes plugin:

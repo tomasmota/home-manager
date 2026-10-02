@@ -1,17 +1,16 @@
 # Agent configuration
 
-- This directory contains shared agent configuration managed by Home Manager.
-- Shared OpenCode agents (general, coder, terminal, quick, deep, explore, reviewer, free) are defined in `opencode/subagents.jsonc`. The `opencode/plugins/agent-routes` server plugin turns them into agents and hot-reloads edits, so no restart or switch is needed. Edit that file rather than adding Markdown agents or generated files under `~/.config/opencode/`.
-- Keep `subagents.jsonc` comments accurate and preserve its style. Agent descriptions are what delegating models read when choosing an agent, so describe when to use each one.
+- This directory consumes the immutable public `tomasmota/agents` core through thin Home Manager adapters. Read `config/README.md` before changing it.
+- Shared roles/descriptions/routing/portable skills are edited centrally. Workstation model maps, provider/permission/MCP/browser settings and CLI preferences are edited in `config/`; render generated snapshots with `bash agents/config/manage.sh --render` from the repository root.
+- Generated routes hot-reload, but do not edit them directly. Changing an exact package pin requires target reconciliation and active-identity proof.
 
 ## Sources of truth
 
-- Agent definitions, quota fallbacks, and shared agent permissions: `opencode/subagents.jsonc`
-- Agent plugin: `opencode/plugins/agent-routes/` (shared logic in `opencode/lib/agent-routes.js`)
-- OpenCode server configuration: `opencode/opencode*.json`
-- OpenCode TUI configuration: `opencode/cli.json`
-- Shared skills: `skills/*/SKILL.md`
-- Global agent instructions: `global/AGENTS.md`
+- Central lock and adapters: `config/lock.json`, `config/{mac,linux}.json`, `config/platform.*`
+- CLI preference source: `config/cli.json`; generated `opencode/cli.json`
+- Local quota/credential adapter: `opencode/plugins/agent-routes/quota.js`
+- Generated recovery artifacts: `opencode/opencode*.json`, `opencode/subagents.jsonc`, shared helpers/skills, `global/AGENTS.md`, `config/inventory.*.json`
+- Runtime/Nix integration: `runtime/`, `../agents.nix`, `../darwin/cliproxyapi.nix`
 
 ## OpenCode documentation
 
@@ -22,8 +21,8 @@
 - Before setting an OpenCode model, use the available OpenCode models listing tool and copy the exact `providerID/modelID` it returns. Do not infer or normalize model IDs.
 - A colon may be part of the literal model ID, such as `inco/glm-5.3-flash:fast`; preserve it exactly.
 - Append `#variant` only when the models listing exposes that variant for the selected model. Never convert a colon suffix in a model ID into a `#variant`.
-- After changing an agent model in `subagents.jsonc`, check `~/.cache/opencode/agent-routes.json`: `errors` must be empty and `agents.<id>.model` must show the new model. Invalid edits are logged to `~/.local/share/opencode/log/agent-routes.log`, and the last good version stays active.
+- After rendering an adapter model change, check `~/.cache/opencode/agent-routes.json`: `errors` must be empty and the primary mapping must match. Actual child executor calls are forced to Space Bunny by the central policy; richer `mode: all` primary choices stay intact.
 
 ## Tests
 
-- Run `node --test opencode/tests/*.test.mjs` after changing the plugin, `opencode/lib/`, `subagents.jsonc`, or the model-selector script.
+- Run `bash agents/config/manage.sh --check`, `node agents/config/check.mjs`, and `node --test --test-timeout=30000 agents/opencode/tests/*.test.mjs agents/config/test/*.test.mjs agents/runtime/test/*.test.mjs` from the root. Central plugins have their own tests in the canonical repository. Nix validation and target Mac smoke checks are separate.

@@ -1,0 +1,14 @@
+{
+  "name": "workstation-agent-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@openchamber/web": "2.0.0",
+    "@opencode/cli": "2.0.16"
+  },
+  "allowScripts": {
+    "@opencode/cli@2.0.16": true,
+    "node-pty@1.2.0-beta.15": true,
+    "msgpackr-extract@3.0.4": true
+  }
+}

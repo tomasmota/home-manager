@@ -23,8 +23,8 @@
 - `tmux.nix`: tmux settings/plugins/keybindings.
 - `nvim/`: Neovim config (lazy.nvim, plugin specs under `nvim/lua/plugins`, core config under `nvim/lua/config`).
 - `agents.nix`, `agents/**`: AI tool configs (OpenCode). `agents/global/AGENTS.md` is installed as the global agent instructions; `agents/AGENTS.md` applies only while working in the tracked `agents/` tree.
-- Shared OpenCode agents live in `agents/opencode/subagents.jsonc` and are loaded by the `agents/opencode/plugins/agent-routes` server plugin; update that file instead of the `opencode*.json` files or Markdown agents.
-- `agents/skills/**`: shared cross-agent skills; each skill lives in `agents/skills/<skill-name>/SKILL.md`.
+- Shared roles, routing code, portable skills and instructions are canonical in public `tomasmota/agents`. `agents/config/lock.json` pins that source; `agents/config/{mac,linux}.json` and `platform.*` are the workstation adapters. See `agents/config/README.md` for the update/deploy/rollback workflow.
+- `agents/skills/**`: generated portable skills plus local workstation-only skills. Do not edit generated files; local/team skill ownership remains separate.
 - `secrets.env`: local secrets file at repo root, intentionally gitignored.
 
 ## Configuration Composition Notes
@@ -38,9 +38,9 @@
   - Editing files in this repo updates live config targets directly after switch.
 - `agents.nix` symlinks repo files into:
   - `~/.config/opencode/opencode.json`
-- Packaged OpenCode plugins (Jev permission reviewer, stuck-command watchdog, and tmux title renamer) live in the private `tomasmota/agents` repo under `opencode/plugins/`, not here. `opencode*.json` load them as Git packages tracking `main`; run `opencode plugin update` to install newly pushed commits.
-- `agents/opencode/lib/` holds the Jev client and session registry used by the `tmux-status` TUI plugin and the `model-selector` skill, plus the agent-routes logic shared by the `agent-routes` plugin and `model-selector`.
-- The `agent-routes` server plugin is the exception to the private-repo rule: it lives here in `agents/opencode/plugins/agent-routes/` and is symlinked into `~/.config/opencode/plugins/`, where OpenCode auto-discovers it.
+- Every shared server package, including agent-routes, uses the immutable central SHA. Full-SHA packages are skipped by `plugin update`; a location reload reconciles new pins. Pulling the repository alone is not installed/active proof.
+- `agents/opencode/lib/` includes generated shared helpers and the locally owned session registry. The local `plugins/agent-routes/quota.js` is only a credential/quota adapter, not a discovered server plugin.
+- `agents/runtime/` locks OpenCode/OpenChamber and installs the content-addressed runtime; Nix/launchd select it rather than Homebrew or npm-global binaries.
 
 ## Apply and Validate Workflows
 - Preferred validation before applying:
@@ -67,9 +67,9 @@
   - Keep aliases/functions concise and compatible with zsh.
   - `secrets.env` may be sourced by zsh init; never commit credentials.
 - Agent policies:
-  - Edit policy source files in `agents/opencode/opencode.json` (and `opencode.macos.json`).
+  - Edit the central source for shared behavior, platform adapters here for workstation choices; render and check before switching. Generated `opencode*.json`, routes and global instructions are not policy sources.
 - Agent skills:
-  - Add new skills under `agents/skills/<skill-name>/SKILL.md`.
+  - Add portable public skills centrally. Only workstation-specific tracked skills belong under `agents/skills/<skill-name>/SKILL.md`; private local/team contents never enter either public repository.
   - Keep the existing frontmatter style (`name`, `description`, and `metadata`) and include usage-oriented sections.
 
 ## Safety and Gotchas

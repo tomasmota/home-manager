@@ -21,7 +21,32 @@ jobs:
         run: nix flake check
 
       - name: alejandra format check
-        run: nix run nixpkgs#alejandra -- --check .
+        run: nix run --inputs-from . nixpkgs#alejandra -- --check .
 
       - name: statix lint
-        run: nix run nixpkgs#statix -- check .
+        run: nix run --inputs-from . nixpkgs#statix -- check .
+
+      - name: strict locked runtime smoke with repository-selected Node/npm
+        run: >-
+          nix shell --impure --expr '(builtins.getFlake (toString ./.)).homeConfigurations.linux.pkgs.nodejs_24'
+          -c bash agents/runtime/smoke.sh
+
+  agents:
+    name: offline and deterministic agent contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node agents/config/check.mjs
+      - run: mkdir -p /tmp/opencode
+      - id: pin
+        run: node -e 'console.log("revision="+require("./agents/config/lock.json").revision)' >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: tomasmota/agents
+          ref: ${{ steps.pin.outputs.revision }}
+          path: central-source
+      - run: AGENTS_SOURCE="$PWD/central-source" node --test --test-timeout=60000 agents/opencode/tests/*.test.mjs agents/config/test/*.test.mjs agents/runtime/test/*.test.mjs
+      - run: AGENTS_SOURCE="$PWD/central-source" bash agents/config/manage.sh --check

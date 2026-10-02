@@ -64,7 +64,7 @@ test("resolves a named agent without Jev", () => {
 })
 
 test("the tracked subagents.jsonc is valid", async () => {
-  const tracked = await loadRoutes()
+  const tracked = await loadRoutes(new URL("../subagents.jsonc", import.meta.url))
   assert.ok(tracked.agents.general)
   assert.ok(tracked.agents.explore)
 })

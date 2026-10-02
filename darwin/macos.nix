@@ -80,57 +80,63 @@
 
   # LaunchServices does not pass the user launchd environment to GUI apps.
   # Starting OpenChamber directly ensures it only connects to configured hosts.
-  launchd.user.agents.openchamber-desktop = {
-    environment.OPENCHAMBER_SKIP_LOCAL_SERVER = "1";
-    command = ''
-      /Applications/OpenChamber.app/Contents/MacOS/OpenChamber
-    '';
-    serviceConfig = {
-      KeepAlive = true;
-      RunAtLoad = true;
-      ProcessType = "Interactive";
-    };
-  };
-
-  # Tailscale terminates HTTPS for the MagicDNS hostname and proxies locally.
-  launchd.user.agents.openchamber-tailnet = {
-    command = ''
-      /run/current-system/sw/bin/tailscale serve --bg --yes http://127.0.0.1:3001
-    '';
-    serviceConfig = {
-      RunAtLoad = true;
-      ProcessType = "Background";
-      StandardOutPath = "/Users/tomas/Library/Logs/OpenChamber-tailnet.log";
-      StandardErrorPath = "/Users/tomas/Library/Logs/OpenChamber-tailnet.error.log";
-    };
-  };
-
-  # Codex Usage menu bar app (built from darwin/codex-usage in this repo).
-  # Restart on crash, but stay dead after an explicit Quit from the menu.
-  launchd.user.agents.codex-usage = {
-    environment = {
-      HOME = "/Users/tomas";
-      PATH = "/Users/tomas/.local/bin:/usr/bin:/bin";
-    };
-    command = ''
-      /Users/tomas/Applications/CodexUsage.app/Contents/MacOS/CodexUsage
-    '';
-    serviceConfig = {
-      KeepAlive = {
-        Crashed = true;
-        SuccessfulExit = false;
+  # The desktop restarts on crash, not explicit Quit; Android uses the separate
+  # always-running server, independent of this GUI.
+  launchd.user.agents = {
+    openchamber-desktop = {
+      environment.OPENCHAMBER_SKIP_LOCAL_SERVER = "1";
+      command = ''
+        /Applications/OpenChamber.app/Contents/MacOS/OpenChamber
+      '';
+      serviceConfig = {
+        KeepAlive = {Crashed = true;};
+        RunAtLoad = true;
+        ProcessType = "Interactive";
       };
-      RunAtLoad = true;
-      ProcessType = "Background";
-      StandardOutPath = "/Users/tomas/Library/Logs/CodexUsage.log";
-      StandardErrorPath = "/Users/tomas/Library/Logs/CodexUsage.error.log";
+    };
+
+    # Tailscale terminates HTTPS for the MagicDNS hostname and proxies locally.
+    openchamber-tailnet = {
+      command = ''
+        /run/current-system/sw/bin/tailscale serve --bg --yes http://127.0.0.1:3001
+      '';
+      serviceConfig = {
+        RunAtLoad = true;
+        ProcessType = "Background";
+        StandardOutPath = "/Users/tomas/Library/Logs/OpenChamber-tailnet.log";
+        StandardErrorPath = "/Users/tomas/Library/Logs/OpenChamber-tailnet.error.log";
+      };
+    };
+
+    # Codex Usage menu bar app (built from darwin/codex-usage in this repo).
+    # Restart on crash, but stay dead after an explicit Quit from the menu.
+    codex-usage = {
+      environment = {
+        HOME = "/Users/tomas";
+        PATH = "/Users/tomas/.local/bin:/usr/bin:/bin";
+      };
+      command = ''
+        /Users/tomas/Applications/CodexUsage.app/Contents/MacOS/CodexUsage
+      '';
+      serviceConfig = {
+        KeepAlive = {
+          Crashed = true;
+          SuccessfulExit = false;
+        };
+        RunAtLoad = true;
+        ProcessType = "Background";
+        StandardOutPath = "/Users/tomas/Library/Logs/CodexUsage.log";
+        StandardErrorPath = "/Users/tomas/Library/Logs/CodexUsage.error.log";
+      };
     };
   };
 
   homebrew = {
     enable = true;
     taps = ["anomalyco/tap"];
-    brews = ["anomalyco/tap/opencode-v2"];
+    # OpenCode is selected by the locked Home Manager runtime, not upgraded by
+    # Homebrew behind the configuration lock. Other brews keep their own policy.
+    brews = [];
     casks = [
       "ghostty"
       "middleclick"

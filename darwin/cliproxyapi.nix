@@ -6,6 +6,10 @@
   configFile = "${configDir}/config.yaml";
   envFile = "${configDir}/client.env";
   authDir = "/Users/tomas/.local/share/cliproxyapi/auth";
+  runtime = import ../agents/runtime {
+    inherit pkgs;
+    home = "/Users/tomas";
+  };
   cliProxyApi = pkgs.stdenvNoCC.mkDerivation {
     pname = "cli-proxy-api";
     inherit version;
@@ -27,7 +31,7 @@
     . "${envFile}"
     set +a
     exec ${pkgs.nodejs_24}/bin/node \
-      /Users/tomas/.npm-global/lib/node_modules/@openchamber/web/bin/cli.js \
+      ${runtime.openchamber} \
       serve --foreground --host 127.0.0.1 --port 3001
   '';
 in {
@@ -75,10 +79,11 @@ in {
 
   launchd.user.agents.openchamber = {
     path = [
-      "/Users/tomas/.npm-global/bin"
-      "/opt/homebrew/bin"
+      "${pkgs.nodejs_24}/bin"
       "/etc/profiles/per-user/tomas/bin"
       "/run/current-system/sw/bin"
+      "/opt/homebrew/bin"
+      "/Users/tomas/.npm-global/bin"
       "/usr/bin"
       "/bin"
       "/usr/sbin"
@@ -86,8 +91,11 @@ in {
     ];
     environment = {
       HOME = "/Users/tomas";
-      OPENCODE_BINARY = "/opt/homebrew/bin/opencode";
+      OPENCODE_BINARY = runtime.binary;
+      OPENCHAMBER_OPENCODE_PATH = runtime.binary;
       OPENCODE_JEV_DEBUG = "1";
+      # Match the terminal's browser choice without sourcing the full shell environment.
+      BROWSER = "/Applications/Vivaldi.app/Contents/MacOS/Vivaldi --profile-directory=Default";
       XDG_CONFIG_HOME = "/Users/tomas/.config";
       XDG_DATA_HOME = "/Users/tomas/.local/share";
     };
