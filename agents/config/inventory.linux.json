@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "central": {
     "schemaVersion": 1,
-    "revision": "29935a09fc2ed070fa4f610a497195fc9a6338b4",
+    "revision": "e9d28f5c0ce8dddb34161d8fbdab80346d3e912f",
     "pluginApi": "2.0",
     "opencode": "2.0.16"
   },
@@ -109,9 +109,9 @@
     }
   },
   "artifacts": {
-    "agents/opencode/opencode.json": "b5582248c2bce87b2f13075cbbc17a7484eebdea85cb58b69cee5b310a4609c9",
+    "agents/opencode/opencode.json": "9f5096f8e2a075475cc3e9377b3feddf8f89eb62e197be5682f2fad65230af4b",
     "agents/opencode/subagents.jsonc": "820824d4ec8b917640d81bfbaed577f15469b5baba9f2244c9c07b362b108afd",
-    "agents/global/AGENTS.md": "11bec9f79435fc7dd1767b100f2461d8762b9629cb6f8bac23d3cf8ad12d941a",
+    "agents/global/AGENTS.md": "5e5abaa9a1de436175c3738e913a95e54dd8dab433f9d04bbdba3f01f40f8f59",
     "agents/opencode/cli.json": "ea2a176fd832d50186327a510b228dc6a231355fb265883647b51e4841a71503",
     "agents/skills/hey/SKILL.md": "94363fb6a29f14814b8bf01205f9be105661507a6d12ec7b11af9c71d2c4e69f",
     "agents/skills/typesafe-ai/LICENSE": "835f233f1d6ed84a9b9a351aba0689b47644a4137d6316911fc7957bde523b02",

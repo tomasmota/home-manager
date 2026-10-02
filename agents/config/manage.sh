@@ -25,16 +25,21 @@ const lock = JSON.parse(fs.readFileSync(lockPath));
 if (mode === '--update') lock.revision = revision;
 const { render, apply } = await import(source + '/config/render.mjs');
 const merged = new Map();
+const protectedPaths = new Set([path.resolve(lockPath)]);
 for (const profile of ['mac', 'linux']) {
   const adapterPath = path.join(root, 'agents/config', profile + '.json');
-  const outputs = await render(lock, JSON.parse(fs.readFileSync(adapterPath)), root, source);
+  const adapter = JSON.parse(fs.readFileSync(adapterPath));
+  protectedPaths.add(path.resolve(adapterPath));
+  for (const input of [adapter.server, adapter.instructions, adapter.cli]) if (input) protectedPaths.add(path.resolve(root, input));
+  const outputs = await render(lock, adapter, root, source);
   for (const [output, content] of outputs) {
-    const target = path.resolve(root, output);
-    if (target === path.resolve(adapterPath) || target === path.resolve(lockPath)) throw new Error('output collides with adapter/lock: ' + output);
     const previous = merged.get(output);
     if (previous && !previous.equals(content)) throw new Error('profiles render conflicting shared output: ' + output);
     merged.set(output, content);
   }
+}
+for (const output of merged.keys()) {
+  if (protectedPaths.has(path.resolve(root, output))) throw new Error('output collides with an adapter, input or lock: ' + output);
 }
 await apply(merged, root, mode === '--check');
 if (mode === '--update') fs.writeFileSync(lockPath, JSON.stringify(lock, null, 2) + '\n');
