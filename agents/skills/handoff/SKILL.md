@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Hand off task state to a fresh-context agent session. Writes a self-contained handoff document, then either spawns the new session in a tmux pane with it as the first prompt, or only saves it to a temp file. Use ONLY when the user explicitly asks to do, create, or write a handoff. Never invoke proactively.
+description: Hand off task state to a fresh-context agent session. Writes a self-contained handoff document, then either spawns the new session with it as the first prompt, or only saves it to a temp file.
 license: MIT
 ---
 
@@ -12,9 +12,9 @@ The handoff is the new session's first prompt. Nothing is written into the workt
 
 ## When to Use This Skill
 
-- Only when the user explicitly asks to do, create, or write a handoff.
-- Do not invoke this skill because work is unfinished, a task changes phase, context is getting long, a session is ending, compaction is imminent, or work is delegated to another agent.
-- Two modes, distinguished by wording:
+- The user asks for a handoff, or asks to continue the work in a fresh session.
+- The `auto-handoff` plugin asks for one because the session crossed its context threshold. That request is an automatic `do a handoff`: it continues the same work with no new direction from the user. Run the full `do a handoff` flow below, including model resolution with the `model-selector` skill (no user is present to name a model), then stop and do not resume the task in that session.
+- Two user-facing modes, distinguished by wording:
   - `do a handoff` (also `handoff to a new session` / `handoff to a new agent`): write the document, then spawn the next session with it as the first prompt (see "Spawning the Next Session").
   - `create a handoff document` (also `write` / `update a handoff`): write the document only. Do not touch tmux or create a session. Report the file path and this ready-to-paste line for whichever session should take over: `Taking over after a handoff. Read <path> and follow it.`
 
