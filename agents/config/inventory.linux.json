@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "central": {
     "schemaVersion": 1,
-    "revision": "39a084010b3668619156f36302638a88b8ab89e5",
+    "revision": "57c6edfc6ce2dece2ff5fd07ec1a8604960a6a92",
     "pluginApi": "2.0",
     "opencode": "2.0.16"
   },
@@ -11,7 +11,7 @@
     "adapter": "a9b9ef4f12e6008162e6b725c38c4da26d4fd9022b144b00f56e98d762960be6",
     "files": {
       "agents/config/platform.linux.json": "c75c5a4cd1fd6150b1b92587f7c0dd939ca05e4f1650637d6a1ac8fce0a83340",
-      "agents/config/platform.md": "b3fb51f4bbba565baa3ff00d027ec18f49ec5d34822a56a245f301b0a70f5abf",
+      "agents/config/platform.md": "c702eb779067e133e0f8408213e42abc5da2928a95870f6de1cfe6f932497e77",
       "agents/config/cli.json": "ea2a176fd832d50186327a510b228dc6a231355fb265883647b51e4841a71503"
     }
   },
@@ -104,9 +104,9 @@
     }
   },
   "artifacts": {
-    "agents/opencode/opencode.json": "ce3b5fc4f08913f84b6739ddf3e303e1177c9583a8663528eb5d45fab5a298c4",
+    "agents/opencode/opencode.json": "9044e5cbb0b622905528c08c873fe33fe0918efde5b4aacb35640db321a7fe0c",
     "agents/opencode/subagents.jsonc": "cbcd65cc1404c537a681c08f592f8f75dc01c5cfa009b33daf9d6f2b03528be7",
-    "agents/global/AGENTS.md": "2bc09897190d267e87c8bec98303986298e5275c79ed541617397fe22077a277",
+    "agents/global/AGENTS.md": "41ef1c681aaad7803e194abe32083479bd8809827fff59d22de2d7f1f445fde7",
     "agents/opencode/cli.json": "ea2a176fd832d50186327a510b228dc6a231355fb265883647b51e4841a71503",
     "agents/skills/hey/SKILL.md": "94363fb6a29f14814b8bf01205f9be105661507a6d12ec7b11af9c71d2c4e69f",
     "agents/skills/typesafe-ai/LICENSE": "835f233f1d6ed84a9b9a351aba0689b47644a4137d6316911fc7957bde523b02",

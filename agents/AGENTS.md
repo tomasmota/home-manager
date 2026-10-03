@@ -2,6 +2,7 @@
 
 - This directory consumes the immutable public `tomasmota/agents` core through thin Home Manager adapters. Read `config/README.md` before changing it.
 - Shared roles/descriptions/routing/portable skills are edited centrally. Workstation model maps, provider/permission/MCP/browser settings and CLI preferences are edited in `config/`; render generated snapshots with `bash agents/config/manage.sh --render` from the repository root.
+- Shared base behavior and instruction/skill ownership heuristics are canonical in central `config/instructions.md`; consult `config/README.md` here for generated versus local skill paths. Do not reintroduce shared workflow copies into `config/platform.md`.
 - Generated routes hot-reload, but do not edit them directly. Changing an exact package pin requires target reconciliation and active-identity proof.
 
 ## Sources of truth

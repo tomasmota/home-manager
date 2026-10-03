@@ -7,6 +7,39 @@ Generated snapshots are recovery artifacts, not installed/active proof.
 `runtime/` separately locks OpenCode 2.0.16 and OpenChamber **web server** 2.0.0;
 the native desktop cask is a separate client and needs its own version record.
 
+## Instruction and skill ownership
+
+The global `agents/global/AGENTS.md` is generated from local `platform.md` plus
+central `config/instructions.md`. Investigation, proactive delegation/review,
+tool/model hints, client detection and ownership heuristics live in the shared
+base; keep only actual workstation differences here. Do not duplicate the base
+in the adapter. See the central configuration README's ownership table before
+adding instructions or skills; project conventions stay in project `AGENTS.md`.
+
+Portable public skill sources live centrally and are selected by manifest profile,
+not copied manually into this repo. `inventory.{mac,linux}.json` records generated
+skill ownership under `agents/skills/`; do not edit those files. Workstation-only
+tracked skills use non-generated directories in that same tree. Private machine
+skills stay in `~/.agents/local-skills/`; team skills stay in their own checkout
+linked by `~/.agents/team-skills/`, never copied into either public repository.
+When adding a tracked local skill, ensure its directory is not inventory-owned.
+
+Use skill descriptions for ordinary discovery. Put necessary workstation-only
+triggers in `platform.md`, and shared triggers centrally only when supported by all
+affected profiles or guarded by availability. Neither a skill nor a shared rule
+grants cloud contexts, browser access or credentials. Ask if publication scope is
+unclear. Shared updates follow the pinned workflow below; local instructions
+require render/check too. Mac target acceptance remains a separate native step.
+
+Source acceptance (2026-10-03): both profiles pin central
+`57c6edfc6ce2dece2ff5fd07ec1a8604960a6a92`, consume the same consolidated base and
+retain their previous server/routing/skill selections except for exact package
+pins. Render/check and offline conformance passed; the full consumer suite passed
+61/61 with the clean locked `AGENTS_SOURCE`. Linux flake check (`--no-build`) and
+Mac system derivation evaluation passed. This is not native Mac build, switch or
+installed/active proof; that acceptance remains blocked from Coder as documented
+below.
+
 ## Edit, update and validate
 
 Edit portable behavior in central source; test/commit/push there first. Edit
