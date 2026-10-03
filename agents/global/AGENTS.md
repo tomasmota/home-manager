@@ -1,4 +1,4 @@
-<!-- Generated from agents 57c6edfc6ce2dece2ff5fd07ec1a8604960a6a92; edit the platform adapter or shared source. -->
+<!-- Generated from agents fd5deda2078c9eb32cc1fcc93c3207cbe2f96d23; edit the platform adapter or shared source. -->
 
 # This machine
 - My terminal is ghostty

@@ -31,14 +31,22 @@ grants cloud contexts, browser access or credentials. Ask if publication scope i
 unclear. Shared updates follow the pinned workflow below; local instructions
 require render/check too. Mac target acceptance remains a separate native step.
 
-Source acceptance (2026-10-03): both profiles pin central
-`57c6edfc6ce2dece2ff5fd07ec1a8604960a6a92`, consume the same consolidated base and
-retain their previous server/routing/skill selections except for exact package
+Base-consolidation acceptance (2026-10-03): at central
+`57c6edfc6ce2dece2ff5fd07ec1a8604960a6a92`, both profiles consumed the same base and
+retained their previous server/routing/skill selections except for exact package
 pins. Render/check and offline conformance passed; the full consumer suite passed
 61/61 with the clean locked `AGENTS_SOURCE`. Linux flake check (`--no-build`) and
 Mac system derivation evaluation passed. This is not native Mac build, switch or
 installed/active proof; that acceptance remains blocked from Coder as documented
 below.
+
+Role-description follow-up (2026-10-03): the lock now pins central
+`fd5deda2078c9eb32cc1fcc93c3207cbe2f96d23`. The `free` description refers only to
+its adapter-selected model, not a global child-model policy. Render/check, offline
+conformance and all 61 consumer tests passed; comparison with the previous
+snapshots proves models, permissions, routing policy and skill selections are
+unchanged apart from package pins and that description. Native Mac activation
+remains unverified.
 
 ## Edit, update and validate
 
