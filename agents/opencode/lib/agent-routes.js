@@ -7,7 +7,8 @@ export const STATE_MAX_AGE_MS = 15 * 60_000
 
 // Written by the agent-routes plugin:
 // { updatedAt, errors, low, agents: { [id]: { model, fallbackFrom? } },
-//   quota: { [providerID]: { fiveHourLeft?, weeklyLeft?, checkedAt } } }
+//   quota: { [providerID]: { fiveHourLeft?, weeklyLeft?, checkedAt } },
+//   exhausted: { [providerID]: { detectedAt, until, windowMs } } }  (quota failures seen at runtime)
 export function statePath(env = process.env) {
   return join(env.XDG_CACHE_HOME ?? join(homedir(), ".cache"), "opencode", "agent-routes.json")
 }
@@ -26,6 +27,15 @@ export function freshQuota(quota, { now = Date.now(), maxAgeMs = STATE_MAX_AGE_M
   return Object.fromEntries(
     Object.entries(quota ?? {}).filter(([, entry]) => typeof entry?.checkedAt === "number" && now - entry.checkedAt <= maxAgeMs),
   )
+}
+
+// Keeps the newest reading per provider; readings from other processes arrive through the state file.
+export function mergeQuota(known, incoming) {
+  const merged = { ...known }
+  for (const [provider, entry] of Object.entries(incoming ?? {})) {
+    if (entry?.checkedAt > (merged[provider]?.checkedAt ?? 0)) merged[provider] = entry
+  }
+  return merged
 }
 
 const MODES = new Set(["primary", "subagent", "all"])

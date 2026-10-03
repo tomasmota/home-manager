@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "central": {
     "schemaVersion": 1,
-    "revision": "96904989e6bd824713b2a603a77b77a40d655d3a",
+    "revision": "39a084010b3668619156f36302638a88b8ab89e5",
     "pluginApi": "2.0",
     "opencode": "2.0.16"
   },
@@ -104,9 +104,9 @@
     }
   },
   "artifacts": {
-    "agents/opencode/opencode.macos.json": "6924154b10c1ca21950fd0c5803db3c229b1e1b93a3497a540c63e5a278cac54",
+    "agents/opencode/opencode.macos.json": "ae115b230583f0728d0a823dea31f5fc583105adcf06f865e7c6de14bcfa875b",
     "agents/opencode/subagents.jsonc": "cbcd65cc1404c537a681c08f592f8f75dc01c5cfa009b33daf9d6f2b03528be7",
-    "agents/global/AGENTS.md": "5f73c9cdf76d4db6679cee6be339e94d81f1ed80c6a0f47f3e9e62d9a5687312",
+    "agents/global/AGENTS.md": "2bc09897190d267e87c8bec98303986298e5275c79ed541617397fe22077a277",
     "agents/opencode/cli.json": "ea2a176fd832d50186327a510b228dc6a231355fb265883647b51e4841a71503",
     "agents/skills/hey/SKILL.md": "94363fb6a29f14814b8bf01205f9be105661507a6d12ec7b11af9c71d2c4e69f",
     "agents/skills/typesafe-ai/LICENSE": "835f233f1d6ed84a9b9a351aba0689b47644a4137d6316911fc7957bde523b02",
@@ -116,7 +116,7 @@
     "agents/skills/model-selector/SKILL.md": "82418415681868e1e7697a8ecd10f888de66d41ee26cc4aa9cfe04aad283e21e",
     "agents/skills/use-uvx/SKILL.md": "c365efefed4d4e119e03c2940a780c384e161720d5af3a1500883ecc1b8e2bb8",
     "agents/opencode/lib/jev-client.js": "aac70d261fc2b7499a5899e7334bc53217870f614cb321685ca67e868480e141",
-    "agents/opencode/lib/agent-routes.js": "9b70cc9afc41c47849fc7fda4e08d1481139fc2d0de6ed25bfaf50494282dcbb",
+    "agents/opencode/lib/agent-routes.js": "3c3dba0e6b2b1a909407069847fc3c098fc1419cc69c8fdfa931e0f54c9eaa52",
     "agents/opencode/lib/quota-cache.js": "6462feb36f7a8d7a21b7129253a5b1b9f42a8c9f0698a8e8d385c169b6d3265c",
     "agents/opencode/lib/inventory.mjs": "5601732c352fd76f5517c8196e8e31465a4e2ea2067895344279318a545380eb"
   }
