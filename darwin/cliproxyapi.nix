@@ -1,4 +1,10 @@
-{pkgs, ...}: let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
+  user = "tomas";
   version = "7.3.19";
   archiveSha256 = "sha256-VY9yzCubFZOuVuhVv6He2euAzXNOldlZa61TEPtb7O8=";
   binarySha256 = "2af8429560a91add289d9197b8f769a4325ceb4f8fc43ba0f76cf793eb469504";
@@ -36,6 +42,14 @@
   '';
 in {
   environment.systemPackages = [cliProxyApi];
+
+  # Runs after `checks` (so `darwin-rebuild check` stops first) but before
+  # `launchd`/`userLaunchd`; under the activation script's `set -e` a failure
+  # aborts before the OpenChamber agent is unloaded or replaced.
+  system.activationScripts.extraActivation.text = lib.mkAfter ''
+    echo "validating agent config and locked runtime for ${user}..." >&2
+    launchctl asuser "$(id -u -- ${user})" sudo --user=${user} --set-home -- ${config.home-manager.users.${user}.agents.activationPreflight}
+  '';
 
   home-manager.users.tomas = {lib, ...}: {
     home.activation.cliProxyApi = lib.hm.dag.entryAfter ["writeBoundary"] ''

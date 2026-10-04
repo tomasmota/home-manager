@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 source_dir=$(cd -- "$(dirname "$0")" && pwd)
-scratch=$(mktemp -d "${TMPDIR:-/tmp}/agent-runtime-smoke.XXXXXX")
+# macOS TMPDIR may contain /var, a symlink the immutable installer rejects.
+scratch_root=$(node -p 'require("fs").realpathSync(require("os").tmpdir())')
+mkdir -p "$scratch_root/opencode"
+scratch=$(mktemp -d "$scratch_root/opencode/agent-runtime-smoke.XXXXXX")
 trap 'rm -rf -- "$scratch"' EXIT
 mkdir "$scratch/home"
 export HOME="$scratch/home" npm_config_userconfig=/dev/null npm_config_cache="$scratch/cache"

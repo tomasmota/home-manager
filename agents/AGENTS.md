@@ -7,7 +7,7 @@
 
 ## Sources of truth
 
-- Central lock and adapters: `config/lock.json`, `config/{mac,linux}.json`, `config/platform.*`
+- Central lock and adapters: `config/lock.json`, `config/mac.json`, `config/platform.*` (Mac-only; there is no Linux OpenCode profile)
 - CLI preference source: `config/cli.json`; generated `opencode/cli.json`
 - Local quota/credential adapter: `opencode/plugins/agent-routes/quota.js`
 - Generated recovery artifacts: `opencode/opencode*.json`, `opencode/subagents.jsonc`, shared helpers/skills, `global/AGENTS.md`, `config/inventory.*.json`

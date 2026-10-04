@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Offline render/check, or deliberate lock update using an existing clean clone.
-# Both profiles are rendered, merged and validated before any file is published.
+# The Mac profile is rendered and validated before any file is published.
 set -euo pipefail
 root=$(cd -- "$(dirname "$0")/../.." && pwd)
 source=${AGENTS_SOURCE:-$(dirname "$root")/agents}
@@ -26,18 +26,11 @@ if (mode === '--update') lock.revision = revision;
 const { render, apply } = await import(source + '/config/render.mjs');
 const merged = new Map();
 const protectedPaths = new Set([path.resolve(lockPath)]);
-for (const profile of ['mac', 'linux']) {
-  const adapterPath = path.join(root, 'agents/config', profile + '.json');
-  const adapter = JSON.parse(fs.readFileSync(adapterPath));
-  protectedPaths.add(path.resolve(adapterPath));
-  for (const input of [adapter.server, adapter.instructions, adapter.cli]) if (input) protectedPaths.add(path.resolve(root, input));
-  const outputs = await render(lock, adapter, root, source);
-  for (const [output, content] of outputs) {
-    const previous = merged.get(output);
-    if (previous && !previous.equals(content)) throw new Error('profiles render conflicting shared output: ' + output);
-    merged.set(output, content);
-  }
-}
+const adapterPath = path.join(root, 'agents/config/mac.json');
+const adapter = JSON.parse(fs.readFileSync(adapterPath));
+protectedPaths.add(path.resolve(adapterPath));
+for (const input of [adapter.server, adapter.instructions, adapter.cli]) if (input) protectedPaths.add(path.resolve(root, input));
+for (const [output, content] of await render(lock, adapter, root, source)) merged.set(output, content);
 for (const output of merged.keys()) {
   if (protectedPaths.has(path.resolve(root, output))) throw new Error('output collides with an adapter, input or lock: ' + output);
 }

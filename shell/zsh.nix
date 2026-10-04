@@ -79,6 +79,10 @@
             eval "$(command wt config shell init zsh)"
           fi
 
+          if command -v omp >/dev/null 2>&1; then
+            eval "$(omp completions zsh)"
+          fi
+
           if [[ -n $TMUX && -n $TMUX_PANE ]]; then
             zmodload zsh/datetime
             typeset -gi _tmux_command_started_at=0

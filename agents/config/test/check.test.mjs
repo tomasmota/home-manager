@@ -1,14 +1,17 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { mkdtemp, readFile, writeFile, mkdir, cp, rm, symlink } from "node:fs/promises"
+import { mkdtemp, readFile, writeFile, mkdir, cp, rm, symlink, realpath } from "node:fs/promises"
+import { tmpdir } from "node:os"
 import { dirname, join, resolve } from "node:path"
 import { check } from "../check.mjs"
 const source = resolve(".")
+const scratch = join(await realpath(tmpdir()), "opencode")
+await mkdir(scratch, { recursive: true })
 async function fixture(t) {
-  const root = await mkdtemp("/tmp/opencode/home-config-test-")
+  const root = await mkdtemp(join(scratch, "home-config-test-"))
   t.after(() => rm(root, { recursive: true, force: true }))
-  const files = new Set(["agents/config/lock.json", "agents/config/mac.json", "agents/config/linux.json", "agents/runtime/package.json", "agents/runtime/package-lock.json"])
-  for (const name of ["mac", "linux"]) {
+  const files = new Set(["agents/config/lock.json", "agents/config/mac.json", "agents/runtime/package.json", "agents/runtime/package-lock.json"])
+  for (const name of ["mac"]) {
     const path = `agents/config/inventory.${name}.json`
     const inventory = JSON.parse(await readFile(join(source, path)))
     files.add(path)
@@ -36,4 +39,18 @@ test("malformed coverage, profile drift, missing files and symlinks fail closed"
   await rm(path); await assert.rejects(check(root))
   await symlink(join(source, "agents/skills/hey/SKILL.md"), path)
   await assert.rejects(check(root), /symlink/)
+})
+test("unsupported runtime versions and extra lifecycle scripts fail closed", async (t) => {
+  const root = await fixture(t), lockPath = join(root, "agents/config/lock.json")
+  const lock = JSON.parse(await readFile(lockPath))
+  for (const version of ["2.0.17", "2.0.22-beta.1", "v2.0.22", null]) {
+    await writeFile(lockPath, JSON.stringify({ ...lock, opencode: version }))
+    await assert.rejects(check(root), /unsupported central lock/)
+  }
+  await writeFile(lockPath, JSON.stringify(lock))
+  const runtimePath = join(root, "agents/runtime/package.json")
+  const runtime = JSON.parse(await readFile(runtimePath))
+  runtime.allowScripts["fictional-extra-package@1.0.0"] = true
+  await writeFile(runtimePath, JSON.stringify(runtime))
+  await assert.rejects(check(root), /runtime script allowlist drift/)
 })

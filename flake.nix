@@ -11,12 +11,16 @@
       url = "github:LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Oh My Pi, pinned to an exact revision; update deliberately via
+    # `nix flake update omp` after reviewing upstream release notes.
+    omp.url = "github:can1357/oh-my-pi/898b09d32f147887a2242cf5ec9a1967bcac8873";
   };
 
   outputs = {
     nixpkgs,
     home-manager,
     nix-darwin,
+    omp,
     ...
   }: let
     # Common user and system settings
@@ -30,12 +34,13 @@
     mkHomeModule = {
       username,
       homeDirectory,
+      extraModules ? [],
     }: {
       home = {
         inherit username homeDirectory;
         stateVersion = "25.05";
       };
-      imports = [./home.nix];
+      imports = [./home.nix] ++ extraModules;
     };
 
     # Helper to build a standalone home-manager configuration
@@ -71,12 +76,22 @@
               home = macHome;
             };
 
+            # darwin/omp.nix receives the pinned omp flake input.
+            _module.args.omp = omp;
+
             home-manager = {
               useUserPackages = true;
-              extraSpecialArgs = {fontSize = 14;};
+              # omp is a Mac-only addition for now; the Linux target must keep
+              # building without it, so it is only passed to this host.
+              extraSpecialArgs = {
+                fontSize = 14;
+                inherit omp;
+              };
               users."${user}" = mkHomeModule {
                 username = user;
                 homeDirectory = macHome;
+                # OpenCode/OpenChamber agent config is Mac-only.
+                extraModules = [./agents.nix ./omp.nix];
               };
             };
           }

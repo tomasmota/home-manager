@@ -98,7 +98,10 @@ Include examples of inputs and expected outputs.
 
 4. **Create comprehensive instructions:** Write clear, step-by-step guidance that another agent can follow.
 
-5. **Create the skill directory and file:**
+5. **Choose the owner, then create the skill directory and file.** `{skills_dir}` is not fixed; pick it by classifying the skill before writing (ask the user if publication scope or intended profiles are unclear, and never default private material into a public repo):
+   - **Portable public** (useful beyond this workstation, public-safe): the canonical public `tomasmota/agents` checkout, `skills/<skill-name>/`, plus a `config/manifest.json` entry with provenance, license and intended profiles. It reaches the home-manager workstation only after a tested commit on a clean SHA is consumed through the lock and render workflow in `~/.config/home-manager/agents/config/README.md`; writing files does not publish or install it on all profiles.
+   - **Workstation-only public**: `~/.config/home-manager/agents/skills/<skill-name>/`, a non-generated directory. Before any write, check `agents/config/inventory.mac.json`: reject the name if it is a key in `skills` or if any `agents/skills/<skill-name>/` path is in `artifacts`. Those are generated and must not be edited or overwritten.
+   - **Private machine-only**: `~/.agents/local-skills/<skill-name>/`. Team skills stay in their existing team repo checkout (`~/.agents/team-skills/`), never copied elsewhere.
    - Create directory: `{skills_dir}/{skill-name}/`
    - Create file: `{skills_dir}/{skill-name}/SKILL.md` (must be named exactly `SKILL.md`)
    - **CRITICAL:** When you write SKILL.md, the very first characters must be `---`. No title, description, or other content before the frontmatter.
@@ -115,7 +118,12 @@ Include examples of inputs and expected outputs.
    - If the skill directory contains a SKILL.md only and has no other bundled resources, share the SKILL.md file directly
    - If the skill has any bundled resources (scripts, references, assets): zip the entire skill directory. Do NOT extract just the SKILL.md — the bundled files are part of the skill. Use `.zip` format, not `.tar` or `.tar.gz`
 
-8. **Inform the user:** Let the user know the skill has been created and validated successfully. It is available under `~/.agents/skills/` through the existing `agents.nix` symlink. Tracked edits belong in `~/.config/home-manager/agents/skills/`; machine-only changes belong in `~/.agents/local-skills/`.
+8. **Inform the user:** Let the user know the skill has been created and validated successfully, and report the chosen owner and path. Availability depends on the class:
+   - Workstation-only public: visible under `~/.agents/skills/` through the existing `agents.nix` symlink of repo `agents/skills`.
+   - Private machine-only: in `~/.agents/local-skills/`, a configured skill path (a restart or location reload may be needed).
+   - Portable public: not available here until the central change is committed, the lock advanced to that clean SHA, and the render and checks pass. State what was not done (commit, push, lock update, profile selection).
+
+   Do not commit, push, publish, or install to any target the user did not request. Editing an existing skill follows the same ownership rules: never edit generated files under `agents/skills/` (edit the central source instead).
 
 ## Example: Creating a Code Review Skill
 

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { chmod, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { spawnSync } from "node:child_process"
@@ -9,13 +9,16 @@ const skill = await readFile(new URL("../../skills/handoff/SKILL.md", import.met
 const recipe = skill.match(/```bash\n(worktree=[\s\S]*?)\n```/)?.[1]
 assert.ok(recipe, "the documented spawn recipe must remain executable")
 const quote = (value) => `'${value.replaceAll("'", "'\\''")}'`
+const scratch = join(await realpath(tmpdir()), "opencode")
+await mkdir(scratch, { recursive: true })
 
 async function runRecipe({ attach = false, tmux = false, paneFailure = false, promptFailure = false } = {}) {
-  const directory = await mkdtemp(join(tmpdir(), "opencode-handoff-test-"))
+  const directory = await mkdtemp(join(scratch, "opencode-handoff-test-"))
   try {
     const file = join(directory, "handoff.md")
     const log = join(directory, "calls.jsonl")
     await writeFile(file, "Continue this fictional task.\nPreserve its state.\n")
+    await writeFile(log, "")
     for (const command of ["opencode", "tmux"]) {
       const path = join(directory, command)
       await writeFile(path, `#!/usr/bin/env node
@@ -32,7 +35,8 @@ if (args[0] === 'api' && args[2]?.endsWith('/prompt')) process.exit(process.env.
       .replace(/^worktree=.*$/m, `worktree=${quote(directory)}`)
       .replace(/^file=.*$/m, `file=${quote(file)}`)
       .replace(/^attach_tmux=.*$/m, `attach_tmux=${attach}`)
-    const result = spawnSync("bash", ["-c", script], {
+    // Nix Bash's system startup file can replace PATH and bypass the mocks.
+    const result = spawnSync("bash", ["--noprofile", "--norc", "-c", script], {
       encoding: "utf8",
       timeout: 10000,
       env: {
@@ -46,7 +50,7 @@ if (args[0] === 'api' && args[2]?.endsWith('/prompt')) process.exit(process.env.
       },
     })
     assert.ifError(result.error)
-    const calls = (await readFile(log, "utf8")).trim().split("\n").map((line) => JSON.parse(line))
+    const calls = (await readFile(log, "utf8")).trim().split("\n").filter(Boolean).map((line) => JSON.parse(line))
     return { ...result, calls }
   } finally {
     await rm(directory, { recursive: true, force: true })
@@ -92,8 +96,8 @@ test("an uncertain prompt receipt preserves the successor for inspection, withou
   assert.equal(result.calls.filter((call) => call.command === "tmux").length, 0)
 })
 
-test("both configs select search server-side and omit the deleted package", async () => {
-  for (const name of ["opencode.json", "opencode.macos.json"]) {
+test("the Mac config selects search server-side and omits the deleted package", async () => {
+  for (const name of ["opencode.macos.json"]) {
     const config = JSON.parse(await readFile(new URL(`../${name}`, import.meta.url), "utf8"))
     assert.equal(config.websearch.provider, "exa")
     assert.ok(config.plugins.every((item) => !(typeof item === "string" ? item : item.package).includes("compaction-preserve")))

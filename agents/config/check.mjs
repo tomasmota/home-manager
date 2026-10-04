@@ -19,12 +19,12 @@ export async function check(root) {
   }
   const json = async (p) => JSON.parse(await readFile(await safe(p), "utf8"))
   const lock = await json("agents/config/lock.json")
-  require(lock.schemaVersion === 1 && lock.pluginApi === "2.0" && lock.opencode === "2.0.16" && /^[a-f0-9]{40}$/.test(lock.revision), "unsupported central lock")
-  for (const name of ["mac", "linux"]) {
+  require(lock.schemaVersion === 1 && lock.pluginApi === "2.0" && ["2.0.16", "2.0.22"].includes(lock.opencode) && /^[a-f0-9]{40}$/.test(lock.revision), "unsupported central lock")
+  for (const name of ["mac"]) {
     const inventory = await json(`agents/config/inventory.${name}.json`)
     const adapter = await json(`agents/config/${name}.json`)
     const out = adapter.outputs
-    require(inventory.schemaVersion === 1 && inventory.profile === (name === "mac" ? "mac" : "home-linux") && equal(inventory.central, lock), "snapshot identity mismatch")
+    require(inventory.schemaVersion === 1 && inventory.profile === name && equal(inventory.central, lock), "snapshot identity mismatch")
     require(inventory.server === out.server && equal(inventory.packages.map((p) => p.id), packages) && inventory.packages.every((p) => p.path === `opencode/plugins/${p.id}`), "package coverage mismatch")
     require(equal(Object.keys(inventory.skills).sort(), Object.keys(skills).sort()), "skill coverage mismatch")
     const expectedInputs = [adapter.server, adapter.instructions, adapter.cli].sort()
@@ -49,7 +49,7 @@ export async function check(root) {
   }
   const runtime = await json("agents/runtime/package.json"), runtimeLock = await json("agents/runtime/package-lock.json")
   require(equal(runtime.dependencies, { "@openchamber/web": "2.0.0", "@opencode/cli": lock.opencode }) && equal(runtimeLock.packages[""].dependencies, runtime.dependencies), "runtime pin drift")
-  require(equal(runtime.allowScripts, { "@opencode/cli@2.0.16": true, "node-pty@1.2.0-beta.15": true, "msgpackr-extract@3.0.4": true }), "runtime script allowlist drift")
+  require(equal(runtime.allowScripts, { [`@opencode/cli@${lock.opencode}`]: true, "node-pty@1.2.0-beta.15": true, "msgpackr-extract@3.0.4": true }), "runtime script allowlist drift")
   for (const [id, version] of Object.entries(runtime.dependencies)) require(runtimeLock.packages[`node_modules/${id}`].version === version, "runtime lock drift")
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

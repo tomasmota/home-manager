@@ -4,10 +4,10 @@
   "private": true,
   "dependencies": {
     "@openchamber/web": "2.0.0",
-    "@opencode/cli": "2.0.16"
+    "@opencode/cli": "2.0.22"
   },
   "allowScripts": {
-    "@opencode/cli@2.0.16": true,
+    "@opencode/cli@2.0.22": true,
     "node-pty@1.2.0-beta.15": true,
     "msgpackr-extract@3.0.4": true
   }

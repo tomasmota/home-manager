@@ -1,4 +1,4 @@
-<!-- Generated from agents fd5deda2078c9eb32cc1fcc93c3207cbe2f96d23; edit the platform adapter or shared source. -->
+<!-- Generated from agents fc83fb007bcdfbfda9a5520ee17e028c985c6e97; edit the platform adapter or shared source. -->
 
 # This machine
 - My terminal is ghostty
@@ -14,7 +14,6 @@
 # skills
 - If I ask for a skill that should stay only on this machine or should not live in the public home-manager repo, create it under `~/.agents/local-skills/`.
 - Workstation-specific tracked skill sources live under `agents/skills/`, alongside generated portable skills. Consult `agents/config/README.md` and its inventories to distinguish ownership before editing.
-- `~/.agents/team-skills/` links to my work team's skills repo checkout. Edit team skills there and deliver them through that repo; never copy them into `local-skills`.
 
 # Shared agent base
 

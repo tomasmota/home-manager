@@ -131,7 +131,7 @@ effort="<effort/variant, or empty>"
 attach_tmux=false # Set true only for the confirmed tmux TUI branch in step 3.
 
 payload=$(jq -n --arg title "$title" --arg dir "$worktree" --arg agent "$agent" --arg provider "$provider" --arg id "$model_id" --arg variant "$effort" \
-  '{title:$title,location:{directory:$dir}} + (if $agent != "" then {agent:$agent} else {} end) + (if $provider != "" then {model:{providerID:$provider,id:$id} + (if $variant != "" then {variant:$variant} else {} end)} else {} end)')
+  '{title:$title,location:{directory:$dir}} + (if $agent != "" then {agent:$agent} else {} end) + (if $provider != "" then {model:({providerID:$provider,id:$id} + (if $variant != "" then {variant:$variant} else {} end))} else {} end)')
 sid=$(opencode api post /api/session -d "$payload" | jq -r .data.id) || exit 1
 [ -n "$sid" ] && [ "$sid" != null ] || exit 1
 body=$(jq -n --rawfile text "$file" '{text:$text}')

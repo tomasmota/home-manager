@@ -68,6 +68,15 @@ nix flake update
 - `shell/zsh.nix` sources this file if it exists.
 - Never commit credentials.
 
+## Oh My Pi (omp)
+
+- omp runs alongside OpenCode as a daily-driver candidate (Mac only): pinned
+  `omp` flake input, `programs.omp` settings in `omp.nix`, file config in
+  `agents/omp/`, auth broker + gateway launchd services in `darwin/omp.nix`.
+- CLIProxyAPI (8317) keeps serving OpenCode unchanged; omp's stack uses 8765
+  and 4000. See `agents/omp/README.md` for the preference mapping, the
+  interactive auth runbook and known gaps.
+
 ## Optional work git config + signing
 
 ```bash
