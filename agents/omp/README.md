@@ -83,7 +83,10 @@ failed key lookup after 30 s.
 Build acceptance (2026-10-04): the pinned omp 18.6.1 package and Mac system
 build pass, as do all 82 combined consumer tests (including Nix evaluation).
 The custom Inco provider passed isolated native prompt and read-tool smoke
-tests. Broker-backed startup, subscription models, gateway requests and live
+tests. Harmless MCP fixtures were denied in native root and bundled sonic
+child sessions, including `xd://` dispatch; neither fixture executed. A failed
+extension-load control confirmed the documented child-yolo limitation.
+Broker-backed startup, subscription models, gateway requests and live
 skill/MCP discovery still await the owner's switch and interactive logins.
 
 ```sh
