@@ -33,11 +33,13 @@ type CompleteSimple = (
 type RequestJev = (args: Record<string, unknown>) => Promise<unknown>
 export type AutoApproveJevDeps = { requestJev?: RequestJev; completeSimple?: CompleteSimple }
 
-// Native read-only and scheduling tools skip review entirely. Everything else,
-// including `write` (also xd:// device dispatch) and `eval`, is reviewed.
+// Subagent creation never executes by itself; children inherit the policy
+// extensions, so delegation runs without a parent review. Native read-only
+// and scheduling tools skip as well. Everything else, including `write`
+// (also xd:// device dispatch) and `eval`, is reviewed.
 // Membership is checked with `=== true` so inherited keys never match.
 export const SKIPPED_TOOLS: Record<string, true> = {
-  read: true, grep: true, glob: true, find: true, web_search: true, ask: true, todo: true, wait: true,
+  read: true, grep: true, glob: true, find: true, web_search: true, ask: true, todo: true, wait: true, task: true,
 }
 
 // OpenCode's `openai` provider was the ChatGPT subscription; omp names that

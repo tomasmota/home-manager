@@ -108,7 +108,7 @@ const reply = text => ({ stopReason: "stop", content: [{ type: "text", text }] }
 
 test("native read-only and scheduling tools skip review; write/xd and eval do not", async () => {
   const { calls, review } = harness()
-  for (const tool of ["read", "grep", "glob", "find", "web_search", "ask", "todo", "wait"]) {
+  for (const tool of ["read", "grep", "glob", "find", "web_search", "ask", "todo", "wait", "task"]) {
     assert.equal(await review(tool, { path: "/" }), undefined)
   }
   assert.equal(calls.jev.length, 0)

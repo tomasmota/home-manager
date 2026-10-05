@@ -48,7 +48,7 @@ unchanged. Nothing about omp is load-bearing for them.
 | Jev permission review | `auto-approve-jev.ts` + canonical shared evaluator from the central lock | same permissive policy, thresholds, fallback chain and exhaustion behavior as OpenCode; independent of the native `judge` role |
 | Jev-backed judge features (opt-in) | `features.unexpectedStopDetection: smart`, `defaultThinkingLevel: auto` | both ride the `judge` role: **one TypeSafe judgment per classified turn (auto thinking) and per text-only stop (smart)**; answers are cached per model+state. `retry.fallbackChains.judge: []`: a prompted model never replaces a native judge, so no chain. With no TypeSafe credential upstream appends the session model as judge, which spends session-model tokens |
 | quota fallback (proactive <20% poll) | `retry.fallbackChains` keyed by role (`default`, `terminal`, `reviewer` → Opus; `slow`, `task`, `coder` → Sol) | **reactive only**: rescues the turn on 429/quota, primary restored on cooldown. Subagents inherit their role's chain through `@role` aliases; `smol: []` keeps Inco from inheriting the `default` chain |
-| permissions | `tools.approvalMode: yolo` + Jev `tool_call` review + explicit `bash.patterns` denies + `mcp-policy.ts` | read-only/scheduling tools skip review; executable actions, eval, writes and subagent creation are reviewed automatically; explicit denies remain authoritative |
+| permissions | `tools.approvalMode: yolo` + Jev `tool_call` review + explicit `bash.patterns` denies + `mcp-policy.ts` | read-only/scheduling tools and `task` subagent creation skip review; executable actions, eval and writes are reviewed automatically; explicit denies remain authoritative |
 | MCP chrome-devtools (Vivaldi) + confluence | `mcp.json` (same args/URL) | omp's built-in `browser` tool coexists; opentofu/incident-io not ported (were disabled) |
 | skills local/team dirs | `skills.customDirectories` | `~/.agents/skills` + `~/.agents/AGENTS.md` load via the default `agents` provider |
 | websearch exa | `modelRoles.web: web/exa` | Exa runs keyless through its public MCP when no `EXA_API_KEY` or stored credential exists, so no credential is needed. Provider choice is the `web` model role (legacy `providers.webSearch*` keys are migrated away). Unset `retry.fallbackChains.web` leaves the built-in keyless/hosted list as backups |
@@ -95,7 +95,7 @@ child sessions, including `xd://` dispatch; neither fixture executed. A failed
 extension-load control confirmed the documented child-yolo limitation.
 Native approval acceptance (2026-10-05): the packaged Jev adapter loaded in
 root and sonic child sessions. Live Jev approved the exact compound Git
-status/diff command, eval arithmetic and task creation; the child ran its
+status/diff command, eval arithmetic and eval-driven yield; the child ran its
 approved shell command. An explicit `tofu apply*` deny still blocked execution.
 A native 32-second review-hook delay also completed without the old 30-second
 timeout blocking the tool; `verify.sh` passed against the adopted live settings.
@@ -136,9 +136,11 @@ Rendering copies it and its client/audit dependencies into
 `omp.nix` assembles them beside the locally owned `auto-approve-jev.ts` adapter.
 There is no second permission policy to keep in sync.
 
-Read-only/scheduling tools (`read`, `grep`, `glob`, `find`, `web_search`, `ask`,
-`todo`, `wait`) run without inference. Other actions use the same Jev questions
-and thresholds as OpenCode. Scoped development work defaults to allow;
+Read-only/scheduling tools and `task` subagent creation (`read`, `grep`, `glob`,
+`find`, `web_search`, `ask`, `todo`, `wait`, `task`) run without inference:
+delegation never executes by itself, and children inherit both policy
+extensions. Other actions use the same Jev questions and thresholds as
+OpenCode. Scoped development work defaults to allow;
 catastrophic commands are blocked deterministically. Jev denials block the tool.
 Borderline results or unavailable Jev use the existing fallback chain:
 `openai/gpt-5.6-luna` (omp's `openai-codex` equivalent when only subscription auth
