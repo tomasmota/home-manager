@@ -8,7 +8,7 @@
   },
   "profile": "mac",
   "inputs": {
-    "adapter": "c7dd5e27043a81a2db4c2594d56330959adc29da52f9fb801aba2c485a8a86e6",
+    "adapter": "87331d60f2b5238bd9fba44dce02fd91d28eff72ea591dfb2baa512f8eff21d0",
     "files": {
       "agents/config/platform.macos.json": "8c00f9c4285be33d976b66a456b05c330783d9c494e69ebaac651b01e3ca4e32",
       "agents/config/platform.md": "8c903bdbbdda5d541c7bba792064e23fb4bac9495f427f28e05ab39fb9824b37",
@@ -114,8 +114,8 @@
     }
   },
   "artifacts": {
-    "agents/opencode/opencode.macos.json": "6dbd6f0cd898bb0114bfa65ce9dac5d3c736eab60c2086ed92cb0584434f67e1",
-    "agents/opencode/subagents.jsonc": "f2a946b7e6434c40c005f29df727ca3348638d9ca836528d9175a2853af9fbec",
+    "agents/opencode/opencode.macos.json": "f8ade7b3a49af000b754654d0933bc504558bc755b3e4e9933407767f850d039",
+    "agents/opencode/subagents.jsonc": "c9ef4f9c048c2c85747f77359f157d04c7695312088dbecad71a800a89a1067a",
     "agents/global/AGENTS.md": "742675f25d99ec1df3cfe00a5b2e54a752a26491235f5686c84f102c0ad1f1f8",
     "agents/opencode/cli.json": "ea2a176fd832d50186327a510b228dc6a231355fb265883647b51e4841a71503",
     "agents/skills/hey/SKILL.md": "94363fb6a29f14814b8bf01205f9be105661507a6d12ec7b11af9c71d2c4e69f",
