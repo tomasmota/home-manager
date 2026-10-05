@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "central": {
     "schemaVersion": 1,
-    "revision": "9ad4c01b356cf6bab1b433c698fc4fcc8374d868",
+    "revision": "83972c78b953e97e37c66b8c6e3d6a600cef680e",
     "pluginApi": "2.0",
     "opencode": "2.0.22"
   },
@@ -101,12 +101,22 @@
       "files": {
         "SKILL.md": "c365efefed4d4e119e03c2940a780c384e161720d5af3a1500883ecc1b8e2bb8"
       }
+    },
+    "model-benchmarks": {
+      "path": "skills/model-benchmarks",
+      "source": "owner-maintained",
+      "license": "MIT",
+      "version": "content-sha256",
+      "files": {
+        "scripts/aa.mjs": "cc3fa1d5289e9027bca7a45f71a79907cefff36d0909c5347421e8d283cd963a",
+        "SKILL.md": "57b9678f1940f9084b092290c7ff91a3ea979700634f254575de60036258efbf"
+      }
     }
   },
   "artifacts": {
-    "agents/opencode/opencode.macos.json": "8665e94b720dc1c5a8a729767ddb83dbe62f9012043d741768fc4151d647ece3",
+    "agents/opencode/opencode.macos.json": "6dbd6f0cd898bb0114bfa65ce9dac5d3c736eab60c2086ed92cb0584434f67e1",
     "agents/opencode/subagents.jsonc": "f2a946b7e6434c40c005f29df727ca3348638d9ca836528d9175a2853af9fbec",
-    "agents/global/AGENTS.md": "e7df2681da6ffa97075956b40774f228441e74914eb82711b98e818983b71c67",
+    "agents/global/AGENTS.md": "742675f25d99ec1df3cfe00a5b2e54a752a26491235f5686c84f102c0ad1f1f8",
     "agents/opencode/cli.json": "ea2a176fd832d50186327a510b228dc6a231355fb265883647b51e4841a71503",
     "agents/skills/hey/SKILL.md": "94363fb6a29f14814b8bf01205f9be105661507a6d12ec7b11af9c71d2c4e69f",
     "agents/skills/typesafe-ai/LICENSE": "835f233f1d6ed84a9b9a351aba0689b47644a4137d6316911fc7957bde523b02",
@@ -115,6 +125,8 @@
     "agents/skills/model-selector/scripts/select.mjs": "09b8ff53dea8692bbf142da8170c4a60de3760f9bbbfce940d4966483e720cda",
     "agents/skills/model-selector/SKILL.md": "82418415681868e1e7697a8ecd10f888de66d41ee26cc4aa9cfe04aad283e21e",
     "agents/skills/use-uvx/SKILL.md": "c365efefed4d4e119e03c2940a780c384e161720d5af3a1500883ecc1b8e2bb8",
+    "agents/skills/model-benchmarks/scripts/aa.mjs": "cc3fa1d5289e9027bca7a45f71a79907cefff36d0909c5347421e8d283cd963a",
+    "agents/skills/model-benchmarks/SKILL.md": "57b9678f1940f9084b092290c7ff91a3ea979700634f254575de60036258efbf",
     "agents/opencode/lib/jev-client.js": "aac70d261fc2b7499a5899e7334bc53217870f614cb321685ca67e868480e141",
     "agents/opencode/lib/agent-routes.js": "3c3dba0e6b2b1a909407069847fc3c098fc1419cc69c8fdfa931e0f54c9eaa52",
     "agents/opencode/lib/quota-cache.js": "6462feb36f7a8d7a21b7129253a5b1b9f42a8c9f0698a8e8d385c169b6d3265c",

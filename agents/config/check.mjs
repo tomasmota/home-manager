@@ -8,7 +8,7 @@ const hash = (bytes) => createHash("sha256").update(bytes).digest("hex")
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 const require = (ok, message) => { if (!ok) throw new Error(message) }
 const packages = ["agent-routes", "auto-retitle", "auto-approve-jev", "stuck-command", "tmux-title-jev", "gcloud-auth-healer", "auto-handoff"]
-const skills = { hey: ["SKILL.md"], "typesafe-ai": ["LICENSE", "SKILL.md"], handoff: ["SKILL.md"], "model-selector": ["SKILL.md", "scripts/select.mjs"], "use-uvx": ["SKILL.md"] }
+const skills = { hey: ["SKILL.md"], "typesafe-ai": ["LICENSE", "SKILL.md"], handoff: ["SKILL.md"], "model-selector": ["SKILL.md", "scripts/select.mjs"], "use-uvx": ["SKILL.md"], "model-benchmarks": ["SKILL.md", "scripts/aa.mjs"] }
 export async function check(root) {
   const safe = async (path) => {
     require(typeof path === "string" && !/[\\\0]/.test(path) && path.split("/").every((p) => p && p !== "." && p !== ".."), "unsafe snapshot path")
