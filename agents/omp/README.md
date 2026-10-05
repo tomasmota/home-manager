@@ -7,10 +7,12 @@ unchanged. Nothing about omp is load-bearing for them.
 - Flake input pinned in `flake.nix` (`omp.url = github:can1357/oh-my-pi/<rev>`).
   Update deliberately: review upstream release notes, then `nix flake update
   omp`, rebuild, and re-run the checks below. Never float.
-- Package + declarative settings via `programs.omp` (`/omp.nix`, darwin only;
-  the Linux target stays omp-free). `~/.omp/agent/config.yml` is a **writable
-  copy**, not a symlink, because omp locks and rewrites it at runtime; settings
-  changed at runtime (`/settings`, onboarding) are reverted on each switch.
+- Package + settings via `programs.omp` (`/omp.nix`, darwin only; the Linux
+  target stays omp-free). `~/.omp/agent/config.yml` is a **writable file**, not
+  a symlink, because omp locks and rewrites it at runtime. Ownership is split
+  (see [Model roles and runtime settings](#model-roles-and-runtime-settings)):
+  Nix `policy` is reapplied on every switch; `preferences` (roles, their
+  fallback chains, UI) only seed missing keys and are otherwise runtime-owned.
 - Repo-tracked, symlinked into `~/.omp/agent/`: `RULES.md` (sticky rules),
   `agents/` (custom task agents). `mcp.json` is installed as a writable 0600
   copy because `/mcp` commands atomically replace that pathname. Runtime
@@ -60,6 +62,35 @@ unchanged. Nothing about omp is load-bearing for them.
 | subagent-depth policies (child spawn rules) | `task.maxRecursionDepth: 2`; custom agents omit `spawns` | depth is capped; children inherit both policy extensions, while upstream forces their native approval mode to yolo |
 | `google-vertex` provider deny (`experimental.policies`) | — | **accepted gap**: omp has no provider deny list; it only matters if a `google-vertex` credential is added to omp, which this setup never does |
 | telemetry | `telemetry.otlpExportEnabled: false` | OTLP never initializes without an endpoint anyway |
+
+The model columns above are the **seed** values in `omp.nix` `preferences`.
+Live roles may differ by design; `omp config get modelRoles` is authoritative.
+
+## Model roles and runtime settings
+
+Roles are an indirection: agents and features use `@smol`, `@slow`, `@coder`
+and so on, so reassigning a role retargets everything that uses it.
+
+| Owner | Keys | On switch |
+| --- | --- | --- |
+| Nix `policy` | `tools.approvalMode`, `extensions`, `extensionHandlers`, `bash.patterns`, `auth`, `telemetry`, `skills`, `task.*`, `advisor`, `modelRoles.judge`, `retry.fallbackChains.{smol,judge}` | reapplied, overriding runtime edits |
+| Runtime (seeded by Nix `preferences`) | other `modelRoles`, other `retry.fallbackChains`, `defaultThinkingLevel`, `features.unexpectedStopDetection`, `hideThinkingBlock`, `compaction.keepRecentTokens`, `theme`, plus anything omp writes itself | kept; seed fills only missing keys |
+
+Change roles day to day with `/model` or, from a shell or agent:
+
+```sh
+omp models                                       # exact selectors
+# modelRoles is one record; dotted paths (modelRoles.smol) are rejected
+omp config set modelRoles "$(omp config get modelRoles --json |
+  jq -c '.value + {smol: "<provider/model[:level]>"}')"
+omp config get modelRoles --json
+```
+
+When a role moves to another provider, revisit its `retry.fallbackChains`
+entry too (OpenAI roles fall back to Anthropic and vice versa). To make a
+choice the default for a fresh machine, also update `preferences` in `omp.nix`.
+`agents/omp/merge-config.sh` performs the `preferences * live * policy` merge
+at activation; an unparsable live file is moved to `config.yml.invalid`.
 
 ## Authenticate (one-time, interactive)
 

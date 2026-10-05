@@ -1,5 +1,6 @@
 import { test } from "node:test"
-import { readFileSync, readdirSync } from "node:fs"
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { resolve, join } from "node:path"
 import { execFileSync } from "node:child_process"
 
@@ -100,6 +101,41 @@ test("RULES.md is a compact sticky-rules port", () => {
   for (const phrase of ["credentials", "context-expensive", "low-regret"]) {
     if (!rules.includes(phrase)) throw new Error(`expected the shared-base rule about ${phrase}`)
   }
+})
+
+test("config.yml is merged, not overwritten: policy wins, preferences only seed", () => {
+  const module = readFileSync(join(root, "omp.nix"), "utf8")
+  if (!module.includes("home.activation.ompConfig = lib.mkForce")) throw new Error("upstream whole-file copy must be replaced")
+  if (!module.includes("settings = policy;")) throw new Error("programs.omp.settings must carry policy only")
+  const policy = module.slice(module.indexOf("  policy = {"), module.indexOf("  preferences = {"))
+  for (const key of ["approvalMode", "extensions", "bash.patterns", "auth.broker.url", 'judge = "typesafe/jev-latest"', "smol = [];", "judge = [];"]) {
+    if (!policy.includes(key)) throw new Error(`policy must own ${key}`)
+  }
+  if (/\bdefault = "|theme\./.test(policy)) throw new Error("roles and UI belong to runtime-owned preferences")
+})
+
+test("merge-config keeps runtime choices and reapplies policy", () => {
+  try { execFileSync("yq", ["--version"]) } catch { return }
+  const dir = mkdtempSync(join(tmpdir(), "omp-merge-"))
+  const prefs = join(dir, "prefs.yml"), policy = join(dir, "policy.yml"), target = join(dir, "config.yml")
+  writeFileSync(prefs, "modelRoles:\n  default: a/one\n  smol: b/two\ntheme:\n  dark: dark-catppuccin\n")
+  writeFileSync(policy, "tools:\n  approvalMode: yolo\nmodelRoles:\n  judge: typesafe/jev-latest\nbash:\n  patterns:\n    - {match: \"tofu apply*\", approval: deny}\n")
+  writeFileSync(target, "modelRoles:\n  smol: c/three\n  judge: other\ntheme:\n  dark: titanium\ncompaction:\ntools:\n  approvalMode: always-ask\nbash:\n  patterns:\n    - {match: \"ls*\", approval: allow}\n")
+  const run = () => execFileSync("bash", [join(ompDir, "merge-config.sh"), prefs, policy, target])
+  const get = (expr) => execFileSync("yq", ["-o=json", expr, target], { encoding: "utf8" }).trim()
+  run()
+  if (get(".modelRoles") !== JSON.stringify({ default: "a/one", smol: "c/three", judge: "typesafe/jev-latest" }, null, 2)) throw new Error(`roles: ${get(".modelRoles")}`)
+  if (get(".theme.dark") !== '"titanium"') throw new Error("runtime theme must survive")
+  if (get(".tools.approvalMode") !== '"yolo"') throw new Error("policy must win")
+  if (get('.bash.patterns | length') !== "1" || get(".bash.patterns[0].approval") !== '"deny"') throw new Error("policy arrays replace runtime arrays")
+  if ((statSync(target).mode & 0o777) !== 0o600) throw new Error("config.yml must stay 0600")
+  rmSync(target)
+  run()
+  if (get(".theme.dark") !== '"dark-catppuccin"') throw new Error("missing file must be seeded")
+  writeFileSync(target, "foo: [unclosed\n")
+  run()
+  if (!existsSync(`${target}.invalid`) || get(".modelRoles.default") !== '"a/one"') throw new Error("invalid file must be kept aside and reseeded")
+  rmSync(dir, { recursive: true })
 })
 
 test("verify.sh stays syntactically valid bash", () => {

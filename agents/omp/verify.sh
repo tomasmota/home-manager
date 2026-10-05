@@ -28,7 +28,7 @@ test -f "${AGENT_DIR}/agents/coder.md"
 test -f "${AGENT_DIR}/agents/terminal.md"
 test -f "${AGENT_DIR}/agents/deep.md"
 
-# Declarative settings survived omp's runtime rewrites on the last switch.
+# Nix policy keys survived omp's runtime rewrites since the last switch.
 grep --quiet --fixed-strings 'approvalMode: yolo' "${AGENT_DIR}/config.yml"
 grep --quiet --fixed-strings 'url: http://127.0.0.1:8765' "${AGENT_DIR}/config.yml"
 omp config get tools.approvalMode --json | jq -e '.value == "yolo"' >/dev/null
@@ -40,7 +40,8 @@ omp config get modelRoles --json | jq -e '.value.judge == "typesafe/jev-latest"'
 # Inco custom provider: read-only models.yml, literal smol id resolvable.
 # Lists the catalog only; the credential command is not executed here.
 test -f "${AGENT_DIR}/models.yml"
-omp config get modelRoles --json | jq -e '.value.smol == "inco/glm-5.3-flash:fast"' >/dev/null
+# Roles are runtime-owned (seeded only), so require presence, not a value.
+omp config get modelRoles --json | jq -e '.value.default and .value.smol' >/dev/null
 omp models inco --json | jq -e 'any(.models[]; .selector == "inco/glm-5.3-flash:fast")' >/dev/null
 
 # Judge role: jev-latest is a judge-kind model (omp models defaults to
@@ -48,7 +49,7 @@ omp models inco --json | jq -e 'any(.models[]; .selector == "inco/glm-5.3-flash:
 # this fails until `omp auth-broker login typesafe` (or the shell key) works.
 omp models typesafe --kind judge --json | jq -e 'any(.models[]; .id == "jev-latest")' >/dev/null
 omp config get features.unexpectedStopDetection --json | jq -e '.value == "smart"' >/dev/null
-omp config get retry.fallbackChains --json | jq -e '.value.judge == [] and (.value.coder | length) == 1' >/dev/null
+omp config get retry.fallbackChains --json | jq -e '.value.judge == [] and .value.smol == []' >/dev/null
 
 # Exercise the shipped immutable policy factory, not just the checkout source.
 # Live parent/child denial probes are still required before delegated MCP use.
