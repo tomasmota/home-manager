@@ -1,12 +1,12 @@
 {
-  "$schema": "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json",
+  "$schema": "https://raw.githubusercontent.com/can1357/oh-my-pi/898b09d32f147887a2242cf5ec9a1967bcac8873/packages/coding-agent/src/config/mcp-schema.json",
   "mcpServers": {
     "chrome-devtools": {
       "type": "stdio",
       "command": "npx",
       "args": [
         "-y",
-        "chrome-devtools-mcp@latest",
+        "chrome-devtools-mcp@1.10.1",
         "--auto-connect",
         "--user-data-dir=/Users/tomas/Library/Application Support/Vivaldi",
         "--no-usage-statistics",

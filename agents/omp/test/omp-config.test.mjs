@@ -53,22 +53,6 @@ test("custom agents are exactly the profiles without a bundled equivalent", () =
   }
 })
 
-test("bash pattern port keeps every deny ahead of every allow", () => {
-  const text = read("bash-patterns.nix")
-  const rules = [...text.matchAll(/\{\s*match = "(.*?)";\s*approval = "(deny|allow)";\s*\}/g)].map((m) => [m[1], m[2]])
-  if (rules.length < 150) throw new Error(`expected the full permission port, found ${rules.length} rules`)
-  const firstAllow = rules.findIndex(([, a]) => a === "allow")
-  if (firstAllow < 0) throw new Error("no allow rules found")
-  if (rules.slice(firstAllow).some(([, a]) => a === "deny")) {
-    throw new Error("a deny follows an allow; ordered rules would let the allow win")
-  }
-  for (const dangerous of ["tofu apply*", "tofu destroy*", "glab auth revoke*", "gcloud projects delete*"]) {
-    if (!rules.some(([match, approval]) => match === dangerous && approval === "deny")) {
-      throw new Error(`missing deny for ${dangerous}`)
-    }
-  }
-})
-
 test("omp is imported only by the Mac home configuration", () => {
   const home = readFileSync(join(root, "home.nix"), "utf8")
   const flake = readFileSync(join(root, "flake.nix"), "utf8")

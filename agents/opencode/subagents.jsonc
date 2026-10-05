@@ -47,7 +47,7 @@
     "quick": {
       "description": "Small tasks with an obvious approach: lookups, mechanical edits and focused value changes, not uncertain design.",
       "mode": "all",
-      "model": "inco/glm-5.3-flash:fast"
+      "model": "opencode/space-bunny-free"
     },
     "deep": {
       "description": "Hard debugging, design and high-level decisions that need careful reasoning; not merely long work.",
@@ -105,7 +105,7 @@
         }
       ],
       "mode": "subagent",
-      "model": "inco/glm-5.3-flash:fast"
+      "model": "opencode/space-bunny-free"
     },
     "reviewer": {
       "description": "Independent adversarial review for concrete bugs, regressions, risks and missing tests. Does not edit; shell checks are permitted, so it is not a strict read-only sandbox.",

@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "central": {
     "schemaVersion": 1,
-    "revision": "fc83fb007bcdfbfda9a5520ee17e028c985c6e97",
+    "revision": "9ad4c01b356cf6bab1b433c698fc4fcc8374d868",
     "pluginApi": "2.0",
     "opencode": "2.0.22"
   },
   "profile": "mac",
   "inputs": {
-    "adapter": "87331d60f2b5238bd9fba44dce02fd91d28eff72ea591dfb2baa512f8eff21d0",
+    "adapter": "c7dd5e27043a81a2db4c2594d56330959adc29da52f9fb801aba2c485a8a86e6",
     "files": {
       "agents/config/platform.macos.json": "8c00f9c4285be33d976b66a456b05c330783d9c494e69ebaac651b01e3ca4e32",
       "agents/config/platform.md": "8c903bdbbdda5d541c7bba792064e23fb4bac9495f427f28e05ab39fb9824b37",
@@ -104,9 +104,9 @@
     }
   },
   "artifacts": {
-    "agents/opencode/opencode.macos.json": "fdfaee0533081c5f3dbcb44bf5cd300c6a5b86b5d94ef7b46ede0b70320ff954",
-    "agents/opencode/subagents.jsonc": "c9ef4f9c048c2c85747f77359f157d04c7695312088dbecad71a800a89a1067a",
-    "agents/global/AGENTS.md": "b28ae5107085569da89d21ea50cb10a178eb427eeccbc7296431c0403fff1e3e",
+    "agents/opencode/opencode.macos.json": "8665e94b720dc1c5a8a729767ddb83dbe62f9012043d741768fc4151d647ece3",
+    "agents/opencode/subagents.jsonc": "f2a946b7e6434c40c005f29df727ca3348638d9ca836528d9175a2853af9fbec",
+    "agents/global/AGENTS.md": "e7df2681da6ffa97075956b40774f228441e74914eb82711b98e818983b71c67",
     "agents/opencode/cli.json": "ea2a176fd832d50186327a510b228dc6a231355fb265883647b51e4841a71503",
     "agents/skills/hey/SKILL.md": "94363fb6a29f14814b8bf01205f9be105661507a6d12ec7b11af9c71d2c4e69f",
     "agents/skills/typesafe-ai/LICENSE": "835f233f1d6ed84a9b9a351aba0689b47644a4137d6316911fc7957bde523b02",
@@ -118,6 +118,9 @@
     "agents/opencode/lib/jev-client.js": "aac70d261fc2b7499a5899e7334bc53217870f614cb321685ca67e868480e141",
     "agents/opencode/lib/agent-routes.js": "3c3dba0e6b2b1a909407069847fc3c098fc1419cc69c8fdfa931e0f54c9eaa52",
     "agents/opencode/lib/quota-cache.js": "6462feb36f7a8d7a21b7129253a5b1b9f42a8c9f0698a8e8d385c169b6d3265c",
+    "agents/opencode/lib/permission-review/permission-review.js": "a6cf70a5ef7c88b07ba7a5bf25e692135f979d40be3135373c4219b8d81bfdac",
+    "agents/opencode/lib/permission-review/jev-client.js": "aac70d261fc2b7499a5899e7334bc53217870f614cb321685ca67e868480e141",
+    "agents/opencode/lib/permission-review/decision-audit.js": "55b79edbfe03a03cde19fbd1d1c50071d7531442c701f0a9656268a51c4332a1",
     "agents/opencode/lib/inventory.mjs": "3bd93a7bbc31daef503abafb2e77a1aeeea0910a8e95e0e6a2141d3ca5b315b3"
   }
 }

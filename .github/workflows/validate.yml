@@ -48,5 +48,5 @@ jobs:
           repository: tomasmota/agents
           ref: ${{ steps.pin.outputs.revision }}
           path: central-source
-      - run: AGENTS_SOURCE="$PWD/central-source" node --test --test-timeout=60000 agents/opencode/tests/*.test.mjs agents/config/test/*.test.mjs agents/runtime/test/*.test.mjs
+      - run: AGENTS_SOURCE="$PWD/central-source" node --test --test-timeout=60000 agents/omp/test/*.test.mjs agents/opencode/tests/*.test.mjs agents/config/test/*.test.mjs agents/runtime/test/*.test.mjs
       - run: AGENTS_SOURCE="$PWD/central-source" bash agents/config/manage.sh --check

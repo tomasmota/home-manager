@@ -29,10 +29,11 @@ test -f "${AGENT_DIR}/agents/terminal.md"
 test -f "${AGENT_DIR}/agents/deep.md"
 
 # Declarative settings survived omp's runtime rewrites on the last switch.
-grep --quiet --fixed-strings 'approvalMode: always-ask' "${AGENT_DIR}/config.yml"
-! grep --quiet --fixed-strings 'approvalMode: yolo' "${AGENT_DIR}/config.yml"
+grep --quiet --fixed-strings 'approvalMode: yolo' "${AGENT_DIR}/config.yml"
 grep --quiet --fixed-strings 'url: http://127.0.0.1:8765' "${AGENT_DIR}/config.yml"
-omp config get tools.approvalMode --json | jq -e '.value == "always-ask"' >/dev/null
+omp config get tools.approvalMode --json | jq -e '.value == "yolo"' >/dev/null
+omp config get tools.approval --json | jq -e '[.value[] | select(. != "allow")] == []' >/dev/null
+omp config get extensionHandlers.toolCallTimeoutMs --json | jq -e '.value >= 150000' >/dev/null
 omp config get advisor.enabled --json | jq -e '.value == false' >/dev/null
 omp config get modelRoles --json | jq -e '.value.judge == "typesafe/jev-latest"' >/dev/null
 
@@ -42,11 +43,20 @@ test -f "${AGENT_DIR}/models.yml"
 omp config get modelRoles --json | jq -e '.value.smol == "inco/glm-5.3-flash:fast"' >/dev/null
 omp models inco --json | jq -e 'any(.models[]; .selector == "inco/glm-5.3-flash:fast")' >/dev/null
 
+# Judge role: jev-latest is a judge-kind model (omp models defaults to
+# --kind chat) and is listed only when the typesafe credential resolves, so
+# this fails until `omp auth-broker login typesafe` (or the shell key) works.
+omp models typesafe --kind judge --json | jq -e 'any(.models[]; .id == "jev-latest")' >/dev/null
+omp config get features.unexpectedStopDetection --json | jq -e '.value == "smart"' >/dev/null
+omp config get retry.fallbackChains --json | jq -e '.value.judge == [] and (.value.coder | length) == 1' >/dev/null
+
 # Exercise the shipped immutable policy factory, not just the checkout source.
 # Live parent/child denial probes are still required before delegated MCP use.
 policy="$(omp config get extensions --json | jq -er '.value[] | select(endswith("-mcp-policy.ts"))')"
 test -r "$policy"
-node --input-type=module - "$policy" <<'JS'
+reviewer="$(omp config get extensions --json | jq -er '.value[] | select(endswith("/auto-approve-jev.ts"))')"
+test -r "$reviewer"
+OPENCODE_JEV_DEBUG=0 node --input-type=module - "$policy" "$reviewer" <<'JS'
 import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 const { default: policy } = await import(pathToFileURL(process.argv[2]));
@@ -56,6 +66,12 @@ for (const toolName of ["mcp__confluence_deletepage", "mcp__chrome_devtools_perf
   assert.equal(toolCall({ toolName }).block, true);
 }
 assert.equal(toolCall({ toolName: "mcp__confluence_getjiraissue" }), undefined);
+const { default: reviewer } = await import(pathToFileURL(process.argv[3]));
+let review;
+reviewer({ on(name, handler) { assert.equal(name, "tool_call"); review = handler; } });
+const context = { cwd: process.cwd(), hasUI: false };
+assert.equal((await review({ toolName: "bash", input: { command: "rm -rf /" } }, context)).block, true);
+assert.equal(await review({ toolName: "read", input: { path: "/" } }, context), undefined);
 JS
 
 # Launchd services are loaded and listening on loopback only.

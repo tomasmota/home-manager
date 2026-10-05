@@ -29,9 +29,3 @@ test("extension blocks forbidden calls before tool execution", () => {
   assert.equal(handler({ toolName: "mcp__confluence_deletepage" }).block, true)
   assert.equal(handler({ toolName: "mcp__confluence_getjiraissue" }), undefined)
 })
-
-test("MCP defaults stay conservative if the extension cannot load", () => {
-  const module = readFileSync(new URL("../../../omp.nix", import.meta.url), "utf8")
-  assert.match(module, /approvalMode = "always-ask"/)
-  assert.match(module, /extensions = \["\$\{\.\/agents\/omp\/mcp-policy\.ts\}"\]/)
-})

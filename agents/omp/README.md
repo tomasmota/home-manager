@@ -24,7 +24,9 @@ unchanged. Nothing about omp is load-bearing for them.
 - Inco (not an omp builtin) is a custom provider in `~/.omp/agent/models.yml`,
   generated read-only by `/omp.nix`. Its `apiKey` is a `!command` that reads
   OpenCode's active `inco` credential from the documented local
-  `opencode api get /api/credential` endpoint at request time. omp keeps the
+  `opencode api get /api/credential` endpoint at request time, through the
+  pinned `runtime.opencode` wrapper from `agents/runtime` rather than the
+  profile path (endpoint confirmed against the pinned runtime). omp keeps the
   result in process memory only; nothing is copied into omp's store, the
   broker, `secrets.env` or the Nix store. Rotating the key in OpenCode is
   picked up by the next omp process.
@@ -43,18 +45,20 @@ unchanged. Nothing about omp is load-bearing for them.
 | reviewer (sol xhigh) | bundled `reviewer` + `task.agentModelOverrides.reviewer: "@reviewer"` | structured P0-P3 findings |
 | free (opencode muse-spark) | — | **gap**: OpenCode free tier is opencode.ai-specific; no omp equivalent found |
 | auto-retitle (gpt-6-luna low) | built-in session titles via `tiny` role | unset `tiny` inherits `@smol` |
-| Jev permission review | `modelRoles.judge: typesafe/jev-latest`; advisor disabled | **gap**: native typed judgments do not recreate permission auto-approval; the chat advisor is a separate feature and cannot use Jev |
-| quota fallback (proactive <20% poll) | `retry.fallbackChains` provider wildcards | **reactive only**: rescues the turn on 429/quota, primary restored on cooldown |
-| permissions (shell ask + allow/deny lists) | `tools.approvalMode: always-ask`, explicit local-write grants + `bash.patterns` (deny rules first) + `tools.approval.eval: prompt` | unmatched commands and MCP calls prompt; no OpenCode tool_output equivalent |
+| Jev permission review | `auto-approve-jev.ts` + canonical shared evaluator from the central lock | same permissive policy, thresholds, fallback chain and exhaustion behavior as OpenCode; independent of the native `judge` role |
+| Jev-backed judge features (opt-in) | `features.unexpectedStopDetection: smart`, `defaultThinkingLevel: auto` | both ride the `judge` role: **one TypeSafe judgment per classified turn (auto thinking) and per text-only stop (smart)**; answers are cached per model+state. `retry.fallbackChains.judge: []`: a prompted model never replaces a native judge, so no chain. With no TypeSafe credential upstream appends the session model as judge, which spends session-model tokens |
+| quota fallback (proactive <20% poll) | `retry.fallbackChains` keyed by role (`default`, `terminal`, `reviewer` → Opus; `slow`, `task`, `coder` → Sol) | **reactive only**: rescues the turn on 429/quota, primary restored on cooldown. Subagents inherit their role's chain through `@role` aliases; `smol: []` keeps Inco from inheriting the `default` chain |
+| permissions | `tools.approvalMode: yolo` + Jev `tool_call` review + explicit `bash.patterns` denies + `mcp-policy.ts` | read-only/scheduling tools skip review; executable actions, eval, writes and subagent creation are reviewed automatically; explicit denies remain authoritative |
 | MCP chrome-devtools (Vivaldi) + confluence | `mcp.json` (same args/URL) | omp's built-in `browser` tool coexists; opentofu/incident-io not ported (were disabled) |
 | skills local/team dirs | `skills.customDirectories` | `~/.agents/skills` + `~/.agents/AGENTS.md` load via the default `agents` provider |
-| websearch exa | — | **gap**: no `EXA_API_KEY` on this machine; add it to `secrets.env` and set `modelRoles.web: web/exa` to enable |
+| websearch exa | `modelRoles.web: web/exa` | Exa runs keyless through its public MCP when no `EXA_API_KEY` or stored credential exists, so no credential is needed. Provider choice is the `web` model role (legacy `providers.webSearch*` keys are migrated away). Unset `retry.fallbackChains.web` leaves the built-in keyless/hosted list as backups |
 | tool_output 500 lines/16kB caps | — | **gap**: omp truncates internally; only `tools.artifactMaxBytes` (16 MB artifact cap) exists |
 | compaction keep 12000 tokens | `compaction.keepRecentTokens: 12000` | |
 | theme catppuccin | `theme.dark: dark-catppuccin` | |
 | session thinking hidden | `hideThinkingBlock: true` | |
 | tabs off / sidebar hide / notifications | — | **gap**: no omp equivalents found (no notification setting exists) |
-| subagent-depth policies (child spawn rules) | — | **gap**: omp subagents run headless yolo; the parent `task` approval is the boundary |
+| subagent-depth policies (child spawn rules) | `task.maxRecursionDepth: 2`; custom agents omit `spawns` | depth is capped; children inherit both policy extensions, while upstream forces their native approval mode to yolo |
+| `google-vertex` provider deny (`experimental.policies`) | — | **accepted gap**: omp has no provider deny list; it only matters if a `google-vertex` credential is added to omp, which this setup never does |
 | telemetry | `telemetry.otlpExportEnabled: false` | OTLP never initializes without an endpoint anyway |
 
 ## Authenticate (one-time, interactive)
@@ -68,6 +72,7 @@ curl -fsS http://127.0.0.1:8765/v1/healthz   # broker up
 
 omp auth-broker login anthropic        # Claude subscription (OAuth)
 omp auth-broker login openai-codex     # OpenAI subscription (OAuth)
+omp auth-broker login typesafe         # TypeSafe Jev (judge role)
 ```
 
 Open each printed URL in the local browser. Never paste URLs, callbacks or
@@ -80,14 +85,23 @@ failed key lookup after 30 s.
 
 ## Operations and checks
 
-Build acceptance (2026-10-04): the pinned omp 18.6.1 package and Mac system
-build pass, as do all 82 combined consumer tests (including Nix evaluation).
+Build acceptance (2026-10-04, re-run 2026-10-05): the pinned omp 18.6.1 package
+and Mac system build pass, as do all 82 combined consumer tests (omp, OpenCode,
+config and runtime suites; 6 Nix-evaluation tests skip unless
+`AGENTS_NIX_EVAL=1`, and pass with it).
 The custom Inco provider passed isolated native prompt and read-tool smoke
 tests. Harmless MCP fixtures were denied in native root and bundled sonic
 child sessions, including `xd://` dispatch; neither fixture executed. A failed
 extension-load control confirmed the documented child-yolo limitation.
-Broker-backed startup, subscription models, gateway requests and live
-skill/MCP discovery still await the owner's switch and interactive logins.
+Native approval acceptance (2026-10-05): the packaged Jev adapter loaded in
+root and sonic child sessions. Live Jev approved the exact compound Git
+status/diff command, eval arithmetic and task creation; the child ran its
+approved shell command. An explicit `tofu apply*` deny still blocked execution.
+A native 32-second review-hook delay also completed without the old 30-second
+timeout blocking the tool; `verify.sh` passed against the adopted live settings.
+All 88 consumer tests passed with `AGENTS_NIX_EVAL=1`, as did the macOS system
+build and offline flake check. Confluence discovery returned HTTP 401 in this
+smoke; its authenticated calls remain unavailable until reauthenticated.
 
 ```sh
 agents/omp/verify.sh                       # health, versions, approval mode, links
@@ -101,18 +115,52 @@ tail -50 ~/Library/Logs/OMPAuthBroker.error.log
 Inside a session: `/mcp list`, `/skills` (skills + MCP tool roster), `/model`
 roles view. `mcp-policy.ts` enforces Confluence's nine-tool allow-list and
 Chrome's performance/lighthouse/heapsnapshot denies through `tool_call`.
-Unknown MCP calls prompt in the parent even if the extension cannot load.
-MCP per-tool approval grants (`tools.approval.mcp__…`) must use exact sanitized
-registered names; enumerate them live before adding grants. The extension is
-installed from the Nix store, so policy edits require a rebuild/switch.
+Both extensions are installed from the Nix store, so policy edits require a
+rebuild/switch (or deliberate live `omp config set extensions` adoption of the
+built store paths). Start a new omp process to load changed extensions; the
+pinned `/reload-plugins` does not reload this extension runtime.
 
 OAuth credentials live outside `mcp.json`; resetting the declared servers on
 switch preserves authentication when the server URL and active profile match.
 
-Task children inherit the policy extension but upstream forces their approval
-mode to `yolo`. If extension loading fails, parent-only prompt defaults do not
-protect child MCP calls. Verify policy loading and parent/child deny probes
-before approving delegation; extension load errors are non-fatal at this pin.
+Task children inherit both extensions, but upstream forces their native approval
+mode to `yolo`. If an extension cannot load, its restrictions/review are absent
+in both parent and child sessions. Extension load errors are non-fatal at this
+pin: verify loading and native parent/child deny probes before delegated MCP use.
+
+## Automatic permission review
+
+The canonical evaluator lives in central `auto-approve-jev/lib/permission-review.js`.
+Rendering copies it and its client/audit dependencies into
+`agents/opencode/lib/permission-review/`; never edit those generated files.
+`omp.nix` assembles them beside the locally owned `auto-approve-jev.ts` adapter.
+There is no second permission policy to keep in sync.
+
+Read-only/scheduling tools (`read`, `grep`, `glob`, `find`, `web_search`, `ask`,
+`todo`, `wait`) run without inference. Other actions use the same Jev questions
+and thresholds as OpenCode. Scoped development work defaults to allow;
+catastrophic commands are blocked deterministically. Jev denials block the tool.
+Borderline results or unavailable Jev use the existing fallback chain:
+`openai/gpt-5.6-luna` (omp's `openai-codex` equivalent when only subscription auth
+is available), then `inco/glm-5.3-flash:fast`.
+
+The adapter resolves TypeSafe credentials through omp's model registry/broker,
+then retains the shared client's environment/private secrets-file fallback.
+It never persists or prints credentials. Existing `OPENCODE_JEV_*` settings
+remain applicable, including optional private audit and
+`OPENCODE_JEV_ON_EXHAUSTION`: the unchanged default is **allow** if all reviewers
+fail; `manual` asks in an interactive session and blocks headless execution;
+`deny` blocks. Invalid fallback configuration also requires manual review.
+
+`extensionHandlers.toolCallTimeoutMs: 180000` covers the default two-model
+fallback chain at its maximum supported request budgets (30s Jev + 2 × 60s
+fallback) with authentication overhead. If adding more fallback models, raise
+the native hook timeout to cover their total budgets too.
+
+Native `yolo` is the execution gate after extension review, not a substitute for
+Jev. Explicit native tool denies/prompts and MCP restrictions still apply.
+This is not a sandbox: eval can run code outside the bash-pattern gate, and a
+missing extension leaves native default-allow behavior.
 
 ## CLIProxyAPI retirement criterion
 
@@ -126,6 +174,7 @@ omp rollout.
 
 - quota-watch / tmux-status / auto-retitle OpenCode TUI plugins (out of scope).
 - No proactive quota polling: omp fallback is reactive per turn.
-- `free` role and Exa web search have no working equivalent yet (see table).
-- Jev permission auto-approval is not ported; the native `judge` role is not a
-  permission hook. Optional background chat advice remains disabled.
+- `free` role has no working equivalent yet (see table).
+- OpenCode's `google-vertex` provider deny has no omp equivalent (see table).
+- No built-in Jev permission hook exists at this pin; the local adapter uses the
+  canonical OpenCode evaluator. Optional background chat advice stays disabled.

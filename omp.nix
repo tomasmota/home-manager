@@ -18,12 +18,25 @@
 }: let
   ompDir = "${config.xdg.configHome}/home-manager/agents/omp";
 
+  runtime = import ./agents/runtime {
+    inherit pkgs;
+    home = config.home.homeDirectory;
+  };
+
+  # The renderer copies the canonical reviewer at agents/config/lock.json's
+  # revision; keep the omp adapter and its relative imports together in-store.
+  permissionReviewer = pkgs.runCommand "omp-auto-approve-jev" {} ''
+    mkdir -p "$out"
+    cp ${./agents/opencode/lib/permission-review}/*.js "$out/"
+    cp ${./agents/omp/auto-approve-jev.ts} "$out/auto-approve-jev.ts"
+  '';
+
   # Inco is not an omp builtin. Reuse OpenCode's active Inco key through its
   # documented local credential API at request time (omp caches the stdout in
   # memory only); the key never lands in the store, models.yml or omp's DB.
   incoKey = pkgs.writeShellScript "omp-inco-key" ''
     set -o pipefail
-    ${config.home.profileDirectory}/bin/opencode api get /api/credential 2>/dev/null |
+    ${runtime.opencode}/bin/opencode api get /api/credential 2>/dev/null |
       ${pkgs.jq}/bin/jq -er 'first(.data[] | select(.integrationID == "inco" and .active) | .value | select(.type == "key") | .key)'
   '';
 
@@ -87,38 +100,57 @@ in {
           reviewer = "openai-codex/gpt-6.1-sol:xhigh";
           # Native typed judgments; Jev is not a tool-calling chat advisor.
           judge = "typesafe/jev-latest";
+          # Keyless Exa (public MCP unless an Exa credential exists), OpenCode's
+          # websearch provider. Unset fallbacks keep the rest of the built-in
+          # web priority list as non-explicit backups.
+          web = "web/exa";
         };
 
         # Steer bundled agents to this workstation's model choices without
         # forking their definitions; custom agents keep frontmatter aliases.
         task.agentModelOverrides.reviewer = "@reviewer";
 
-        defaultThinkingLevel = "high";
+        # Subagent nesting: explicit copy of the upstream default (2 levels).
+        task.maxRecursionDepth = 2;
+
+        # `auto` and Smart stop detection both ride the judge role (one Jev
+        # judgment per classified turn / text-only stop).
+        defaultThinkingLevel = "auto";
+        features.unexpectedStopDetection = "smart";
         hideThinkingBlock = true;
 
         # Reactive quota fallback (OpenCode proactive <20% polling has no omp
         # equivalent): rescues the turn on 429/quota, primary restored later.
+        # Role-keyed so bundled and custom subagents inherit their role's chain
+        # (`@task`, `@coder`, ...). OpenAI-side roles fall back to Anthropic and
+        # vice versa, at the role's own effort. `smol = []` keeps Inco isolated:
+        # without it the `default` chain would apply to every chat role that
+        # has none. `judge = []`: the native TypeSafe judge has no substitute
+        # (a prompted model never follows a native one), so no chain.
         retry.fallbackChains = {
-          "openai-codex/*" = ["anthropic/claude-opus-5-5"];
-          "anthropic/*" = ["openai-codex/gpt-6.1-sol:high"];
+          default = ["anthropic/claude-opus-5-5:high"];
+          terminal = ["anthropic/claude-opus-5-5:xhigh"];
+          reviewer = ["anthropic/claude-opus-5-5:xhigh"];
+          slow = ["openai-codex/gpt-6.1-sol:xhigh"];
+          task = ["openai-codex/gpt-6.1-sol:high"];
+          coder = ["openai-codex/gpt-6.1-sol:high"];
+          smol = [];
+          judge = [];
         };
 
         tools = {
-          # Unknown MCP tools prompt in the parent even if the policy fails.
-          # Headless task children have an upstream yolo-mode limitation.
-          # Explicit local-write grants preserve the usual coding workflow.
-          approvalMode = "always-ask";
-          approval = {
-            write = "allow";
-            edit = "allow";
-            ast_edit = "allow";
-            # bash.patterns cannot gate the eval tool's own shell path.
-            eval = "prompt";
-          };
+          # The Jev extension reviews executable actions before this native
+          # default-allow gate. Explicit bash/MCP denies remain authoritative.
+          approvalMode = "yolo";
         };
 
         bash.patterns = import ./agents/omp/bash-patterns.nix;
-        extensions = ["${./agents/omp/mcp-policy.ts}"];
+        extensions = [
+          "${./agents/omp/mcp-policy.ts}"
+          "${permissionReviewer}/auto-approve-jev.ts"
+        ];
+        # Max shared budgets: 30s Jev + 2 x 60s fallback, plus auth overhead.
+        extensionHandlers.toolCallTimeoutMs = 180000;
 
         compaction.keepRecentTokens = 12000;
 

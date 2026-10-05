@@ -67,8 +67,13 @@ and forms are cancelled and running sessions continue at the next step boundary.
 
 ```bash
 opencode api post /api/location/reload                                             # default service
-opencode api --server "http://127.0.0.1:$APP_PORT" post /api/location/reload       # app backend
+opencode api --server http://127.0.0.1:3001 post /api/location/reload             # managed app backend via its authenticated proxy
 ```
+
+The managed backend's direct port requires its generated password. Use the
+owned app's loopback API proxy instead: it forwards the same native `/api/*`
+paths and supplies backend authentication without exposing credentials.
+Successful reloads return HTTP 204 and no JSON body.
 
 ### Rendered, installed or active?
 
@@ -84,14 +89,13 @@ opencode service status                                   # default service: run
 
 # App backend port is ephemeral; read only selected /health fields (no auth material)
 curl -fsS http://127.0.0.1:3001/health | node -e 'const h=JSON.parse(require("fs").readFileSync(0,"utf8"));console.log({status:h.status,openCodePort:h.openCodePort,openchamberVersion:h.openchamberVersion})'
-APP_PORT=<openCodePort from above>
 
 inv() { node agents/opencode/lib/inventory.mjs --inventory agents/config/inventory.mac.json --root "$PWD" --opencode "$(command -v opencode)" --installed-server "$HOME/.config/opencode/opencode.json" --installed-skills "$HOME/.agents/skills" --directory "$PWD" "$@"; }
 inv                                                       # default service
-inv --server "http://127.0.0.1:$APP_PORT"                 # app backend
+inv --server http://127.0.0.1:3001                       # managed app backend via authenticated proxy
 ```
 
-An explicit server takes credentials only from the CLI's own environment, never
+A direct backend connection takes credentials only from the CLI's own environment, never
 from a URL or arguments; do not print them. A default-location pass does not prove
 project overrides or per-request hook changes. Ports and PIDs change on restart, so
 discover them each time rather than recording them.
@@ -188,7 +192,7 @@ From this repo, with a clean central checkout matching the desired full SHA:
 AGENTS_SOURCE=/path/to/clean/agents bash agents/config/manage.sh --update <full-SHA>
 bash agents/config/manage.sh --check
 node agents/config/check.mjs
-AGENTS_SOURCE=/path/to/clean/agents node --test --test-timeout=60000 agents/opencode/tests/*.test.mjs agents/config/test/*.test.mjs agents/runtime/test/*.test.mjs
+AGENTS_SOURCE=/path/to/clean/agents node --test --test-timeout=60000 agents/omp/test/*.test.mjs agents/opencode/tests/*.test.mjs agents/config/test/*.test.mjs agents/runtime/test/*.test.mjs
 nix flake check --no-build
 nix run --inputs-from . nixpkgs#alejandra -- --check .
 nix run --inputs-from . nixpkgs#statix -- check .

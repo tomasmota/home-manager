@@ -1026,24 +1026,24 @@
   },
   "plugins": [
     {
-      "package": "git+ssh://git@github.com/tomasmota/agents.git#fc83fb007bcdfbfda9a5520ee17e028c985c6e97::path:opencode/plugins/agent-routes",
+      "package": "git+ssh://git@github.com/tomasmota/agents.git#9ad4c01b356cf6bab1b433c698fc4fcc8374d868::path:opencode/plugins/agent-routes",
       "options": {
         "routesFile": "/Users/tomas/.config/opencode/subagents.jsonc",
         "quotaAdapter": "file:///Users/tomas/.config/home-manager/agents/opencode/plugins/agent-routes/quota.js"
       }
     },
     {
-      "package": "git+ssh://git@github.com/tomasmota/agents.git#fc83fb007bcdfbfda9a5520ee17e028c985c6e97::path:opencode/plugins/auto-retitle",
+      "package": "git+ssh://git@github.com/tomasmota/agents.git#9ad4c01b356cf6bab1b433c698fc4fcc8374d868::path:opencode/plugins/auto-retitle",
       "options": {
         "model": "openai/gpt-6-luna#low"
       }
     },
-    "git+ssh://git@github.com/tomasmota/agents.git#fc83fb007bcdfbfda9a5520ee17e028c985c6e97::path:opencode/plugins/auto-approve-jev",
-    "git+ssh://git@github.com/tomasmota/agents.git#fc83fb007bcdfbfda9a5520ee17e028c985c6e97::path:opencode/plugins/stuck-command",
-    "git+ssh://git@github.com/tomasmota/agents.git#fc83fb007bcdfbfda9a5520ee17e028c985c6e97::path:opencode/plugins/tmux-title-jev",
-    "git+ssh://git@github.com/tomasmota/agents.git#fc83fb007bcdfbfda9a5520ee17e028c985c6e97::path:opencode/plugins/gcloud-auth-healer",
+    "git+ssh://git@github.com/tomasmota/agents.git#9ad4c01b356cf6bab1b433c698fc4fcc8374d868::path:opencode/plugins/auto-approve-jev",
+    "git+ssh://git@github.com/tomasmota/agents.git#9ad4c01b356cf6bab1b433c698fc4fcc8374d868::path:opencode/plugins/stuck-command",
+    "git+ssh://git@github.com/tomasmota/agents.git#9ad4c01b356cf6bab1b433c698fc4fcc8374d868::path:opencode/plugins/tmux-title-jev",
+    "git+ssh://git@github.com/tomasmota/agents.git#9ad4c01b356cf6bab1b433c698fc4fcc8374d868::path:opencode/plugins/gcloud-auth-healer",
     {
-      "package": "git+ssh://git@github.com/tomasmota/agents.git#fc83fb007bcdfbfda9a5520ee17e028c985c6e97::path:opencode/plugins/auto-handoff",
+      "package": "git+ssh://git@github.com/tomasmota/agents.git#9ad4c01b356cf6bab1b433c698fc4fcc8374d868::path:opencode/plugins/auto-handoff",
       "options": {
         "threshold": 250000
       }
@@ -1069,7 +1069,7 @@
     "quick": {
       "description": "Small tasks with an obvious approach: lookups, mechanical edits and focused value changes, not uncertain design.",
       "mode": "all",
-      "model": "inco/glm-5.3-flash:fast"
+      "model": "opencode/space-bunny-free"
     },
     "deep": {
       "description": "Hard debugging, design and high-level decisions that need careful reasoning; not merely long work.",
@@ -1127,7 +1127,7 @@
         }
       ],
       "mode": "subagent",
-      "model": "inco/glm-5.3-flash:fast"
+      "model": "opencode/space-bunny-free"
     },
     "reviewer": {
       "description": "Independent adversarial review for concrete bugs, regressions, risks and missing tests. Does not edit; shell checks are permitted, so it is not a strict read-only sandbox.",

@@ -30,6 +30,7 @@ export async function check(root) {
     const expectedInputs = [adapter.server, adapter.instructions, adapter.cli].sort()
     require(equal(Object.keys(inventory.inputs.files).sort(), expectedInputs) && inventory.inputs.adapter === hash(JSON.stringify(adapter, null, 2) + "\n"), "input coverage or adapter mismatch")
     const artifacts = [out.server, out.instructions, out.routes, out.cli, out.inventoryTool, ...["agent-routes.js", "jev-client.js", "quota-cache.js"].map((p) => `${out.helpers}/${p}`)]
+    artifacts.push(...["permission-review.js", "jev-client.js", "decision-audit.js"].map((p) => `${out.helpers}/permission-review/${p}`))
     for (const [id, files] of Object.entries(skills)) {
       require(equal(Object.keys(inventory.skills[id].files).sort(), [...files].sort()), "skill file coverage mismatch")
       artifacts.push(...files.map((p) => `${out.skills}/${id}/${p}`))
