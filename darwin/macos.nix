@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: {
-  imports = [./cliproxyapi.nix];
+  imports = [./cliproxyapi.nix ./paseo.nix];
 
   nixpkgs.hostPlatform = "aarch64-darwin";
 

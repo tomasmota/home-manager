@@ -17,6 +17,7 @@
 - `home.nix`: shared Home Manager module; imports most local modules and declares common packages.
 - `darwin/macos.nix`: macOS-only nix-darwin config (system defaults, Homebrew casks, Tailscale).
 - `darwin/cliproxyapi.nix`: CLIProxyAPI (OpenCode's Claude subscription gateway, loopback 8317) and the OpenChamber launchd service; local secret-bearing state lives under `~/.config/cliproxyapi` (see `darwin/cliproxyapi/README.md`).
+- `darwin/paseo.nix`, `darwin/paseo/`: locked Paseo runtime and user launchd services for native Android access to omp; private state stays in `~/.paseo`. See `darwin/paseo/README.md` for pairing and exclusive TUI/phone handoffs.
 - `omp/`: Oh My Pi (omp) agent, Mac-only via the pinned `omp` flake input. Self-contained Home Manager module (`omp/default.nix`) plus everything it installs into `~/.omp/agent/` (`AGENTS.md`, `RULES.md`, `mcp.json`, extensions). Independent of OpenCode and `agents/`; see `omp/README.md`.
 - `darwin/codex-usage/`: Codex Usage menu bar app (Swift). Built into `~/Applications/CodexUsage.app` by `install.sh` via a home-manager activation script when sources change; kept running by the `codex-usage` launchd agent.
 - `terminal/ghostty.nix`: Ghostty config; expects `fontSize` from flake `extraSpecialArgs`.

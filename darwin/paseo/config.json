@@ -1,0 +1,34 @@
+{
+  "$schema": "https://paseo.sh/schemas/paseo.config.v1.json",
+  "version": 1,
+  "daemon": {
+    "listen": "127.0.0.1:6767",
+    "relay": {
+      "enabled": false
+    }
+  },
+  "agents": {
+    "providers": {
+      "omp": {
+        "enabled": true,
+        "command": ["/etc/profiles/per-user/tomas/bin/omp"],
+        "options": { "rpcTimeoutMs": 180000 }
+      },
+      "claude": {
+        "enabled": false
+      },
+      "codex": {
+        "enabled": false
+      },
+      "copilot": {
+        "enabled": false
+      },
+      "opencode": {
+        "enabled": false
+      },
+      "pi": {
+        "enabled": false
+      }
+    }
+  }
+}

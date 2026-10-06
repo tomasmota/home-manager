@@ -11,9 +11,8 @@
       url = "github:LnL7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Oh My Pi, pinned to an exact revision; update deliberately via
-    # `nix flake update omp` after reviewing upstream release notes.
-    omp.url = "github:can1357/oh-my-pi/898b09d32f147887a2242cf5ec9a1967bcac8873";
+    # Follow upstream; flake.lock fixes the revision until the next update.
+    omp.url = "github:can1357/oh-my-pi";
   };
 
   outputs = {

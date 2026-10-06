@@ -1,8 +1,7 @@
 // Workstation MCP boundary. Unknown Confluence tools stay denied even when
 // the server adds tools; approval settings alone only support exact names.
-// Blocked tools are also removed from the active set, so their schemas and
-// xd:// routes never reach the model context (omp has no per-server tool
-// filter). The tool_call gate stays the enforcement point.
+// Enforce at tool_call without changing the active set: MCP refreshes restore
+// server tools, so pruning them at turn boundaries causes mount/unmount noise.
 const confluenceAllowed = new Set([
   "getAccessibleAtlassianResources",
   "getConfluencePage",
@@ -32,9 +31,6 @@ export function blockedReason(toolName: string): string | undefined {
 type Api = {
   on(event: "tool_call", handler: (event: { toolName: string }) =>
     { block: true; reason: string } | undefined): void;
-  on(event: "before_agent_start" | "turn_end", handler: () => Promise<void>): void;
-  getActiveTools(): string[];
-  setActiveTools(toolNames: string[]): Promise<void>;
 };
 
 export default function mcpPolicy(pi: Api) {
@@ -42,16 +38,4 @@ export default function mcpPolicy(pi: Api) {
     const reason = blockedReason(event.toolName);
     return reason ? { block: true, reason } : undefined;
   });
-
-  // Every MCP refresh (deferred startup discovery, reconnect, list_changed)
-  // re-activates all server tools, and omp re-reads the active set before
-  // each model call. Re-trim at prompt and turn boundaries; setActiveTools
-  // rebuilds the system prompt, so call it only when something changes.
-  const hideBlocked = async () => {
-    const active = pi.getActiveTools();
-    const allowed = active.filter(name => !blockedReason(name));
-    if (allowed.length !== active.length) await pi.setActiveTools(allowed);
-  };
-  pi.on("before_agent_start", hideBlocked);
-  pi.on("turn_end", hideBlocked);
 }

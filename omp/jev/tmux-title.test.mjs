@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import tmuxTitle, { completedTurn } from "./tmux-title.ts";
 import { createTmuxTitleNamer } from "./tmux-title-core.js";
 
@@ -12,10 +15,10 @@ const answer = (choice, probability = 1) => ({ answers: {
   needs_update: { type: "noul", noul: probability },
 } });
 
-function windowNamer(requestJev) {
+function windowNamer(requestJev, env = {}) {
   const window = { name: "repo:pull-main" };
   const namer = createTmuxTitleNamer({
-    env: { TMUX: "smoke", TMUX_PANE: "%1" }, requestJev,
+    env: { TMUX: "smoke", TMUX_PANE: "%1", ...env }, requestJev,
     spawnSync(command, args) {
       if (command === "git") return { status: 0, stdout: "/repo/.git" };
       if (args[0] === "display-message") return { status: 0, stdout: window.name };
@@ -63,7 +66,7 @@ test("late results cannot rename a replaced session; external window writes do n
   assert.equal(window.name, "repo:pull-main");
   active = true;
   const latest = namer.review({ ...turn, shouldApply: () => active });
-  window.name = "opencode:another-task";
+  window.name = "repo:another-task";
   release(answer("fix-tmux-titles"));
   await latest;
   assert.equal(window.name, "repo:fix-tmux-titles");
@@ -147,4 +150,37 @@ test("automatic continuations keep the title until the final completed turn", as
     await settle();
     assert.equal(window.name, "repo:fix-window-labels");
   });
+});
+
+test("only omp settings can change the title-review threshold", async () => {
+  const { window: ignored, namer: original } = windowNamer(async () => answer("fix-tmux-titles", 0.7),
+    { OPENCODE_TMUX_TITLE_UPDATE_MIN: "0.6" });
+  await original.review(turn);
+  assert.equal(ignored.name, "repo:pull-main");
+  const { window, namer } = windowNamer(async () => answer("fix-tmux-titles", 0.7),
+    { OMP_TMUX_TITLE_UPDATE_MIN: "0.6" });
+  await namer.review(turn);
+  assert.equal(window.name, "repo:fix-tmux-titles");
+});
+
+test("omp secret-file selection cannot be redirected by another app", async t => {
+  const scratch = mkdtempSync(join(tmpdir(), "omp-title-auth-"));
+  const own = join(scratch, "omp.env");
+  const other = join(scratch, "other.env");
+  writeFileSync(own, "TYPESAFE_API_KEY=omp-title-fixture\n");
+  writeFileSync(other, "TYPESAFE_API_KEY=other-title-fixture\n");
+  t.mock.method(globalThis, "fetch", async (_url, options) => {
+    const authorized = options.headers.Authorization === "Bearer omp-title-fixture";
+    return new Response(JSON.stringify(answer("fix-tmux-titles")),
+      { status: authorized ? 200 : 401 });
+  });
+  try {
+    const { window, namer } = windowNamer(undefined, {
+      OMP_TMUX_TITLE_SECRETS_FILE: own, OPENCODE_SECRETS_FILE: other,
+    });
+    await namer.review(turn);
+    assert.equal(window.name, "repo:fix-tmux-titles");
+  } finally {
+    rmSync(scratch, { recursive: true });
+  }
 });

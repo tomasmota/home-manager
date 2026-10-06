@@ -1,0 +1,13 @@
+{
+  "name": "workstation-paseo-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@getpaseo/cli": "0.10.3"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": false,
+    "msgpackr-extract@3.0.4": false,
+    "node-pty@1.2.0-beta.15": false
+  }
+}

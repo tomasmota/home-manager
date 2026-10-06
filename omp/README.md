@@ -1,8 +1,11 @@
 # Oh My Pi (omp)
 
 Mac-only, self-contained: `default.nix` is the whole Home Manager module and
-nothing here depends on OpenCode or `agents/`. The flake input is pinned in
-`flake.nix`; update deliberately with `nix flake update omp`.
+nothing here depends on OpenCode or `agents/`. The flake input follows upstream;
+`flake.lock` fixes the installed revision. Update only omp with
+`nix flake update omp`, or all inputs (including omp) with `nix flake update`.
+Apply with `sudo darwin-rebuild switch --flake .#macbook`, then start a fresh omp
+process.
 
 | File | Installed as | Notes |
 | --- | --- | --- |
@@ -12,7 +15,7 @@ nothing here depends on OpenCode or `agents/`. The flake input is pinned in
 | `AGENTS.md` | `~/.omp/agent/AGENTS.md` | user context; shadows `~/.agents/AGENTS.md` |
 | `RULES.md` | `~/.omp/agent/RULES.md` | sticky MCP safety rule |
 | `mcp.json` | `~/.omp/agent/mcp.json` | writable 0600 copy, reset on switch |
-| `mcp-policy.ts` | extension | Confluence allow-list, Chrome denies; hides denied tools from context |
+| `mcp-policy.ts` | extension | Confluence allow-list and Chrome denies enforced at `tool_call`; no active-tool pruning |
 | `jev/` | extension | Jev permission review before the native `yolo` gate |
 | `jev/tmux-title.ts` | extension | Jev-powered `<repo>:<task>` tmux window names |
 | `status-line.ts` | extension | `ctx used/window` and accumulated Inco cost in the status line |
@@ -67,10 +70,11 @@ Change `preferences` only to alter fresh-machine defaults.
 
 ## tmux window names
 
-The main omp TUI names its containing window `<repo>:<task>`, using the same
-Jev naming policy as the OpenCode plugin. `jev/tmux-title-core.js` is vendored
-from `tomasmota/agents` revision `83972c78b953e97e37c66b8c6e3d6a600cef680e`;
-omp owns this copy and reuses the local `jev-client.js`.
+The main omp TUI names its containing window `<repo>:<task>` through Jev.
+This extension reads only omp sessions; it does not listen to other agents.
+`jev/tmux-title-core.js` was vendored from `tomasmota/agents` revision
+`83972c78b953e97e37c66b8c6e3d6a600cef680e`; omp owns this independent copy
+and reuses the local `jev-client.js`.
 
 Initial, renamed, resumed and switched sessions get a short branch-like name.
 After a completed user turn, Jev changes the name only when the current one
@@ -82,17 +86,17 @@ Git worktrees use the main repository's name.
 Only the main TUI writes to `TMUX_PANE`: subagents, print/RPC modes and
 processes outside tmux do nothing. Title changes are checked every 500 ms,
 but unchanged ticks never call Jev. Switching sessions or starting another
-turn invalidates older in-flight results. No cross-app ownership is enforced:
-OpenCode and omp can both rename a window; the last write wins.
+turn invalidates older in-flight results.
 
-Naming uses `TYPESAFE_API_KEY`, with the existing `secrets.env` fallback.
-The original plugin knobs also apply here:
+Naming uses `TYPESAFE_API_KEY`, otherwise loads the workstation `secrets.env`.
+All naming settings are omp-specific; other agents' settings are ignored.
 
 | Variable | Default |
 | --- | --- |
-| `OPENCODE_TMUX_TITLE_JEV_MODEL` | `OPENCODE_JEV_MODEL`, otherwise `jev-latest` |
-| `OPENCODE_TMUX_TITLE_TIMEOUT_MS` | `5000` |
-| `OPENCODE_TMUX_TITLE_UPDATE_MIN` | `0.8` |
+| `OMP_TMUX_TITLE_JEV_MODEL` | `jev-latest` |
+| `OMP_TMUX_TITLE_TIMEOUT_MS` | `5000` |
+| `OMP_TMUX_TITLE_UPDATE_MIN` | `0.8` |
+| `OMP_TMUX_TITLE_SECRETS_FILE` | `$HOME/.config/home-manager/secrets.env` |
 
 Start a fresh omp process after activation; `/reload-plugins` does not reload
 extensions. Regression checks: `node --test omp/jev/tmux-title.test.mjs`.
@@ -108,3 +112,21 @@ Jev, with `openai-codex/gpt-5.6-luna` then Inco as fallbacks. Knobs are the
 extensions but always run `yolo`; if an extension fails to load, its review is
 absent, so check startup warnings after changing extension code. Extension
 changes need a new omp process, not `/reload-plugins`.
+
+MCP policy leaves denied tools mounted and visible in context, accepting that
+overhead to avoid repeated mount/unmount notices at prompt and turn boundaries.
+Calls are still blocked, including unknown Confluence tools. Initial MCP
+discovery can still emit a mount notice.
+
+## Android access with Paseo
+
+The Mac-only service in `darwin/paseo.nix` uses Paseo's native omp `rpc-ui`
+provider with this same profile, extensions, credentials, skills and MCP config.
+See [`../darwin/paseo/README.md`](../darwin/paseo/README.md) for secure direct
+Android connection over Tailscale, service management and the tested limitations.
+
+Paseo does **not** attach to a running omp TUI. Finish or interrupt the turn and
+exit omp before importing its transcript. Archive the Paseo agent before resuming
+that transcript in the TUI; Stop only interrupts a turn, it does not release the
+process. An overlapping writer silently forks a stale conversation rather than
+sharing the live agent. No global single-process restriction is installed.
