@@ -14,6 +14,7 @@ nothing here depends on OpenCode or `agents/`. The flake input is pinned in
 | `mcp.json` | `~/.omp/agent/mcp.json` | writable 0600 copy, reset on switch |
 | `mcp-policy.ts` | extension | Confluence allow-list, Chrome denies; hides denied tools from context |
 | `jev/` | extension | Jev permission review before the native `yolo` gate |
+| `jev/tmux-title.ts` | extension | Jev-powered `<repo>:<task>` tmux window names |
 | `status-line.ts` | extension | `ctx used/window` and accumulated Inco cost in the status line |
 | `skills/` | skill dir | read live from the repo; `ste` = ASD-STE100 replies, `handoff` = fresh omp sessions |
 
@@ -63,6 +64,38 @@ Inco reads `INCO_API_KEY` from `secrets.env`. Jev review falls back to
 
 `preferences` only seed missing keys; the live `config.yml` is authoritative.
 Change `preferences` only to alter fresh-machine defaults.
+
+## tmux window names
+
+The main omp TUI names its containing window `<repo>:<task>`, using the same
+Jev naming policy as the OpenCode plugin. `jev/tmux-title-core.js` is vendored
+from `tomasmota/agents` revision `83972c78b953e97e37c66b8c6e3d6a600cef680e`;
+omp owns this copy and reuses the local `jev-client.js`.
+
+Initial, renamed, resumed and switched sessions get a short branch-like name.
+After a completed user turn, Jev changes the name only when the current one
+badly describes the actual work. Incidental tests, commits and follow-ups
+should keep an adequate name. A failed review keeps the existing name;
+initial naming falls back to a deterministic candidate if Jev is unavailable.
+Git worktrees use the main repository's name.
+
+Only the main TUI writes to `TMUX_PANE`: subagents, print/RPC modes and
+processes outside tmux do nothing. Title changes are checked every 500 ms,
+but unchanged ticks never call Jev. Switching sessions or starting another
+turn invalidates older in-flight results. No cross-app ownership is enforced:
+OpenCode and omp can both rename a window; the last write wins.
+
+Naming uses `TYPESAFE_API_KEY`, with the existing `secrets.env` fallback.
+The original plugin knobs also apply here:
+
+| Variable | Default |
+| --- | --- |
+| `OPENCODE_TMUX_TITLE_JEV_MODEL` | `OPENCODE_JEV_MODEL`, otherwise `jev-latest` |
+| `OPENCODE_TMUX_TITLE_TIMEOUT_MS` | `5000` |
+| `OPENCODE_TMUX_TITLE_UPDATE_MIN` | `0.8` |
+
+Start a fresh omp process after activation; `/reload-plugins` does not reload
+extensions. Regression checks: `node --test omp/jev/tmux-title.test.mjs`.
 
 ## Permission review
 

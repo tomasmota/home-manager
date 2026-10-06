@@ -49,6 +49,7 @@
     # `yolo` is only safe while jev/auto-approve-jev.ts reviews every
     # executable action first. Explicit bash denies stay authoritative.
     tools.approvalMode = "yolo";
+    todo.enabled = false;
     bash.patterns =
       map (match: {
         inherit match;
@@ -68,6 +69,7 @@
     extensions = [
       "${./mcp-policy.ts}"
       "${./jev}/auto-approve-jev.ts"
+      "${./jev}/tmux-title.ts"
       "${./status-line.ts}"
     ];
     # Max review budget: 30s Jev + 2 x 60s fallback, plus auth overhead.
