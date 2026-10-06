@@ -15,7 +15,7 @@ nothing here depends on OpenCode or `agents/`. The flake input is pinned in
 | `mcp-policy.ts` | extension | Confluence allow-list, Chrome denies; hides denied tools from context |
 | `jev/` | extension | Jev permission review before the native `yolo` gate |
 | `status-line.ts` | extension | `ctx used/window` and accumulated Inco cost in the status line |
-| `skills/` | skill dir | read live from the repo; `ste` = ASD-STE100 replies |
+| `skills/` | skill dir | read live from the repo; `ste` = ASD-STE100 replies, `handoff` = fresh omp sessions |
 
 Skills: `~/.agents/skills` (OpenCode's) is off via `skills.enableAgentsUser:
 false`; the tracked `skills/` plus the private `~/.agents/local-skills` and
@@ -23,6 +23,28 @@ false`; the tracked `skills/` plus the private `~/.agents/local-skills` and
 `deep` (`agents/deep.md`) uses the `@slow` role. Model roles, fallback chains
 and per-agent model overrides are runtime-owned: set them with `/model`,
 `/agents` or `omp config set`; Nix never writes them.
+
+## Handoff
+
+`skills/handoff/` is omp-only; OpenCode's handoff skill is unchanged. Say:
+
+- “Handoff to a new agent to continue the work.”
+- “Create a new GPT 6.1 Sol High session to investigate X.”
+- “Write a handoff document.” (save only; no new session)
+
+The skill writes a self-contained snapshot outside the worktree. Its Node
+launcher starts a fresh full omp TUI in a right-hand tmux pane and submits the
+document once. A per-launch overlay disables auto-resume without changing live
+settings or disabling safety extensions. Continuation transfers ownership;
+a focused investigation carries only its own scope.
+
+Explicit models resolve against `omp models --json`, with supported thinking
+levels checked before launch. Without a model request, omp uses its configured default.
+Unavailable/ambiguous requests never silently fall back. Outside tmux, return
+a ready-to-run command instead of starting a hidden headless session.
+
+No switch is needed: fresh processes discover the skill; existing sessions can
+use `/reload-plugins` to refresh skills (and reconnect MCP servers).
 
 ## Credentials
 
