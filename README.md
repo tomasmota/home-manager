@@ -70,12 +70,8 @@ nix flake update
 
 ## Oh My Pi (omp)
 
-- omp runs alongside OpenCode as a daily-driver candidate (Mac only): pinned
-  `omp` flake input, `programs.omp` settings in `omp.nix`, file config in
-  `agents/omp/`, auth broker + gateway launchd services in `darwin/omp.nix`.
-- CLIProxyAPI (8317) keeps serving OpenCode unchanged; omp's stack uses 8765
-  and 4000. See `agents/omp/README.md` for the preference mapping, the
-  interactive auth runbook and known gaps.
+- omp runs alongside OpenCode (Mac only): pinned `omp` flake input and a
+  self-contained module in `omp/`. See `omp/README.md`.
 
 ## Optional work git config + signing
 

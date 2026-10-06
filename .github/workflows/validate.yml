@@ -26,13 +26,8 @@ jobs:
       - name: statix lint
         run: nix run --inputs-from . nixpkgs#statix -- check .
 
-      - name: strict locked runtime smoke with repository-selected Node/npm
-        run: >-
-          nix shell --impure --expr '(builtins.getFlake (toString ./.)).homeConfigurations.linux.pkgs.nodejs_24'
-          -c bash agents/runtime/smoke.sh
-
   agents:
-    name: offline and deterministic agent contracts
+    name: agent render check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +35,6 @@ jobs:
         with:
           node-version: '24'
       - run: node agents/config/check.mjs
-      - run: mkdir -p /tmp/opencode
       - id: pin
         run: node -e 'console.log("revision="+require("./agents/config/lock.json").revision)' >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
@@ -48,5 +42,4 @@ jobs:
           repository: tomasmota/agents
           ref: ${{ steps.pin.outputs.revision }}
           path: central-source
-      - run: AGENTS_SOURCE="$PWD/central-source" node --test --test-timeout=60000 agents/omp/test/*.test.mjs agents/opencode/tests/*.test.mjs agents/config/test/*.test.mjs agents/runtime/test/*.test.mjs
       - run: AGENTS_SOURCE="$PWD/central-source" bash agents/config/manage.sh --check

@@ -17,8 +17,7 @@
 - `home.nix`: shared Home Manager module; imports most local modules and declares common packages.
 - `darwin/macos.nix`: macOS-only nix-darwin config (system defaults, Homebrew casks, Tailscale).
 - `darwin/cliproxyapi.nix`: CLIProxyAPI (OpenCode's Claude subscription gateway, loopback 8317) and the OpenChamber launchd service; local secret-bearing state lives under `~/.config/cliproxyapi` (see `darwin/cliproxyapi/README.md`).
-- `darwin/omp.nix`: omp auth broker (8765) + auth gateway (4000) launchd user agents; additive, never touches CLIProxyAPI.
-- `omp.nix`, `agents/omp/`: Oh My Pi (omp) agent config, Mac-only via the pinned `omp` flake input; declarative settings in `programs.omp.settings`, writable-copy `mcp.json`, and repo-tracked `RULES.md`/`agents/` symlinked into `~/.omp/agent/`. See `agents/omp/README.md` for the OpenCode→omp preference mapping, auth runbook and known gaps.
+- `omp/`: Oh My Pi (omp) agent, Mac-only via the pinned `omp` flake input. Self-contained Home Manager module (`omp/default.nix`) plus everything it installs into `~/.omp/agent/` (`AGENTS.md`, `RULES.md`, `mcp.json`, extensions). Independent of OpenCode and `agents/`; see `omp/README.md`.
 - `darwin/codex-usage/`: Codex Usage menu bar app (Swift). Built into `~/Applications/CodexUsage.app` by `install.sh` via a home-manager activation script when sources change; kept running by the `codex-usage` launchd agent.
 - `terminal/ghostty.nix`: Ghostty config; expects `fontSize` from flake `extraSpecialArgs`.
 - `shell/zsh.nix`, `shell/aliases.nix`, `shell/functions.nix`: shell behavior, aliases, helper functions.
@@ -36,7 +35,7 @@
   - `./shell/zsh.nix`
   - `./git.nix`
   - `./tmux.nix`
-- The macbook Home Manager user additionally imports `./agents.nix` and `./omp.nix` (`flake.nix`).
+- The macbook Home Manager user additionally imports `./agents.nix` and `./omp` (`flake.nix`).
 - `home.nix` uses out-of-store symlinks for `nvim` and `agents` directories.
   - Once a switch has created the links, editing files in this repo updates live config targets directly; a further switch is needed only to change the links, packages or services (see `agents/config/README.md`).
 - `agents.nix` symlinks repo files into:

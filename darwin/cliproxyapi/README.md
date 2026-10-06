@@ -36,7 +36,6 @@ or token data into chat or logs. Then restart OpenCode and select a
 ```sh
 launchctl kickstart -k "gui/${UID}/org.nixos.cliproxyapi"
 curl --fail --silent http://127.0.0.1:8317/healthz | jq -e '.status == "ok"'
-darwin/cliproxyapi/verify.sh
 ```
 
 Claude cloak mode stays enabled because it is the compatibility path that uses

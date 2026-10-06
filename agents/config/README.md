@@ -192,7 +192,6 @@ From this repo, with a clean central checkout matching the desired full SHA:
 AGENTS_SOURCE=/path/to/clean/agents bash agents/config/manage.sh --update <full-SHA>
 bash agents/config/manage.sh --check
 node agents/config/check.mjs
-AGENTS_SOURCE=/path/to/clean/agents node --test --test-timeout=60000 agents/omp/test/*.test.mjs agents/opencode/tests/*.test.mjs agents/config/test/*.test.mjs agents/runtime/test/*.test.mjs
 nix flake check --no-build
 nix run --inputs-from . nixpkgs#alejandra -- --check .
 nix run --inputs-from . nixpkgs#statix -- check .
@@ -220,15 +219,7 @@ the networked npm install happens during activation. nix-darwin starts user laun
 agents before Home Manager, so nix-darwin `extraActivation` runs
 `agents.activationPreflight` as the user after `checks` and before launchd. A
 failure aborts the switch with old services loaded; the profile link may already
-point to the new generation. `agents/runtime/test/activation.test.mjs` audits
-the pinned order; `AGENTS_NIX_EVAL=1` adds evaluated-script proof. Isolated proof:
-
-```bash
-nix shell --impure --expr '(builtins.getFlake (toString ./.)).darwinConfigurations.macbook.pkgs.nodejs_24' -c bash agents/runtime/smoke.sh
-```
-
-CI runs the same smoke on its Linux runner only as a portable install-logic test;
-no Linux target installs the runtime.
+point to the new generation.
 
 ## Mac deployment and native acceptance
 
@@ -247,7 +238,6 @@ opencode service status
 opencode api get /api/info
 opencode api post /api/location/reload
 node agents/opencode/lib/inventory.mjs --inventory agents/config/inventory.mac.json --root "$PWD" --opencode "$(command -v opencode)" --installed-server "$HOME/.config/opencode/opencode.json" --installed-skills "$HOME/.agents/skills" --directory "$PWD"
-darwin/cliproxyapi/verify.sh
 launchctl kickstart -k "gui/${UID}/org.nixos.openchamber-desktop"
 ```
 

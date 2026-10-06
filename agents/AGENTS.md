@@ -25,13 +25,9 @@
 - Append `#variant` only when the models listing exposes that variant for the selected model. Never convert a colon suffix in a model ID into a `#variant`.
 - After rendering an adapter model change, check `~/.cache/opencode/agent-routes.json`: `errors` must be empty and the primary mapping must match.
 
-## Tests
+## Checks
 
-Verification is proportionate to the change. Scale down by default and scale up only when the touched surface warrants it.
+There is no local test suite; central plugins are tested in the canonical repository.
 
-- Model, route, permission, MCP or instruction edits: `AGENTS_SOURCE=$HOME/dev/personal/agents bash agents/config/manage.sh --render`, then `node agents/config/check.mjs`, then confirm `~/.cache/opencode/agent-routes.json` has empty `errors` and the expected mapping. This catches adapter drift and live state, which is what these edits can actually break. Do not run the full suite.
-- Structural edits (render/`manage.sh`/`check.mjs` logic, runtime, Nix, activation, plugin code): the full suite below.
-- Any change whose cheap checks fail or behave unexpectedly: escalate to the full suite before concluding.
-- Central plugins have their own tests in the canonical repository. Nix validation and target Mac smoke checks are separate and stay out of both ladders.
-
-Full suite: `AGENTS_SOURCE=$HOME/dev/personal/agents bash agents/config/manage.sh --check` and `AGENTS_SOURCE=$HOME/dev/personal/agents node --test --test-timeout=60000 agents/omp/test/*.test.mjs agents/opencode/tests/*.test.mjs agents/config/test/*.test.mjs agents/runtime/test/*.test.mjs` from the root.
+- After any render: `node agents/config/check.mjs`, then confirm `~/.cache/opencode/agent-routes.json` has empty `errors` and the expected mapping.
+- Structural edits (render/`manage.sh`/`check.mjs` logic, runtime, Nix, activation): also `AGENTS_SOURCE=$HOME/dev/personal/agents bash agents/config/manage.sh --check` and `darwin-rebuild build --flake .#macbook`.

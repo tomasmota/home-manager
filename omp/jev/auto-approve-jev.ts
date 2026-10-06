@@ -1,7 +1,7 @@
-// omp adapter for the shared Jev permission reviewer (OpenCode auto-approve-jev).
-// Policy, thresholds, fallback chain, env knobs, audit and exhaustion default
-// live in ./permission-review.js; Nix assembles it beside this file. This
-// adapter only maps omp tool calls onto the OpenCode permission event and the
+// omp adapter for the Jev permission reviewer. Policy, thresholds, fallback
+// chain, env knobs, audit and exhaustion default live in ./permission-review.js
+// (vendored from tomasmota/agents' OpenCode auto-approve-jev; no longer synced).
+// This adapter only maps omp tool calls onto that permission event and the
 // reviewer's decision back onto `tool_call`. It runs before omp's approval
 // gate: explicit tool/user deny policies never reach it, and explicit prompt
 // policies still prompt after an allow here.

@@ -76,12 +76,9 @@
               home = macHome;
             };
 
-            # darwin/omp.nix receives the pinned omp flake input.
-            _module.args.omp = omp;
-
             home-manager = {
               useUserPackages = true;
-              # omp is a Mac-only addition for now; the Linux target must keep
+              # omp is a Mac-only addition; the Linux target must keep
               # building without it, so it is only passed to this host.
               extraSpecialArgs = {
                 fontSize = 14;
@@ -91,7 +88,7 @@
                 username = user;
                 homeDirectory = macHome;
                 # OpenCode/OpenChamber agent config is Mac-only.
-                extraModules = [./agents.nix ./omp.nix];
+                extraModules = [./agents.nix ./omp];
               };
             };
           }

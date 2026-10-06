@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: {
-  imports = [./cliproxyapi.nix ./omp.nix];
+  imports = [./cliproxyapi.nix];
 
   nixpkgs.hostPlatform = "aarch64-darwin";
 
