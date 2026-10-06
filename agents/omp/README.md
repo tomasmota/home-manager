@@ -13,8 +13,9 @@ unchanged. Nothing about omp is load-bearing for them.
   (see [Model roles and runtime settings](#model-roles-and-runtime-settings)):
   Nix `policy` is reapplied on every switch; `preferences` (roles, their
   fallback chains, UI) only seed missing keys and are otherwise runtime-owned.
-- Repo-tracked, symlinked into `~/.omp/agent/`: `RULES.md` (sticky rules),
-  `agents/` (custom task agents). `mcp.json` is installed as a writable 0600
+- Repo-tracked, symlinked into `~/.omp/agent/`: `RULES.md` (sticky workstation
+  MCP safety only; shared guidance loads from `~/.agents/AGENTS.md` without a
+  second copy), `agents/` (custom task agents). `mcp.json` is installed as a writable 0600
   copy because `/mcp` commands atomically replace that pathname. Runtime
   server edits are reset on switch; edit the tracked source for durable changes.
 - Credentials: omp's own auth broker (`org.nixos.omp-auth-broker`,
