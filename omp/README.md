@@ -15,6 +15,7 @@ process.
 | `AGENTS.md` | `~/.omp/agent/AGENTS.md` | user context; shadows `~/.agents/AGENTS.md` |
 | `RULES.md` | `~/.omp/agent/RULES.md` | sticky MCP safety rule |
 | `mcp.json` | `~/.omp/agent/mcp.json` | writable 0600 copy, reset on switch |
+| `google-developer-knowledge.mjs` | `~/.omp/agent/google-developer-knowledge.mjs` | live symlink; stdio-to-HTTP bridge with user ADC renewal |
 | `mcp-policy.ts` | extension | Confluence allow-list and Chrome denies enforced at `tool_call`; no active-tool pruning |
 | `jev/` | extension | Jev permission review before the native `yolo` gate |
 | `jev/tmux-title.ts` | extension | Jev-powered `<repo>:<task>` tmux window names |
@@ -92,6 +93,37 @@ omp login typesafe       # Jev review; also the judge role if you set one
 
 Inco reads `INCO_API_KEY` from `secrets.env`. Jev review falls back to
 `TYPESAFE_API_KEY` there.
+
+## Google Developer Knowledge MCP
+
+`mcp.json` registers Google's hosted documentation server through the local
+`google-developer-knowledge.mjs` bridge. It exposes `search_documents`,
+`get_documents`, and `answer_query`; it does not manage cloud resources.
+See [Google's setup documentation](https://developers.google.com/knowledge/mcp).
+
+The bridge uses existing **user ADC**, not an API key or omp's model-provider
+credentials. It reads `GOOGLE_APPLICATION_CREDENTIALS` when set; otherwise it
+reads `application_default_credentials.json` under `CLOUDSDK_CONFIG` or
+`~/.config/gcloud`. Only `authorized_user` credentials are supported.
+The private file `~/.omp/agent/google-developer-knowledge-project` fixes the
+project for `X-Goog-User-Project`. The bridge does not use the ADC quota project.
+The fixed project must have `developerknowledge.googleapis.com` enabled.
+The project name stays outside the public repository and the Nix store.
+
+For a fresh workstation:
+
+```sh
+gcloud auth application-default login
+printf '%s\n' PROJECT_ID > "$HOME/.omp/agent/google-developer-knowledge-project"
+gcloud services enable developerknowledge.googleapis.com --project=PROJECT_ID
+```
+
+Node is the bridge's only runtime dependency. OAuth access tokens remain in
+memory and renew one minute before expiry; no credentials are copied into the
+repository, Nix store, or omp credential database. After editing the config, use
+`/mcp reload`, then `/mcp test google-developer-knowledge`.
+After a change to ADC or the fixed project, use
+`/mcp reconnect google-developer-knowledge` to read the files again.
 
 ## Runtime settings
 

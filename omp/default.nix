@@ -164,6 +164,8 @@ in {
 
     file = {
       ".omp/agent/models.yml".source = yaml.generate "omp-models.yml" models;
+      ".omp/agent/google-developer-knowledge.mjs".source =
+        config.lib.file.mkOutOfStoreSymlink "${ompDir}/google-developer-knowledge.mjs";
       # Portable skill stays canonical upstream; omp loads its own pinned file.
       ".omp/agent/skills/tmux-control/SKILL.md".source = pkgs.fetchurl {
         url = "https://raw.githubusercontent.com/tomasmota/agents/27519890c40e04efcb5676640f378e0c9f6fbbde/skills/tmux-control/SKILL.md";
