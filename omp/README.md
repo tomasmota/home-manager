@@ -20,6 +20,7 @@ process.
 | `jev/tmux-title.ts` | extension | Jev-powered `<repo>:<task>` tmux window names |
 | `status-line.ts` | extension | `ctx used/window` and accumulated Inco cost in the status line |
 | `skills/` | skill dir | read live from the repo; `ste` = ASD-STE100 replies, `handoff` = fresh omp sessions |
+| upstream `skills/tmux-control/SKILL.md` | `~/.omp/agent/skills/tmux-control/SKILL.md` | immutable SHA + content hash in `default.nix`; independent of OpenCode |
 
 Skills: `~/.agents/skills` (OpenCode's) is off via `skills.enableAgentsUser:
 false`; the tracked `skills/` plus the private `~/.agents/local-skills` and
@@ -52,6 +53,31 @@ fall back. Regressions: `node --test omp/skills/handoff/scripts/start.test.mjs`.
 
 No switch is needed: fresh processes discover the skill; existing sessions can
 use `/reload-plugins` to refresh skills (and reconnect MCP servers).
+
+## tmux control: CLI/TUI testing and debugging
+
+The portable [`tmux-control` skill](https://github.com/tomasmota/agents/blob/27519890c40e04efcb5676640f378e0c9f6fbbde/skills/tmux-control/SKILL.md)
+is canonical in `tomasmota/agents`; `default.nix` installs only its pinned,
+hash-checked file into omp's native user skill directory. OpenCode discovery
+stays disabled. No plugin, daemon or tmux configuration change is needed.
+
+Discover it with requests such as:
+
+- “Test this interactive CLI in a real terminal.”
+- “Debug this TUI's startup failure and keyboard navigation using tmux.”
+- “Exercise this REPL and inspect its output and exit status.”
+
+It covers explicit server/pane IDs, isolated PTYs, bounded readiness checks,
+literal input versus keys, multiline paste hazards, scrollback/process/exit
+inspection and cleanup restricted to task-owned resources. The Python REPL
+example was exercised on tmux 3.7c: result `42`, `ZeroDivisionError`, normal exit
+status `0`, bad-option startup status `2`, and removal of the private test server.
+This is terminal text evidence, not verification of another TUI's visuals.
+
+After changing the central skill, commit/push it there, then update the immutable
+URL and content hash in `default.nix`. A Home Manager switch installs the new pin;
+fresh omp processes discover it, or use `/reload-plugins` in an existing session.
+Check discovery without a model call with `omp read skill://tmux-control`.
 
 ## Credentials
 

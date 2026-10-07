@@ -146,6 +146,11 @@ in {
 
     file = {
       ".omp/agent/models.yml".source = yaml.generate "omp-models.yml" models;
+      # Portable skill stays canonical upstream; omp loads its own pinned file.
+      ".omp/agent/skills/tmux-control/SKILL.md".source = pkgs.fetchurl {
+        url = "https://raw.githubusercontent.com/tomasmota/agents/27519890c40e04efcb5676640f378e0c9f6fbbde/skills/tmux-control/SKILL.md";
+        hash = "sha256-PssVuBe0f3zPKGyuTWGksCz+h6v9aHTVdcCTuupA1HA=";
+      };
       # Shadows ~/.agents/AGENTS.md: omp keeps one user context file, native wins.
       ".omp/agent/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink "${ompDir}/AGENTS.md";
       ".omp/agent/RULES.md".source = config.lib.file.mkOutOfStoreSymlink "${ompDir}/RULES.md";
