@@ -37,15 +37,18 @@ and per-agent model overrides are runtime-owned: set them with `/model`,
 - “Write a handoff document.” (save only; no new session)
 
 The skill writes a self-contained snapshot outside the worktree. Its Node
-launcher starts a fresh full omp TUI in a right-hand tmux pane and submits the
-document once. A per-launch overlay disables auto-resume without changing live
-settings or disabling safety extensions. Continuation transfers ownership;
-a focused investigation carries only its own scope.
+launcher detects Paseo from context markers or daemon ancestry and creates a
+fresh native omp session in the app. In tmux it opens a full omp TUI in a
+right-hand pane, with an overlay disabling auto-resume. Otherwise it returns
+a ready-to-run manual command; it never starts a hidden replacement TUI.
+`--transport paseo|tmux|manual` can override detection. Normal safety extensions
+remain enabled, and the handoff is submitted once. Continuation transfers
+ownership; a focused investigation carries only its own scope.
 
-Explicit models resolve against `omp models --json`, with supported thinking
-levels checked before launch. Without a model request, omp uses its configured default.
-Unavailable/ambiguous requests never silently fall back. Outside tmux, return
-a ready-to-run command instead of starting a hidden headless session.
+Explicit models and thinking resolve against the selected transport's live
+catalog: Paseo's omp provider or `omp models --json`. Without a model request,
+omp uses its configured default. Unavailable/ambiguous requests never silently
+fall back. Regressions: `node --test omp/skills/handoff/scripts/start.test.mjs`.
 
 No switch is needed: fresh processes discover the skill; existing sessions can
 use `/reload-plugins` to refresh skills (and reconnect MCP servers).

@@ -1,13 +1,13 @@
 ---
 name: handoff
 description: >
-  Transfer work to a fresh interactive omp session, or start a focused investigation
-  in a new omp session with an explicitly requested model and thinking level.
+  Transfer work to a fresh native omp session in Paseo or a full omp TUI in tmux,
+  or start a focused investigation with an explicitly requested model and thinking level.
   Use for "handoff to a new agent to continue the work", "create a new GPT 6.1
   Sol High session to investigate X", or requests to write a handoff document.
 license: MIT
 metadata:
-  verified: '2026-10-06'
+  verified: '2026-10-07'
   runtime: omp
 ---
 
@@ -15,8 +15,9 @@ metadata:
 
 Transfer durable task state through a self-contained document, not conversation
 history. The successor has no access to your eval kernel, tool handles or memory.
-This skill starts a full interactive omp TUI, not a `task` subagent, an OpenCode
-session, a resumed session or a fork of the outgoing conversation.
+This skill starts a fresh native omp session in Paseo or a full interactive omp
+TUI in tmux. It does not create a `task` subagent, resume a conversation or fork
+the outgoing session.
 
 ## Request and ownership
 
@@ -135,24 +136,27 @@ owned by the successor merely because it appears in the document.
 
 ## Model and thinking selection
 
-- No explicit model: omit `--model`. Use omp's configured default, not OpenCode's
-  selector or a hardcoded alias. No explicit effort: omit `--thinking` and use
-  omp's configured default. Do not change persistent configuration or model roles.
+- No explicit model: omit `--model` and use omp's configured default. No explicit
+  effort: omit `--thinking`. Do not change persistent configuration or model roles.
 - Parse an explicit model wherever the request puts it: "with/using/on/use X",
   or "a new X session". Separate it from the mission; do not mistake task text
   for a model. Pass the user's model phrase to the launcher. A trailing effort
   word is recognized, so `--model 'GPT 6.1 Sol High'` is valid.
 - Efforts: `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `auto`.
-  OpenCode's `none` means omp's `off`; translate that wording explicitly.
-- The launcher resolves against the live `omp models --json` catalog: exact
-  provider/model selector first, exact normalized ID/name second, then normalized
+  For an explicitly selected model, Paseo must advertise the requested option:
+  do not assume that `auto` or `off` is supported just because the TUI accepts it.
+- The live catalog follows the transport: `paseo provider models omp --thinking
+  --json` for Paseo; `omp models --json` for tmux/manual. Exact provider/model
+  selectors take priority, then exact normalized ID/name, then normalized
   substring. Spaces, dots, underscores and hyphens are equivalent; case is ignored.
-  It validates explicitly requested thinking against that model's catalog.
+- With an explicit model, the launcher checks the requested thinking level
+  against that transport's catalog before creation. Without an explicit model,
+  the provider uses its default and validates any supplied thinking option.
 - If unavailable, do not silently substitute a model or create a default session.
   Report the blocker and saved document. For ambiguity, ask the user to choose
   among the exact selectors returned. A full selector removes ambiguity.
 - Example: `GPT 6.1 Sol High` resolves to `openai-codex/gpt-6.1-sol` with
-  `--thinking high` in the verified catalog. This is an example, not an alias
+  `--thinking high` in the verified catalogs. This is an example, not an alias
   table; resolve it again at launch time.
 
 ## Launch
@@ -167,33 +171,74 @@ node <skill-directory>/scripts/start.mjs --file <absolute-document-path> --cwd <
 node <skill-directory>/scripts/start.mjs --file <absolute-document-path> --cwd <absolute-working-directory> --model 'GPT 6.1 Sol High'
 ```
 
-These are alternatives, not two launches. `--check` validates the document and
-model without creating a pane/session. `--thinking high` can be supplied separately.
+These are alternatives, not two launches. `--check` validates the document,
+transport and requested model/thinking without creating a pane/session.
+`--thinking high` can be supplied separately.
 
-The launcher:
+### Transport detection
 
-1. Validates everything before creating a pane. Writes a private temporary config
-   overlay containing only `autoResume: false`, so runtime auto-resume cannot put
-   the handoff into an old conversation. Normal safety extensions and rules,
-   skills and model roles remain enabled; no persistent config is changed.
-2. With both `TMUX` and `TMUX_PANE`, uses `tmux split-window -h` targeting that
-   pane, with the current working directory and the actual omp executable. Passes
-   `@<document>` once on the CLI. omp embeds the document in a native file wrapper
-   and automatically submits it as the initial prompt in a fresh full TUI.
-   Never use `send-keys`, pipe a prompt into a headless process, or submit it again.
-3. Without tmux, creates no hidden/headless session. Returns `status: manual`
-   and a shell-quoted command for the user to run in a new terminal, with the same
-   fresh-session overlay and model. Report that no successor is running yet.
+The default `--transport auto` selects:
 
-`status: launched` proves pane creation, not a completed model turn. Report the
-pane ID, resolved model/thinking (or configured default), and document path.
-Do not invent a session UUID or claim the successor completed its task. A visible
-startup error is a failed/uncertain launch: preserve the pane and document and
-report it. Do not automatically retry; inspect before creating another successor.
-The successor owns remaining work after a successful continuation launch; stop
-here. A manual command is not ownership transfer until the user starts it.
+1. **Paseo** when `PASEO_AGENT_ID` or `PASEO_WORKSPACE_ID` is present, or a bounded
+   parent-process check finds `Paseo Daemon`/`Paseo Supervisor`. Native omp tools
+   can omit the environment markers, so ancestry covers that case. Paseo takes
+   precedence over inherited tmux variables.
+2. **tmux** when `TMUX` and a valid `TMUX_PANE` are present.
+3. **manual** otherwise. Installing Paseo or finding a running daemon alone
+   does not turn an unrelated terminal into a Paseo session.
 
-A nonzero exit always leaves the document intact. Report the failure and path.
-If receipt is uncertain, stop work here until ownership is resolved; do not create
-another session or continue editing concurrently. Keep the temporary document
-and overlay after launch; the user may need them to recover.
+Use `--transport paseo|tmux|manual` only to override the detected surface when
+the user requests another destination or automatic detection is unavailable.
+Forced tmux still requires an explicit current pane. Never pick an arbitrary
+existing user pane or create a detached replacement handoff TUI.
+
+### Native Paseo
+
+The launcher uses `paseo run --background --provider omp` to create a fresh
+native session in the app. A local Paseo workspace record preserves the exact
+requested working directory; no git branch or worktree is created. It passes
+the resolved model/thinking only when requested, preserving normal provider
+configuration, safety extensions, rules and skills.
+
+The initial prompt tells the successor to read the retained document and follow
+it. That prompt is submitted once as part of creation. Do not separately call
+`paseo send`, import/resume the outgoing transcript, or pipe into a headless omp
+process. The returned Paseo agent ID identifies a new live controller, not a
+native task subagent or tmux terminal.
+
+### tmux or manual
+
+The launcher writes a private temporary overlay containing only
+`autoResume: false`; normal safety extensions, rules, skills and model roles
+remain enabled. No persistent configuration is changed.
+
+In tmux it runs `tmux split-window -h` targeting `TMUX_PANE`, with the current
+working directory and actual omp executable. `@<document>` is passed once:
+omp embeds the document in a native file wrapper and submits the initial prompt.
+Never use `send-keys` or submit the document again.
+
+Manual mode creates no session. It returns `status: manual` and a shell-quoted
+command for a new terminal using the same fresh-session overlay and model.
+Report explicitly that no successor is running yet.
+
+### Receipt and ownership
+
+`status: launched` proves Paseo creation acknowledgement or tmux pane creation,
+not a completed model turn. Report `transport`, the Paseo `agentId`/title or tmux
+`pane`, resolved model/thinking (or configured default), and document path.
+Do not invent a session UUID or claim the successor completed its task.
+
+A visible startup error or uncertain creation receipt requires inspection of
+that destination, not an automatic retry. Preserve the document and any tmux
+pane or Paseo agent; a failed command may already have created a successor.
+The successor owns remaining work after a successful continuation launch:
+stop here. Do not wait for, poll or prompt it again. A manual command transfers
+no ownership until the user starts it.
+
+A nonzero exit always leaves the document intact. If receipt is uncertain,
+stop until ownership is resolved; do not create another session or continue
+editing concurrently. Keep the document and any TUI overlay after launch
+because the user may need them for recovery.
+
+Launcher regressions: `node --test <skill-directory>/scripts/start.test.mjs`.
+
