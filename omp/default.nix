@@ -16,6 +16,23 @@
   ompDir = "${config.xdg.configHome}/home-manager/omp";
   yaml = pkgs.formats.yaml {};
 
+  # Directory interpolation alone does not check that imported modules exist.
+  # Fail during evaluation if Git's flake snapshot omits a new runtime file.
+  jevDir =
+    assert lib.assertMsg
+      (builtins.all (name: builtins.pathExists (./jev + "/${name}")) [
+        "auto-approve-jev.ts"
+        "decision-audit.js"
+        "jev-client.js"
+        "permission-review.js"
+        "tmux-title.ts"
+        "tmux-title-core.js"
+        "tmux-status.ts"
+        "tmux-status-core.js"
+      ])
+      "omp: Jev extension modules are missing from the flake source; git add the new modules before rebuilding.";
+    ./jev;
+
   # Inco is not an omp builtin. INCO_API_KEY comes from secrets.env (sourced
   # by zsh). Inco reports reasoning_effort unsupported for this SKU; `:fast`
   # is part of its literal model id, not a thinking level.
@@ -68,8 +85,9 @@
       ];
     extensions = [
       "${./mcp-policy.ts}"
-      "${./jev}/auto-approve-jev.ts"
-      "${./jev}/tmux-title.ts"
+      "${jevDir}/auto-approve-jev.ts"
+      "${jevDir}/tmux-title.ts"
+      "${jevDir}/tmux-status.ts"
       "${./status-line.ts}"
     ];
     # Max review budget: 30s Jev + 2 x 60s fallback, plus auth overhead.

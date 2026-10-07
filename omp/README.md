@@ -18,6 +18,7 @@ process.
 | `mcp-policy.ts` | extension | Confluence allow-list and Chrome denies enforced at `tool_call`; no active-tool pruning |
 | `jev/` | extension | Jev permission review before the native `yolo` gate |
 | `jev/tmux-title.ts` | extension | Jev-powered `<repo>:<task>` tmux window names |
+| `jev/tmux-status.ts` | extension | tmux tab state, timers, bells and Jev completion classification |
 | `status-line.ts` | extension | `ctx used/window` and accumulated Inco cost in the status line |
 | `skills/` | skill dir | read live from the repo; `ste` = ASD-STE100 replies, `handoff` = fresh omp sessions |
 | upstream `skills/tmux-control/SKILL.md` | `~/.omp/agent/skills/tmux-control/SKILL.md` | immutable SHA + content hash in `default.nix`; independent of OpenCode |
@@ -129,6 +130,67 @@ All naming settings are omp-specific; other agents' settings are ignored.
 
 Start a fresh omp process after activation; `/reload-plugins` does not reload
 extensions. Regression checks: `node --test omp/jev/tmux-title.test.mjs`.
+
+## tmux tab status
+
+`jev/tmux-status.ts` adapts native omp events to the independent controller in
+`jev/tmux-status-core.js`. It uses the existing `@opencode_*` window and pane
+options as a shared tmux wire contract, so `../tmux.nix` needs no changes.
+There is no dependency on OpenCode's runtime, plugins or settings.
+
+Only the main TUI owns its pane. Subagents, print/RPC modes and processes
+outside tmux do nothing. A prompt reports `working` with an elapsed timer;
+`ask` dialogs and native permission prompts report `waiting` until every
+outstanding prompt resolves. Automatic continuations/retries keep the original
+timer and do not report completion. Successful terminal turns report `done`
+with a fixed duration, native terminal errors report `error`, and cancellation
+returns to `idle`. Recoverable tool failures are not terminal errors.
+
+After a completed turn, Jev classifies the latest user request and final
+assistant text. Confident required-input outcomes become `waiting`; unresolved
+failures or off-track results become `error`. Clean or uncertain results stay
+`done`. Classification is **on by default**, unlike OpenCode's dry-run default.
+`dry-run` records verdicts without changing completion state; `off` makes no
+classification requests. Missing credentials, unavailable Jev and malformed
+results retain normal completion behavior.
+
+Classification is asynchronous and cannot block native event handling.
+New activity, session changes and shutdown invalidate older results. Split
+panes aggregate by priority (`error`, `waiting`, `done`, `working`, `idle`).
+Background completion/attention rings a cooldown-limited terminal bell;
+visible windows do not ring. Existing tmux focus hooks acknowledge completed
+alerts, and shutdown clears only the owning pane's state.
+
+Jev uses `TYPESAFE_API_KEY`, otherwise the workstation `secrets.env`. These
+settings are omp-specific; `OPENCODE_*` settings cannot redirect classification.
+
+| Variable | Default |
+| --- | --- |
+| `OMP_JEV_ATTENTION_MODE` | `on` (`on`, `dry-run`, `off`) |
+| `OMP_JEV_ATTENTION_MODEL` | `jev-latest` |
+| `OMP_JEV_ATTENTION_TIMEOUT_MS` | `5000` |
+| `OMP_JEV_ATTENTION_NEEDS_MIN` | `0.8` |
+| `OMP_JEV_ATTENTION_COMPLETED_MAX` | `0.3` |
+| `OMP_JEV_ATTENTION_CONFIDENCE_MIN` | `0.5` |
+| `OMP_JEV_ATTENTION_DEBOUNCE_MS` | `150` |
+| `OMP_JEV_ATTENTION_COOLDOWN_MS` | `2000` |
+| `OMP_JEV_ATTENTION_SECRETS_FILE` | `$HOME/.config/home-manager/secrets.env` |
+
+Bounded decision/failure records live in
+`${XDG_STATE_HOME:-$HOME/.local/state}/omp/jev-attention/decisions.jsonl`.
+Records include scores and transcript sizes, not transcript text or credentials;
+late verdicts are marked stale and never applied.
+
+New extension modules must be Git-tracked before rebuilding (`git add` is
+sufficient; a commit is not required). `default.nix` checks that every required
+Jev module exists in the flake snapshot, rejecting incomplete bundles during
+evaluation rather than leaving a missing-module warning for omp startup.
+
+Apply with `sudo darwin-rebuild switch --flake .#macbook`, then start a fresh
+omp process. Do not use `--flake path:.` here: it can copy gitignored files,
+including `secrets.env`, into the Nix store. Running sessions and
+`/reload-plugins` do not load a new extension. Regression checks:
+`node --test omp/jev/tmux-status-core.test.mjs omp/jev/tmux-status.test.mjs`.
 
 ## Permission review
 
