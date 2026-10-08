@@ -34,7 +34,7 @@ There is no Paseo password. The security boundary is the tailnet:
 `runtime/` pins `@getpaseo/cli` 0.10.3 with an integrity-checked lockfile.
 System activation (before launchd agents are reloaded) runs `runtime/install.sh`
 with Node 24's `npm ci --strict-allow-scripts` into
-`~/.local/share/paseo-runtime/<sha256 of package.json + lock>`, then verifies
+`~/.local/share/paseo-runtime/<sha256 of package.json + lock + btw.patch + btw.js>`, then verifies
 the immutable release on every switch. All three install scripts are denied:
 `node-pty` and `msgpackr-extract` ship darwin-arm64 prebuilds and `esbuild`
 resolves its platform package at runtime, so none needs to run. The `paseo`
@@ -136,6 +136,37 @@ missing/invalid Tailscale-status, restored-name and broken-secrets-file tests.
 
 OpenCode/OpenChamber were not reconfigured or restarted. Full system activation
 is deliberately separate from testing these three new user agents.
+
+## Side questions with `/btw`
+
+The locked Paseo 0.10.3 runtime applies `runtime/btw.patch` and installs
+`runtime/btw.js` to bridge omp's native BTW RPC API (verified with omp 18.8.0).
+The patch is part of the runtime identity; installation rejects mismatched
+upstream hunks and reverifies the patch and bridge on subsequent switches.
+Remove the local patch when a pinned upstream release provides this integration.
+
+- `/btw <question>` starts a side question while the main task runs, or while idle.
+- `/btw` or `/btw --history` shows the session's saved side conversations.
+- `/btw --continue <topic-id> <question>` follows up on a topic. Its ID is in the card.
+- `/btw --cancel` cancels only the side question, not the main task.
+
+Answers stream into expandable **BTW** cards using the existing client renderer.
+They do not enter omp's main model conversation; omp owns their sidecar history.
+Only one side question runs at a time. Provider failures appear as failed cards,
+not successful empty answers. This does not add the TUI's floating BTW panel.
+
+An isolated daemon/client smoke with `openai-codex/gpt-6.1-sol` returned `42`
+alongside an uninterrupted main turn; a contextual follow-up returned `43`.
+Neither side question appeared in the main omp journal. The bundled browser UI
+displayed the expanded answer card. Android rendering was not independently checked.
+An Anthropic follow-up in the tool-disabled smoke session returned a native
+provider error about all tools being deferred; the bridge displayed that error.
+
+Apply the Home Manager/nix-darwin configuration to select the new runtime.
+Restarting the existing daemon without selecting the new runtime keeps the old
+implementation. Activation disconnects clients and interrupts active turns;
+finish them first. Regression and installer checks:
+`bash darwin/paseo/test-install.sh`.
 
 ## Sleep
 

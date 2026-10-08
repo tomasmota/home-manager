@@ -4,7 +4,7 @@ source_dir=$1
 destination=$2
 expected=$3
 test "$#" = 3
-actual=$(node -e 'const fs=require("fs"),crypto=require("crypto"); const p=process.argv[1]; console.log(crypto.createHash("sha256").update(fs.readFileSync(p+"/package.json")).update(fs.readFileSync(p+"/package-lock.json")).digest("hex"))' "$source_dir")
+actual=$(node -e 'const fs=require("fs"),crypto=require("crypto"); const p=process.argv[1],h=crypto.createHash("sha256"); for(const f of ["package.json","package-lock.json","btw.patch","btw.js"]) h.update(fs.readFileSync(p+"/"+f)); console.log(h.digest("hex"))' "$source_dir")
 test "$actual" = "$expected"
 case $(npm config get strict-allow-scripts) in
   true|false) ;;
@@ -14,6 +14,8 @@ verify() {
   local target=$1
   cmp -s "$source_dir/package.json" "$target/package.json"
   cmp -s "$source_dir/package-lock.json" "$target/package-lock.json"
+  cmp -s "$source_dir/btw.js" "$target/node_modules/@getpaseo/server/dist/server/server/agent/providers/omp/btw.js"
+  patch --dry-run --reverse --batch -p1 -d "$target" -i "$source_dir/btw.patch" >/dev/null
   test "$("$target/node_modules/.bin/paseo" --version)" = "$(node -p 'require(process.argv[1]).dependencies["@getpaseo/cli"]' "$source_dir/package.json")"
   # Install scripts are denied; the shipped darwin-arm64 prebuilds must load as-is.
   node -e 'require(process.argv[1])' "$target/node_modules/node-pty"
@@ -41,6 +43,8 @@ fi
 stage=$(mktemp -d "${destination}.staging.XXXXXX")
 cp "$source_dir/package.json" "$source_dir/package-lock.json" "$stage/"
 npm ci --prefix "$stage" --strict-allow-scripts --no-audit --no-fund
+patch --batch --fuzz=0 -p1 -d "$stage" -i "$source_dir/btw.patch"
+cp "$source_dir/btw.js" "$stage/node_modules/@getpaseo/server/dist/server/server/agent/providers/omp/btw.js"
 verify "$stage"
 # Cooperating publishers are serialized; never use mv on an existing directory.
 ! test -e "$destination" && ! test -L "$destination"

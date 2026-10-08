@@ -1,0 +1,84 @@
+--- a/node_modules/@getpaseo/server/dist/server/server/agent/providers/omp/agent.js
++++ b/node_modules/@getpaseo/server/dist/server/server/agent/providers/omp/agent.js
+@@ -25,6 +25,7 @@
+ import { mapOmpTodoReminderEvent, mapOmpTodoState, mapOmpTodoToolResult } from "./todo-mapper.js";
+ import { mapOmpRuntimeEventToTimelineItem } from "./event-mapper.js";
+ import { mapOmpAdvisorMessageToToolCall } from "./advisor-message.js";
++import { OmpBtwBridge } from "./btw.js";
+ import { clearOmpHostToolState, handleOmpHostToolRuntimeEvent, setOmpHostTools, } from "./host-tools.js";
+ import { OmpSubagentIndex } from "./subagent-index.js";
+ import { mapOmpToolDetail } from "./tool-call-mapper.js";
+@@ -601,6 +602,9 @@
+         this.closed = false;
+         this.emittedUserMessageIds = new Set();
+         this.runtimeSession = options.runtimeSession;
++        this.btw = new OmpBtwBridge(this.runtimeSession, item => this.emit({
++            type: "timeline", provider: this.provider, item,
++        }));
+         this.config = options.config;
+         this.state = options.initialState;
+         this.currentModeId = options.currentModeId ?? null;
+@@ -736,6 +740,9 @@
+             runtimeSession: this.runtimeSession,
+             provider: this.provider,
+         });
++        for (const item of await this.btw.history()) {
++            yield { type: "timeline", provider: this.provider, item };
++        }
+         for (const item of mapOmpTodoState(this.state)) {
+             yield {
+                 type: "timeline",
+@@ -890,6 +897,9 @@
+         }
+         this.live = true;
+         const commandName = parsed.commandName.toLowerCase();
++        if (commandName === "btw") {
++            return this.btw.command(parsed.args);
++        }
+         if (commandName === "compact") {
+             return {
+                 run: async ({ emit }) => {
+@@ -1258,6 +1268,9 @@
+         });
+     }
+     handleExtraRuntimeEvent(event) {
++        if (this.btw.handleEvent(event)) {
++            return true;
++        }
+         if (handleOmpHostToolRuntimeEvent(event, {
+             runtimeSession: this.runtimeSession,
+             paseoTools: this.paseoTools,
+--- a/node_modules/@getpaseo/server/dist/server/server/agent/providers/omp/commands.js
++++ b/node_modules/@getpaseo/server/dist/server/server/agent/providers/omp/commands.js
+@@ -1,5 +1,7 @@
+ import { OmpAvailableCommandsUpdateEventSchema } from "./rpc-types.js";
++import { BTW_SLASH_COMMAND } from "./btw.js";
+ export const OMP_HANDLED_BUILTIN_SLASH_COMMANDS = [
++    BTW_SLASH_COMMAND,
+     {
+         name: "compact",
+         description: "Manually compact the session context",
+--- a/node_modules/@getpaseo/server/dist/server/server/agent/providers/omp/rpc-types.js
++++ b/node_modules/@getpaseo/server/dist/server/server/agent/providers/omp/rpc-types.js
+@@ -1,4 +1,5 @@
+ import { z } from "zod";
++import { BTW_EVENT_SCHEMAS, BTW_COMMAND_SCHEMAS } from "./btw.js";
+ export const OmpThinkingLevelSchema = z.enum([
+     "off",
+     "minimal",
+@@ -448,6 +449,7 @@
+ })
+     .passthrough();
+ export const OmpRuntimeEventSchema = z.discriminatedUnion("type", [
++    ...BTW_EVENT_SCHEMAS,
+     ...OmpAgentSessionEventSchema.options,
+     OmpExtensionUiRequestSchema,
+     z.object({ type: z.literal("command_output"), text: z.string().optional() }).passthrough(),
+@@ -478,6 +480,7 @@
+ ]);
+ const OmpCommandBase = { id: z.string().optional() };
+ export const OmpRpcCommandSchema = z.discriminatedUnion("type", [
++    ...BTW_COMMAND_SCHEMAS.map(schema => schema.extend({ id: z.string().optional() })),
+     z.object({
+         ...OmpCommandBase,
+         type: z.literal("prompt"),

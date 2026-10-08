@@ -12,7 +12,7 @@ trap 'rm -rf -- "$scratch"' EXIT
 export npm_config_cache=${npm_config_cache:-$HOME/.npm}
 
 rev() {
-  node -e 'const fs=require("fs"),crypto=require("crypto"); const p=process.argv[1]; console.log(crypto.createHash("sha256").update(fs.readFileSync(p+"/package.json")).update(fs.readFileSync(p+"/package-lock.json")).digest("hex"))' "$1"
+  node -e 'const fs=require("fs"),crypto=require("crypto"); const p=process.argv[1],h=crypto.createHash("sha256"); for(const f of ["package.json","package-lock.json","btw.patch","btw.js"]) h.update(fs.readFileSync(p+"/"+f)); console.log(h.digest("hex"))' "$1"
 }
 pass() { printf 'ok - %s\n' "$1"; }
 fail() { printf 'not ok - %s\n' "$1" >&2; exit 1; }
@@ -32,6 +32,7 @@ pass 'symlinked destination rejected'
 unreviewed=$scratch/unreviewed
 mkdir -p "$unreviewed"
 cp "$src/package-lock.json" "$unreviewed/"
+cp "$src/btw.patch" "$src/btw.js" "$unreviewed/"
 node -e 'const fs=require("fs"); const p=JSON.parse(fs.readFileSync(process.argv[1])); delete p.allowScripts["node-pty@1.2.0-beta.15"]; fs.writeFileSync(process.argv[2], JSON.stringify(p,null,2)+"\n")' "$src/package.json" "$unreviewed/package.json"
 out=$scratch/unreviewed.log
 if bash "$installer" "$unreviewed" "$scratch/rt/unreviewed" "$(rev "$unreviewed")" >"$out" 2>&1; then fail 'unreviewed install script blocks install'; fi
@@ -55,6 +56,8 @@ let out=""; p.onData(d=>out+=d);
 p.onExit(({exitCode})=>{ if(exitCode!==0||!out.includes("pty-ok")) process.exit(1) });
 ' "$dest/node_modules/node-pty" || fail 'node-pty prebuild spawns'
 pass 'node-pty prebuild spawns a pty'
+PASEO_TEST_RUNTIME="$dest" node --test "$src/btw.test.mjs" || fail 'BTW behavior'
+pass 'BTW side conversation behavior'
 
 bash "$installer" "$src" "$dest" "$revision" >/dev/null 2>&1 || fail 'existing runtime reverifies'
 pass 'existing runtime reverifies'
