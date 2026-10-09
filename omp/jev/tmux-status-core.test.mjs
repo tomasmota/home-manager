@@ -58,11 +58,11 @@ function createTmux(paneIDs, clients = 0) {
     if (args[0] === "list-panes") {
       const rows = [...panes].map(([id, options]) => [
         id,
-        options["@opencode_pane_status"] ?? "",
-        options["@opencode_pane_started_at"] ?? "",
-        options["@opencode_pane_duration"] ?? "",
-        options["@opencode_pane_updated_at"] ?? "",
-        tmux.window["@opencode_status"] ?? "",
+        options["@omp_pane_status"] ?? "",
+        options["@omp_pane_started_at"] ?? "",
+        options["@omp_pane_duration"] ?? "",
+        options["@omp_pane_updated_at"] ?? "",
+        tmux.window["@omp_status"] ?? "",
         String(tmux.clients),
       ].join("\t"));
       return { status: 0, stdout: rows.join("\n") };
@@ -124,8 +124,8 @@ function harness({ tmux = createTmux(["%1"]), pane = "%1", clock = { ms: 1_000_0
   return { core, tmux, clock, timers, bells, closed, diagnostics, exits, fire, pending };
 }
 
-const status = (tmux) => tmux.window["@opencode_status"];
-const paneStatus = (tmux, pane = "%1") => tmux.panes.get(pane)["@opencode_pane_status"];
+const status = (tmux) => tmux.window["@omp_status"];
+const paneStatus = (tmux, pane = "%1") => tmux.panes.get(pane)["@omp_pane_status"];
 
 test("only the terminal assistant message of the latest request decides error, aborted or clean", async () => {
   const cases = [
@@ -167,7 +167,7 @@ test("native errors never reach classification and aborted turns leave no alert"
 test("overlapping asks and approvals keep waiting until every id resolves", async () => {
   const { core, tmux } = harness({ env: { OMP_JEV_ATTENTION_MODE: "off" } });
   await core.start("s");
-  const startedAt = tmux.window["@opencode_started_at"];
+  const startedAt = tmux.window["@omp_started_at"];
   assert.ok(startedAt);
 
   await core.wait("ask:1");
@@ -181,7 +181,7 @@ test("overlapping asks and approvals keep waiting until every id resolves", asyn
   await core.resume("approval:1");
   assert.equal(status(tmux), "working");
   // Waiting time belongs to the prompt: the elapsed timer never restarted.
-  assert.equal(tmux.window["@opencode_started_at"], startedAt);
+  assert.equal(tmux.window["@omp_started_at"], startedAt);
   await core.resume("ask:1");
   assert.equal(status(tmux), "working");
 });
@@ -204,24 +204,24 @@ test("turn end and reset forget outstanding waits", async () => {
   assert.equal(status(tmux), "working");
   await core.reset("s2");
   assert.equal(status(tmux), "idle");
-  assert.equal(tmux.window["@opencode_started_at"], undefined);
+  assert.equal(tmux.window["@omp_started_at"], undefined);
 });
 
 test("completion duration is fixed at finish; a classified wait times from classification", async () => {
   const on = harness({ requestJev: jev(verdict()) });
   await on.core.start("s");
   const started = 1000;
-  assert.equal(on.tmux.window["@opencode_started_at"], String(started));
+  assert.equal(on.tmux.window["@omp_started_at"], String(started));
   on.clock.ms += 65_000;
   await on.core.finish(turn());
   assert.equal(status(on.tmux), "done");
-  assert.equal(on.tmux.window["@opencode_duration"], "01:05");
-  assert.equal(on.tmux.window["@opencode_started_at"], undefined);
+  assert.equal(on.tmux.window["@omp_duration"], "01:05");
+  assert.equal(on.tmux.window["@omp_started_at"], undefined);
   on.clock.ms += 30_000;
   await on.fire();
   assert.equal(status(on.tmux), "waiting");
-  assert.equal(on.tmux.window["@opencode_started_at"], String(started + 95));
-  assert.equal(on.tmux.window["@opencode_duration"], undefined);
+  assert.equal(on.tmux.window["@omp_started_at"], String(started + 95));
+  assert.equal(on.tmux.window["@omp_duration"], undefined);
 
   const dry = harness({ env: { OMP_JEV_ATTENTION_MODE: "dry-run" }, requestJev: jev(verdict()) });
   await dry.core.start("s");
@@ -230,7 +230,7 @@ test("completion duration is fixed at finish; a classified wait times from class
   dry.clock.ms += 90_000;
   await dry.fire();
   assert.equal(status(dry.tmux), "done");
-  assert.equal(dry.tmux.window["@opencode_duration"], "1:02:05");
+  assert.equal(dry.tmux.window["@omp_duration"], "1:02:05");
 });
 
 test("a new prompt restarts timing after a classified wait", async () => {
@@ -243,7 +243,7 @@ test("a new prompt restarts timing after a classified wait", async () => {
   run.clock.ms += 50_000;
   await run.core.start("s");
   assert.equal(status(run.tmux), "working");
-  assert.equal(run.tmux.window["@opencode_started_at"], String(1000 + 60));
+  assert.equal(run.tmux.window["@omp_started_at"], String(1000 + 60));
 });
 
 test("classification applies only in on mode and only past every threshold", async () => {
@@ -263,10 +263,6 @@ test("classification applies only in on mode and only past every threshold", asy
     ["out-of-range setting falls back to default", { needs: 0.6 }, "done", { OMP_JEV_ATTENTION_NEEDS_MIN: "5" }],
     ["unrecognised mode keeps classification on", {}, "waiting", { OMP_JEV_ATTENTION_MODE: "garbage" }],
     ["dry-run predicts but never applies", {}, "done", { OMP_JEV_ATTENTION_MODE: "dry-run" }],
-    ["OpenCode settings are not inherited", {}, "waiting", {
-      OPENCODE_JEV_ATTENTION_MODE: "off",
-      OPENCODE_JEV_ATTENTION_NEEDS_MIN: "0.99",
-    }],
   ];
   for (const [label, answers, expected, env = {}] of cases) {
     const requestJev = jev(verdict(answers));
@@ -456,17 +452,17 @@ test("split panes aggregate by priority and a closing pane leaves the others' st
   clock.ms += 20_000;
   await b.core.start("s2");
   assert.equal(status(tmux), "working");
-  assert.equal(tmux.window["@opencode_started_at"], "1000");
+  assert.equal(tmux.window["@omp_started_at"], "1000");
 
   clock.ms += 10_000;
   await b.core.finish(turn());
   assert.equal(status(tmux), "done");
-  assert.equal(tmux.window["@opencode_duration"], "00:10");
+  assert.equal(tmux.window["@omp_duration"], "00:10");
   assert.equal(paneStatus(tmux, "%1"), "working");
 
   await a.core.wait("ask:1");
   assert.equal(status(tmux), "waiting");
-  assert.equal(tmux.window["@opencode_started_at"], "1000");
+  assert.equal(tmux.window["@omp_started_at"], "1000");
   await a.core.resume("ask:1");
   await a.core.finish([user("Go", 1), assistant("Provider failed", 2, "error")]);
   assert.equal(status(tmux), "error");
@@ -476,9 +472,9 @@ test("split panes aggregate by priority and a closing pane leaves the others' st
   // Closing pane 2 must not erase pane 1's active work.
   await b.core.dispose();
   assert.equal(paneStatus(tmux, "%2"), undefined);
-  assert.equal(tmux.panes.get("%2")["@opencode_pane_started_at"], undefined);
+  assert.equal(tmux.panes.get("%2")["@omp_pane_started_at"], undefined);
   assert.equal(status(tmux), "working");
-  assert.equal(tmux.window["@opencode_started_at"], "1030");
+  assert.equal(tmux.window["@omp_started_at"], "1030");
   assert.equal(paneStatus(tmux, "%1"), "working");
 
   await a.core.dispose();
@@ -496,7 +492,7 @@ test("disposing a finished pane keeps another pane's completion", async () => {
   await b.core.start("s2");
   await b.core.dispose();
   assert.equal(status(tmux), "done");
-  assert.ok(tmux.window["@opencode_duration"]);
+  assert.ok(tmux.window["@omp_duration"]);
 });
 
 test("aggregation picks the highest priority, earliest start and newest completion", () => {
@@ -527,14 +523,14 @@ test("a seen completion stays seen: tmux acknowledgement and visible windows cle
   await b.core.finish(turn());
   assert.equal(paneStatus(tmux, "%2"), "done");
   // The tmux focus hook marks the window idle once the user has seen it.
-  tmux.window["@opencode_status"] = "idle";
+  tmux.window["@omp_status"] = "idle";
   await a.core.start("s1");
   assert.equal(paneStatus(tmux, "%2"), "idle");
   assert.equal(status(tmux), "working");
 
   await b.core.start("s2");
   await b.core.wait("approval:1");
-  tmux.window["@opencode_status"] = "idle";
+  tmux.window["@omp_status"] = "idle";
   await a.core.finish(turn());
   assert.equal(paneStatus(tmux, "%2"), "waiting");
   assert.equal(status(tmux), "waiting");
@@ -684,17 +680,12 @@ function secretsFixture() {
   return { dir, file, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
-test("Jev credentials and model come from omp settings, never OpenCode's", async () => {
+test("Jev resolves configured credentials and model, skipping requests without credentials", async () => {
   const fixture = secretsFixture();
   try {
     const home = join(fixture.dir, "home");
     mkdirSync(join(home, ".config", "home-manager"), { recursive: true });
     writeFileSync(join(home, ".config", "home-manager", "secrets.env"), "TYPESAFE_API_KEY=home-key\n");
-    const opencode = {
-      OPENCODE_SECRETS_FILE: fixture.file("opencode.env", "opencode-key"),
-      OPENCODE_JEV_MODEL: "opencode-model",
-      OPENCODE_JEV_ATTENTION_MODEL: "opencode-attention-model",
-    };
     const cases = [
       ["explicit omp secrets file", { OMP_JEV_ATTENTION_SECRETS_FILE: fixture.file("omp.env", "file-key"), HOME: home }, "file-key", "jev-latest"],
       ["home-manager secrets fallback", { HOME: home }, "home-key", "jev-latest"],
@@ -706,7 +697,7 @@ test("Jev credentials and model come from omp settings, never OpenCode's", async
         calls.push({ url, headers: init.headers, body: JSON.parse(init.body) });
         return { ok: true, status: 200, headers: new Headers(), json: async () => verdict() };
       };
-      const run = harness({ env: { ...opencode, ...env }, fetch, requestJev: undefined });
+      const run = harness({ env, fetch, requestJev: undefined });
       await run.core.start("s");
       await run.core.finish(turn());
       await run.fire();
@@ -718,7 +709,7 @@ test("Jev credentials and model come from omp settings, never OpenCode's", async
 
     let fetched = 0;
     const missing = harness({
-      env: { ...opencode, HOME: join(fixture.dir, "empty-home") },
+      env: { HOME: join(fixture.dir, "empty-home") },
       fetch: async () => { fetched += 1; throw new Error("must not be called"); },
       requestJev: undefined,
     });
@@ -761,7 +752,6 @@ test("decision log lives under the omp state directory and holds no transcript o
     assert.deepEqual(records.map((record) => record.event), ["decision", "failure"]);
     assert.ok(!text.includes("TRANSCRIPT-MARKER"));
     assert.ok(!text.includes(key));
-    assert.ok(!existsSync(join(state, "opencode")));
   } finally {
     rmSync(state, { recursive: true, force: true });
   }
@@ -773,13 +763,13 @@ test("switching between busy sessions starts a fresh prompt timer", async () => 
   clock.ms += 30_000;
   await core.reset("second", true);
   assert.equal(status(tmux), "working");
-  assert.equal(tmux.window["@opencode_started_at"], "1030");
+  assert.equal(tmux.window["@omp_started_at"], "1030");
   clock.ms += 5_000;
   await core.finish(turn());
-  assert.equal(tmux.window["@opencode_duration"], "00:05");
+  assert.equal(tmux.window["@omp_duration"], "00:05");
   await core.reset("second");
   assert.equal(status(tmux), "idle");
-  assert.equal(tmux.window["@opencode_started_at"], undefined);
+  assert.equal(tmux.window["@omp_started_at"], undefined);
 });
 
 test("continuations keep one prompt timer; a start after a settled state begins a new one", async () => {
@@ -789,22 +779,22 @@ test("continuations keep one prompt timer; a start after a settled state begins 
   clock.ms += 40_000;
   // Automatic continuation or retry of the same request.
   await core.start("s");
-  assert.equal(tmux.window["@opencode_started_at"], "1000");
+  assert.equal(tmux.window["@omp_started_at"], "1000");
   await core.wait("approval:1");
   clock.ms += 5_000;
   await core.start("s");
   assert.equal(status(tmux), "waiting");
-  assert.equal(tmux.window["@opencode_started_at"], "1000");
+  assert.equal(tmux.window["@omp_started_at"], "1000");
   await core.resume("approval:1");
   clock.ms += 15_000;
   await core.finish(turn());
-  assert.equal(tmux.window["@opencode_duration"], "01:00");
+  assert.equal(tmux.window["@omp_duration"], "01:00");
 
   clock.ms += 5_000;
   await core.start("s");
-  assert.equal(tmux.window["@opencode_started_at"], "1065");
+  assert.equal(tmux.window["@omp_started_at"], "1065");
   await core.finish([user("Go", 1), assistant("Stopped", 2, "aborted")]);
   clock.ms += 5_000;
   await core.start("s");
-  assert.equal(tmux.window["@opencode_started_at"], "1070");
+  assert.equal(tmux.window["@omp_started_at"], "1070");
 });

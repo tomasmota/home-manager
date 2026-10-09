@@ -70,8 +70,11 @@ nix flake update
 
 ## Oh My Pi (omp)
 
-- omp runs alongside OpenCode (Mac only): pinned `omp` flake input and a
-  self-contained module in `omp/`. See `omp/README.md`.
+- omp is the local coding agent on macOS, installed through the pinned `omp`
+  flake input. Shared instructions and public skills live in `agents/` and are
+  discovered through standard `~/.agents/` paths. See `omp/README.md`.
+- OpenChamber is accessed through the homelab web UI. No OpenCode runtime,
+  OpenChamber desktop/backend or subscription gateway is installed locally.
 
 ## Optional work git config + signing
 

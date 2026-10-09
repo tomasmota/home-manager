@@ -1,7 +1,7 @@
 # Oh My Pi (omp)
 
-Mac-only, self-contained: `default.nix` is the whole Home Manager module and
-nothing here depends on OpenCode or `agents/`. The flake input follows upstream;
+Mac-only: `default.nix` owns native omp configuration. Shared user instructions
+and public skills are locally owned in `../agents/`. The flake input follows upstream;
 `flake.lock` fixes the installed revision. Update only omp with
 `nix flake update omp`, or all inputs (including omp) with `nix flake update`.
 Apply with `sudo darwin-rebuild switch --flake .#macbook`, then start a fresh omp
@@ -12,7 +12,7 @@ process.
 | `default.nix` `policy` | `~/.omp/agent/config.yml` | reapplied on every switch |
 | `default.nix` `preferences` | `~/.omp/agent/config.yml` | seed only; live edits win (`merge-config.sh`) |
 | `default.nix` `models` | `~/.omp/agent/models.yml` | Inco custom provider |
-| `AGENTS.md` | `~/.omp/agent/AGENTS.md` | user context; shadows `~/.agents/AGENTS.md` |
+| `../agents/global/AGENTS.md` | `~/.agents/AGENTS.md` | standard shared user context, linked by `agents.nix` |
 | `RULES.md` | `~/.omp/agent/RULES.md` | sticky MCP safety rule |
 | `mcp.json` | `~/.omp/agent/mcp.json` | writable 0600 copy, reset on switch |
 | `google-developer-knowledge.mjs` | `~/.omp/agent/google-developer-knowledge.mjs` | live symlink; stdio-to-HTTP bridge with user ADC renewal |
@@ -21,19 +21,31 @@ process.
 | `jev/tmux-title.ts` | extension | Jev-powered `<repo>:<task>` tmux window names |
 | `jev/tmux-status.ts` | extension | tmux tab state, timers, bells and Jev completion classification |
 | `status-line.ts` | extension | `ctx used/window` and accumulated Inco cost in the status line |
-| `skills/` | skill dir | read live from the repo; `ste` = ASD-STE100 replies, `handoff` = fresh omp sessions |
-| upstream `skills/tmux-control/SKILL.md` | `~/.omp/agent/skills/tmux-control/SKILL.md` | immutable SHA + content hash in `default.nix`; independent of OpenCode |
+| `../agents/skills/` | `~/.agents/skills/` | locally owned public skills; `ste`, `handoff` and `tmux-control` included |
 
-Skills: `~/.agents/skills` (OpenCode's) is off via `skills.enableAgentsUser:
-false`; the tracked `skills/` plus the private `~/.agents/local-skills` and
-`~/.agents/team-skills` load. Agents: the bundled `task`, `scout`, `sonic` and `security-reviewer`;
+Skills use standard shared `~/.agents/skills` discovery, enabled by default and
+explicitly enabled by policy. Only private `~/.agents/local-skills` and
+`~/.agents/team-skills` need extra directories; neither is copied into this
+public repo. Agents: the bundled `task`, `scout`, `sonic` and `security-reviewer`;
 `deep` (`agents/deep.md`) uses the `@slow` role. Model roles, fallback chains
 and per-agent model overrides are runtime-owned: set them with `/model`,
 `/agents` or `omp config set`; Nix never writes them.
 
+The `agents` discovery provider loads `~/.agents/AGENTS.md` at user scope.
+Native `~/.omp/agent/AGENTS.md` has higher priority and would shadow it, so the
+module deliberately installs no native user context file. Remove an old native
+shadow and old native `skills/tmux-control` link during the cutover; Home Manager
+removes managed links when the former declarations disappear.
+The short `RULES.md` remains at `~/.omp/agent/RULES.md`: native top-level rules
+are always-apply sticky content, unlike ordinary opening context. A shared
+`~/.agents/RULES.md` would not supply that behavior. Named profiles relocate
+native user state, so they need their own native safety configuration if used.
+These paths/defaults were also inspected in the installed omp 18.8.6 executable.
+Discovery semantics: [pinned omp context-file guide](https://github.com/can1357/oh-my-pi/blob/579da1d661c5cb8d43bc2ddd429ab72e67165ad8/docs/context-files.md).
+
 ## Handoff
 
-`skills/handoff/` is omp-only; OpenCode's handoff skill is unchanged. Say:
+`../agents/skills/handoff/` starts fresh native omp sessions. Say:
 
 - “Handoff to a new agent to continue the work.”
 - “Create a new GPT 6.1 Sol High session to investigate X.”
@@ -51,17 +63,18 @@ ownership; a focused investigation carries only its own scope.
 Explicit models and thinking resolve against the selected transport's live
 catalog: Paseo's omp provider or `omp models --json`. Without a model request,
 omp uses its configured default. Unavailable/ambiguous requests never silently
-fall back. Regressions: `node --test omp/skills/handoff/scripts/start.test.mjs`.
+fall back. Regressions: `node --test agents/skills/handoff/scripts/start.test.mjs`.
 
 No switch is needed: fresh processes discover the skill; existing sessions can
 use `/reload-plugins` to refresh skills (and reconnect MCP servers).
 
 ## tmux control: CLI/TUI testing and debugging
 
-The portable [`tmux-control` skill](https://github.com/tomasmota/agents/blob/27519890c40e04efcb5676640f378e0c9f6fbbde/skills/tmux-control/SKILL.md)
-is canonical in `tomasmota/agents`; `default.nix` installs only its pinned,
-hash-checked file into omp's native user skill directory. OpenCode discovery
-stays disabled. No plugin, daemon or tmux configuration change is needed.
+The [`tmux-control` skill](https://github.com/tomasmota/agents/blob/27519890c40e04efcb5676640f378e0c9f6fbbde/skills/tmux-control/SKILL.md)
+is vendored locally at `../agents/skills/tmux-control/SKILL.md` from upstream
+revision `27519890c40e04efcb5676640f378e0c9f6fbbde` (MIT). Its imported SHA-256
+is `PssVuBe0f3zPKGyuTWGksCz+h6v9aHTVdcCTuupA1HA=`.
+No network fetch, separate native skill install or duplicate discovery is needed.
 
 Discover it with requests such as:
 
@@ -76,10 +89,11 @@ example was exercised on tmux 3.7c: result `42`, `ZeroDivisionError`, normal exi
 status `0`, bad-option startup status `2`, and removal of the private test server.
 This is terminal text evidence, not verification of another TUI's visuals.
 
-After changing the central skill, commit/push it there, then update the immutable
-URL and content hash in `default.nix`. A Home Manager switch installs the new pin;
-fresh omp processes discover it, or use `/reload-plugins` in an existing session.
-Check discovery without a model call with `omp read skill://tmux-control`.
+Edit this local source directly. For an upstream update, import the chosen
+revision and preserve provenance/license information here; no external checkout,
+render or lock update is required. Fresh omp processes discover the shared
+skill, or use `/reload-plugins` in an existing session. Check discovery without
+a model call with `omp read skill://tmux-control`.
 
 ## Credentials
 
@@ -166,9 +180,9 @@ extensions. Regression checks: `node --test omp/jev/tmux-title.test.mjs`.
 ## tmux tab status
 
 `jev/tmux-status.ts` adapts native omp events to the independent controller in
-`jev/tmux-status-core.js`. It uses the existing `@opencode_*` window and pane
-options as a shared tmux wire contract, so `../tmux.nix` needs no changes.
-There is no dependency on OpenCode's runtime, plugins or settings.
+`jev/tmux-status-core.js`. Its `@omp_*` window and pane options are the
+tmux wire contract consumed by `../tmux.nix`. Uppercase split hotkeys `V` and
+`S` launch omp in the current pane's working directory.
 
 Only the main TUI owns its pane. Subagents, print/RPC modes and processes
 outside tmux do nothing. A prompt reports `working` with an elapsed timer;
@@ -181,7 +195,7 @@ returns to `idle`. Recoverable tool failures are not terminal errors.
 After a completed turn, Jev classifies the latest user request and final
 assistant text. Confident required-input outcomes become `waiting`; unresolved
 failures or off-track results become `error`. Clean or uncertain results stay
-`done`. Classification is **on by default**, unlike OpenCode's dry-run default.
+`done`. Classification is **on by default**.
 `dry-run` records verdicts without changing completion state; `off` makes no
 classification requests. Missing credentials, unavailable Jev and malformed
 results retain normal completion behavior.
@@ -193,8 +207,8 @@ Background completion/attention rings a cooldown-limited terminal bell;
 visible windows do not ring. Existing tmux focus hooks acknowledge completed
 alerts, and shutdown clears only the owning pane's state.
 
-Jev uses `TYPESAFE_API_KEY`, otherwise the workstation `secrets.env`. These
-settings are omp-specific; `OPENCODE_*` settings cannot redirect classification.
+Jev uses `TYPESAFE_API_KEY`, otherwise the workstation `secrets.env`. Its
+classification settings are omp-specific.
 
 | Variable | Default |
 | --- | --- |
@@ -226,12 +240,15 @@ including `secrets.env`, into the Nix store. Running sessions and
 
 ## Permission review
 
-`jev/permission-review.js`, `jev-client.js` and `decision-audit.js` are a
-vendored copy of the OpenCode reviewer in `tomasmota/agents`; edit them here.
-Read-only tools and `task` spawns skip review; everything else is scored by
-Jev, with `openai-codex/gpt-5.6-luna` then Inco as fallbacks. Knobs are the
-`OPENCODE_JEV_*` environment variables documented at the top of
-`permission-review.js` (exhaustion default: allow). Subagents inherit the
+`jev/permission-review.js`, `jev-client.js` and `decision-audit.js` are locally
+owned reviewer modules; edit them here. Read-only tools and `task` spawns skip
+review; everything else is scored by Jev, with `openai-codex/gpt-5.6-luna` then
+`inco/glm-5.3-flash:fast` as direct omp-provider fallbacks. Knobs are the
+`OMP_JEV_*` environment variables documented at the top of `permission-review.js`
+(exhaustion default: allow). `OMP_SECRETS_FILE` overrides the secret-file fallback;
+`OMP_REVIEW_DIR` overrides the reviewed project directory. Opt-in permission
+audits default to `${XDG_STATE_HOME:-$HOME/.local/state}/omp/jev-auto-approve/decisions.jsonl`.
+Subagents inherit the
 extensions but always run `yolo`; if an extension fails to load, its review is
 absent, so check startup warnings after changing extension code. Extension
 changes need a new omp process, not `/reload-plugins`.

@@ -86,7 +86,7 @@
               users."${user}" = mkHomeModule {
                 username = user;
                 homeDirectory = macHome;
-                # OpenCode/OpenChamber agent config is Mac-only.
+                # Local shared instructions/skills and omp are Mac-only.
                 extraModules = [./agents.nix ./omp];
               };
             };

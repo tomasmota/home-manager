@@ -41,10 +41,8 @@
         export MANPAGER='nvim +Man!'
         export DOCKER_BUILDKIT="1"
         export RCLONE_FAST_LIST="true"
-        export OPENCODE_WEBSEARCH_PROVIDER="exa"
-        # Jev auto-approve plugin: write 30-day permission decision audit to
-        # ~/.local/state/opencode/jev-auto-approve/decisions-<date>.jsonl
-        export OPENCODE_JEV_DEBUG=1
+        # Keep the private Jev permission audit under ~/.local/state/omp/.
+        export OMP_JEV_DEBUG=1
       '';
 
       plugins = [
@@ -97,7 +95,7 @@
 
               # Persistent interactive apps are workspaces, not pending commands.
               case $command_name in
-                opencode|nvim|vim|vi|view|less|more|most|man|info|ssh|mosh|tmux|top|htop|btop|watch|k9s|lazygit)
+                omp|nvim|vim|vi|view|less|more|most|man|info|ssh|mosh|tmux|top|htop|btop|watch|k9s|lazygit)
                   return 0
                   ;;
               esac
@@ -161,10 +159,6 @@
 
           if [[ -f "${config.xdg.configHome}/home-manager/secrets.env" ]]; then
             source ${config.xdg.configHome}/home-manager/secrets.env
-          fi
-
-          if [[ -f "${config.xdg.configHome}/cliproxyapi/client.env" ]]; then
-            source ${config.xdg.configHome}/cliproxyapi/client.env
           fi
 
           if [[ -f "${config.xdg.configHome}/home-manager/shell/local.zsh" ]]; then

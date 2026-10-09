@@ -3,9 +3,9 @@
   xdg,
   ...
 }: let
-  acknowledgeFinishedAgent = ''if-shell -F "#{&&:#{>:#{window_active_clients},0},#{||:#{==:#{@opencode_status},done},#{==:#{@opencode_status},error}}}" "set-option -w @opencode_status idle"'';
+  acknowledgeFinishedAgent = ''if-shell -F "#{&&:#{>:#{window_active_clients},0},#{||:#{==:#{@omp_status},done},#{==:#{@omp_status},error}}}" "set-option -w @omp_status idle"'';
   acknowledgeFinishedCommand = ''if-shell -F "#{&&:#{>:#{window_active_clients},0},#{||:#{==:#{@shell_command_status},done},#{==:#{@shell_command_status},error}}}" "set-option -w @shell_command_status idle ; set-option -w -u @shell_command_started_at ; set-option -w -u @shell_command_duration"'';
-  formatElapsed = pkgs.writeShellScript "tmux-opencode-elapsed" ''
+  formatElapsed = pkgs.writeShellScript "tmux-omp-elapsed" ''
     case "$1" in
       ""|*[!0-9]*) exit 0 ;;
     esac
@@ -23,9 +23,9 @@
   '';
   agentTabColor = fallback:
     builtins.concatStringsSep "" [
-      "#{?#{==:#{@opencode_status},waiting},#{@thm_yellow},"
-      "#{?#{==:#{@opencode_status},done},#{@thm_green},"
-      "#{?#{==:#{@opencode_status},error},#{@thm_red},${fallback}}"
+      "#{?#{==:#{@omp_status},waiting},#{@thm_yellow},"
+      "#{?#{==:#{@omp_status},done},#{@thm_green},"
+      "#{?#{==:#{@omp_status},error},#{@thm_red},${fallback}}"
       "}"
       "}"
     ];
@@ -35,27 +35,27 @@
       "#{?#{==:#{@shell_command_status},error},#{@thm_red},${fallback}}"
       "}"
     ];
-  workTabColor = fallback: "#{?#{@opencode_status},${agentTabColor fallback},${commandTabColor fallback}}";
-  agentHasStatus = "#{&&:#{@opencode_status},#{!=:#{@opencode_status},idle}}";
-  agentHasAlert = "#{||:#{==:#{@opencode_status},waiting},#{||:#{==:#{@opencode_status},done},#{==:#{@opencode_status},error}}}";
+  workTabColor = fallback: "#{?#{@omp_status},${agentTabColor fallback},${commandTabColor fallback}}";
+  agentHasStatus = "#{&&:#{@omp_status},#{!=:#{@omp_status},idle}}";
+  agentHasAlert = "#{||:#{==:#{@omp_status},waiting},#{||:#{==:#{@omp_status},done},#{==:#{@omp_status},error}}}";
   commandHasAlert = "#{||:#{==:#{@shell_command_status},done},#{==:#{@shell_command_status},error}}";
-  workHasAlert = "#{?#{@opencode_status},${agentHasAlert},${commandHasAlert}}";
-  agentElapsedColor = fallback: "#{?#{==:#{@opencode_status},working},#{@thm_blue},${fallback}}";
+  workHasAlert = "#{?#{@omp_status},${agentHasAlert},${commandHasAlert}}";
+  agentElapsedColor = fallback: "#{?#{==:#{@omp_status},working},#{@thm_blue},${fallback}}";
   agentStatusText = builtins.concatStringsSep "" [
-    "#{?#{==:#{@opencode_status},waiting},◆ ,}"
-    "#{?#{==:#{@opencode_status},done},✓ ,}"
-    "#{?#{==:#{@opencode_status},error},! ,}"
+    "#{?#{==:#{@omp_status},waiting},◆ ,}"
+    "#{?#{==:#{@omp_status},done},✓ ,}"
+    "#{?#{==:#{@omp_status},error},! ,}"
   ];
   commandStatusText = builtins.concatStringsSep "" [
     "#{?#{==:#{@shell_command_status},running},#[fg=#{@thm_blue}]● #[fg=#{@thm_fg}],}"
     "#{?#{==:#{@shell_command_status},done},✓ ,}"
     "#{?#{==:#{@shell_command_status},error},! ,}"
   ];
-  workStatusText = "#{?#{@opencode_status},${agentStatusText},${commandStatusText}}";
+  workStatusText = "#{?#{@omp_status},${agentStatusText},${commandStatusText}}";
   agentCurrentStatusText = builtins.concatStringsSep "" [
-    "#{?#{==:#{@opencode_status},waiting},#[fg=#{@thm_yellow}]◆ ,}"
-    "#{?#{==:#{@opencode_status},done},#[fg=#{@thm_green}]✓ ,}"
-    "#{?#{==:#{@opencode_status},error},#[fg=#{@thm_red}]! ,}"
+    "#{?#{==:#{@omp_status},waiting},#[fg=#{@thm_yellow}]◆ ,}"
+    "#{?#{==:#{@omp_status},done},#[fg=#{@thm_green}]✓ ,}"
+    "#{?#{==:#{@omp_status},error},#[fg=#{@thm_red}]! ,}"
   ];
   workWindowText = builtins.concatStringsSep "" [
     " "
@@ -70,9 +70,9 @@
   ];
   agentElapsedText = color:
     builtins.concatStringsSep "" [
-      "#{?#{@opencode_started_at},"
+      "#{?#{@omp_started_at},"
       "#[fg=${color}] · "
-      "#(${formatElapsed} #{@opencode_started_at})"
+      "#(${formatElapsed} #{@omp_started_at})"
       ",}"
     ];
   commandElapsedText = color:
@@ -82,11 +82,11 @@
       "#(${formatElapsed} #{@shell_command_started_at})"
       ",}"
     ];
-  workElapsedText = fallback: "#{?#{@opencode_status},${agentElapsedText (agentElapsedColor fallback)},${commandElapsedText "#{@thm_blue}"}}";
+  workElapsedText = fallback: "#{?#{@omp_status},${agentElapsedText (agentElapsedColor fallback)},${commandElapsedText "#{@thm_blue}"}}";
   agentCompletedText = color:
     builtins.concatStringsSep "" [
-      "#{?#{==:#{@opencode_status},done},"
-      "#[fg=${color}] · #{@opencode_duration}"
+      "#{?#{==:#{@omp_status},done},"
+      "#[fg=${color}] · #{@omp_duration}"
       ",}"
     ];
   commandCompletedText = color:
@@ -95,7 +95,7 @@
       "#[fg=${color}] · #{@shell_command_duration}"
       ",}"
     ];
-  workCompletedText = color: "#{?#{@opencode_status},${agentCompletedText color},${commandCompletedText color}}";
+  workCompletedText = color: "#{?#{@omp_status},${agentCompletedText color},${commandCompletedText color}}";
 in {
   programs.tmux = {
     enable = true;
@@ -160,8 +160,8 @@ in {
       # split with "v" and "s"
       bind v split-window -h -c "#{pane_current_path}"
       bind s split-window -v -c "#{pane_current_path}"
-      bind V split-window -h -c "#{pane_current_path}" "opencode"
-      bind S split-window -v -c "#{pane_current_path}" "opencode"
+      bind V split-window -h -c "#{pane_current_path}" "omp"
+      bind S split-window -v -c "#{pane_current_path}" "omp"
       bind h select-pane -L
       bind j select-pane -D
       bind k select-pane -U

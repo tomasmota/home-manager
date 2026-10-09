@@ -26,13 +26,12 @@ export function answerChoice(value) {
   return { choice: rec.choice, confidence: rec.confidence, probabilities: recordOf(rec.probabilities) ?? {} }
 }
 
-// OpenCode can be launched from contexts that never source the shell env
-// (GUI, launchd, detached serve processes), so plugins miss secrets sourced by
-// zsh. Parse the same env-style secrets file as a fallback.
+// GUI and launchd omp processes may not source the shell environment.
+// Parse the workstation env-style secrets file as a fallback.
 let secretsEnvByPath = new Map()
 
 export async function loadSecretsEnv(
-  path = process.env.OPENCODE_SECRETS_FILE || `${process.env.HOME || ""}/.config/home-manager/secrets.env`,
+  path = process.env.OMP_SECRETS_FILE || `${process.env.HOME || ""}/.config/home-manager/secrets.env`,
 ) {
   const cached = secretsEnvByPath.get(path)
   if (cached) return cached
@@ -72,7 +71,7 @@ export async function requestJev({
   state,
   questions,
   apiKey,
-  model = process.env.OPENCODE_JEV_MODEL || "jev-latest",
+  model = process.env.OMP_JEV_MODEL || "jev-latest",
   timeoutMs = 5000,
   fetchFn = globalThis.fetch,
 }) {

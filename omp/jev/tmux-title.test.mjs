@@ -152,23 +152,17 @@ test("automatic continuations keep the title until the final completed turn", as
   });
 });
 
-test("only omp settings can change the title-review threshold", async () => {
-  const { window: ignored, namer: original } = windowNamer(async () => answer("fix-tmux-titles", 0.7),
-    { OPENCODE_TMUX_TITLE_UPDATE_MIN: "0.6" });
-  await original.review(turn);
-  assert.equal(ignored.name, "repo:pull-main");
+test("omp settings can change the title-review threshold", async () => {
   const { window, namer } = windowNamer(async () => answer("fix-tmux-titles", 0.7),
     { OMP_TMUX_TITLE_UPDATE_MIN: "0.6" });
   await namer.review(turn);
   assert.equal(window.name, "repo:fix-tmux-titles");
 });
 
-test("omp secret-file selection cannot be redirected by another app", async t => {
+test("title review uses its configured secret file", async t => {
   const scratch = mkdtempSync(join(tmpdir(), "omp-title-auth-"));
   const own = join(scratch, "omp.env");
-  const other = join(scratch, "other.env");
   writeFileSync(own, "TYPESAFE_API_KEY=omp-title-fixture\n");
-  writeFileSync(other, "TYPESAFE_API_KEY=other-title-fixture\n");
   t.mock.method(globalThis, "fetch", async (_url, options) => {
     const authorized = options.headers.Authorization === "Bearer omp-title-fixture";
     return new Response(JSON.stringify(answer("fix-tmux-titles")),
@@ -176,7 +170,7 @@ test("omp secret-file selection cannot be redirected by another app", async t =>
   });
   try {
     const { window, namer } = windowNamer(undefined, {
-      OMP_TMUX_TITLE_SECRETS_FILE: own, OPENCODE_SECRETS_FILE: other,
+      OMP_TMUX_TITLE_SECRETS_FILE: own,
     });
     await namer.review(turn);
     assert.equal(window.name, "repo:fix-tmux-titles");

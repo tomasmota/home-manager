@@ -95,9 +95,8 @@ in {
     };
   };
 
-  # Tailnet-only HTTPS :6767 -> loopback :6767. Never Funnel; :443 (OpenChamber)
-  # is a separate Serve entry and is not touched. tailscaled persists the route;
-  # this re-applies it at login and retries until tailscaled accepts it.
+  # Tailnet-only HTTPS :6767 -> loopback :6767. Never Funnel.
+  # tailscaled persists the route; re-apply it at login and retry until accepted.
   launchd.user.agents.paseo-tailnet = {
     command = "${tailscale} serve --bg --yes --https=6767 http://127.0.0.1:6767";
     serviceConfig = {

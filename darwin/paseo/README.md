@@ -7,11 +7,10 @@ this Mac. `darwin/paseo.nix` owns three user launchd agents:
   `127.0.0.1:6767` only. It sources the gitignored `secrets.env` (if present)
   so `omp` gets the same MCP/Inco/Jev environment as the shell.
 - `org.nixos.paseo-tailnet` — `tailscale serve --bg --yes --https=6767
-  http://127.0.0.1:6767`: tailnet-only HTTPS on port 6767. Funnel is never
-  used; the existing `:443` Serve entry (OpenChamber) is not touched.
+  http://127.0.0.1:6767`: tailnet-only HTTPS on port 6767. Funnel is never used.
 - `org.nixos.paseo-awake` — `/usr/bin/caffeinate -i` (see Sleep below).
 
-OpenCode/OpenChamber are independent of all of this.
+OpenChamber is accessed through the homelab web UI; no local server is installed.
 
 ## Trust model
 
@@ -134,8 +133,7 @@ running, and the tailnet route job exits successfully. A daemon stop was followe
 by an automatic launchd restart. The deployed wrapper also passed isolated
 missing/invalid Tailscale-status, restored-name and broken-secrets-file tests.
 
-OpenCode/OpenChamber were not reconfigured or restarted. Full system activation
-is deliberately separate from testing these three new user agents.
+Full system activation is deliberately separate from testing these three user agents.
 
 ## Side questions with `/btw`
 

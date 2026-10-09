@@ -1,6 +1,5 @@
 // omp adapter for the Jev permission reviewer. Policy, thresholds, fallback
 // chain, env knobs, audit and exhaustion default live in ./permission-review.js
-// (vendored from tomasmota/agents' OpenCode auto-approve-jev; no longer synced).
 // This adapter only maps omp tool calls onto that permission event and the
 // reviewer's decision back onto `tool_call`. It runs before omp's approval
 // gate: explicit tool/user deny policies never reach it, and explicit prompt
@@ -42,9 +41,6 @@ export const SKIPPED_TOOLS: Record<string, true> = {
   read: true, grep: true, glob: true, find: true, web_search: true, ask: true, todo: true, wait: true, task: true,
 }
 
-// OpenCode's `openai` provider was the ChatGPT subscription; omp names that
-// subscription `openai-codex` and reserves `openai` for API keys.
-const SUBSCRIPTION_ALIASES: Record<string, string> = { openai: "openai-codex" }
 const NO_AUTH = "N/A"
 
 // Primary arguments are passed verbatim (never truncated or re-encoded) so the
@@ -101,8 +97,7 @@ async function usableKey(registry: ModelRegistry, model: Model, sessionId: strin
   }
 }
 
-// Resolve an exact catalog model with a credential; only an `openai` id with
-// no usable credential falls back to the same id under `openai-codex`.
+// Resolve the exact omp provider/model with a usable credential.
 export async function resolveFallbackModel(
   registry: ModelRegistry,
   providerID: string,
@@ -111,10 +106,7 @@ export async function resolveFallbackModel(
 ): Promise<Model> {
   const exact = registry.find(providerID, modelID)
   if (exact && (await usableKey(registry, exact, sessionId))) return exact
-  const alias = Object.hasOwn(SUBSCRIPTION_ALIASES, providerID) ? SUBSCRIPTION_ALIASES[providerID] : undefined
-  const translated = alias ? registry.find(alias, modelID) : undefined
-  if (translated && (await usableKey(registry, translated, sessionId))) return translated
-  throw new Error(exact || translated ? "fallback model has no credential" : "fallback model is not in the catalog")
+  throw new Error(exact ? "fallback model has no credential" : "fallback model is not in the catalog")
 }
 
 async function typesafeKey(registry: ModelRegistry, sessionId: string): Promise<string | undefined> {

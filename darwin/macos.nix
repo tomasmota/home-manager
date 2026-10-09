@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: {
-  imports = [./cliproxyapi.nix ./paseo.nix];
+  imports = [./paseo.nix];
 
   nixpkgs.hostPlatform = "aarch64-darwin";
 
@@ -78,36 +78,7 @@
 
   services.tailscale.enable = true;
 
-  # LaunchServices does not pass the user launchd environment to GUI apps.
-  # Starting OpenChamber directly ensures it only connects to configured hosts.
-  # The desktop restarts on crash, not explicit Quit; Android uses the separate
-  # always-running server, independent of this GUI.
   launchd.user.agents = {
-    openchamber-desktop = {
-      environment.OPENCHAMBER_SKIP_LOCAL_SERVER = "1";
-      command = ''
-        /Applications/OpenChamber.app/Contents/MacOS/OpenChamber
-      '';
-      serviceConfig = {
-        KeepAlive = {Crashed = true;};
-        RunAtLoad = true;
-        ProcessType = "Interactive";
-      };
-    };
-
-    # Tailscale terminates HTTPS for the MagicDNS hostname and proxies locally.
-    openchamber-tailnet = {
-      command = ''
-        /run/current-system/sw/bin/tailscale serve --bg --yes http://127.0.0.1:3001
-      '';
-      serviceConfig = {
-        RunAtLoad = true;
-        ProcessType = "Background";
-        StandardOutPath = "/Users/tomas/Library/Logs/OpenChamber-tailnet.log";
-        StandardErrorPath = "/Users/tomas/Library/Logs/OpenChamber-tailnet.error.log";
-      };
-    };
-
     # Codex Usage menu bar app (built from darwin/codex-usage in this repo).
     # Restart on crash, but stay dead after an explicit Quit from the menu.
     codex-usage = {
@@ -133,10 +104,6 @@
 
   homebrew = {
     enable = true;
-    taps = ["anomalyco/tap"];
-    # OpenCode is selected by the locked Home Manager runtime, not upgraded by
-    # Homebrew behind the configuration lock. Other brews keep their own policy.
-    brews = [];
     casks = [
       "ghostty"
       "middleclick"

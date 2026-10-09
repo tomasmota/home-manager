@@ -64,7 +64,7 @@ function fakeTmux(panes = [PANE]) {
     window: windowOptions,
     pane: id => paneOptions.get(id),
     setVisible: visible => { activeClients = visible ? 1 : 0; },
-    status: () => windowOptions["@opencode_status"] ?? null,
+    status: () => windowOptions["@omp_status"] ?? null,
   };
 }
 
@@ -150,12 +150,12 @@ test("main TUI prompt maps to working with a timer, then to a timed done", async
     assert.equal(tmux.status(), "idle");
     await emit("agent_start");
     assert.equal(tmux.status(), "working");
-    assert.equal(tmux.window["@opencode_started_at"], "1000");
+    assert.equal(tmux.window["@omp_started_at"], "1000");
     tick(65_000);
     await emit("agent_end", { messages: turn(user("Ship it"), assistant("Shipped.")) });
     assert.equal(tmux.status(), "done");
-    assert.equal(tmux.window["@opencode_duration"], "01:05");
-    assert.equal(tmux.window["@opencode_started_at"], undefined);
+    assert.equal(tmux.window["@omp_duration"], "01:05");
+    assert.equal(tmux.window["@omp_started_at"], undefined);
     await until(() => jevCalls.length === 1);
     await quiet();
     assert.equal(tmux.status(), "done");
@@ -167,7 +167,7 @@ test("session start while the agent is busy reports working immediately", async 
     state.idle = false;
     await emit("session_start");
     assert.equal(tmux.status(), "working");
-    assert.ok(tmux.window["@opencode_started_at"]);
+    assert.ok(tmux.window["@omp_started_at"]);
   });
 });
 
@@ -175,7 +175,7 @@ test("subagent and non-TUI contexts cannot create, clear, or retime the main sta
   await withAdapter(async ({ tmux, state, emit, contextFor, tick, jevCalls }) => {
     await emit("session_start");
     await emit("agent_start");
-    const startedAt = tmux.window["@opencode_started_at"];
+    const startedAt = tmux.window["@omp_started_at"];
     tick(30_000);
     for (const foreign of [contextFor("sub", "tui"), contextFor("main", "rpc"), contextFor("sub", "rpc")]) {
       state.id = "foreign";
@@ -192,8 +192,8 @@ test("subagent and non-TUI contexts cannot create, clear, or retime the main sta
       await emit("agent_end", { messages: turn(user("sub"), assistant("sub done")) }, foreign);
       await emit("session_shutdown", {}, foreign);
       assert.equal(tmux.status(), "working");
-      assert.equal(tmux.window["@opencode_started_at"], startedAt);
-      assert.equal(tmux.window["@opencode_duration"], undefined);
+      assert.equal(tmux.window["@omp_started_at"], startedAt);
+      assert.equal(tmux.window["@omp_duration"], undefined);
     }
     await quiet();
     assert.equal(jevCalls.length, 0);
@@ -201,7 +201,7 @@ test("subagent and non-TUI contexts cannot create, clear, or retime the main sta
     state.id = "session-a";
     await emit("agent_end", { messages: turn(user("main"), assistant("main done")) });
     assert.equal(tmux.status(), "done");
-    assert.equal(tmux.window["@opencode_duration"], "00:30");
+    assert.equal(tmux.window["@omp_duration"], "00:30");
   });
 });
 
@@ -322,15 +322,15 @@ test("a waiting prompt keeps its original start time through resume", async () =
   await withAdapter(async ({ tmux, emit, tick }) => {
     await emit("session_start");
     await emit("agent_start");
-    const startedAt = tmux.window["@opencode_started_at"];
+    const startedAt = tmux.window["@omp_started_at"];
     tick(20_000);
     await emit("tool_approval_requested", { toolCallId: "a" });
-    assert.equal(tmux.window["@opencode_started_at"], startedAt);
+    assert.equal(tmux.window["@omp_started_at"], startedAt);
     tick(10_000);
     await emit("tool_approval_resolved", { toolCallId: "a" });
-    assert.equal(tmux.window["@opencode_started_at"], startedAt);
+    assert.equal(tmux.window["@omp_started_at"], startedAt);
     await emit("agent_end", { messages: turn(user("Go"), assistant("Gone.")) });
-    assert.equal(tmux.window["@opencode_duration"], "00:30");
+    assert.equal(tmux.window["@omp_duration"], "00:30");
   });
 });
 
@@ -392,7 +392,7 @@ test("a switch into a busy session reports working with a fresh timer", async ()
     state.idle = false;
     await emit("session_branch");
     assert.equal(tmux.status(), "working");
-    assert.equal(tmux.window["@opencode_started_at"], "1005");
+    assert.equal(tmux.window["@omp_started_at"], "1005");
   });
 });
 
@@ -401,19 +401,19 @@ test("shutdown clears only this pane, leaves sibling panes aggregated, and canno
     await emit("session_start");
     await emit("agent_start");
     // A sibling agent in the same window is still working.
-    Object.assign(tmux.pane("%2"), { "@opencode_pane_status": "working", "@opencode_pane_started_at": "900" });
+    Object.assign(tmux.pane("%2"), { "@omp_pane_status": "working", "@omp_pane_started_at": "900" });
     await emit("session_shutdown");
-    assert.equal(tmux.pane(PANE)["@opencode_pane_status"], undefined);
-    assert.equal(tmux.pane("%2")["@opencode_pane_status"], "working");
+    assert.equal(tmux.pane(PANE)["@omp_pane_status"], undefined);
+    assert.equal(tmux.pane("%2")["@omp_pane_status"], "working");
     assert.equal(tmux.status(), "working");
-    assert.equal(tmux.window["@opencode_started_at"], "900");
+    assert.equal(tmux.window["@omp_started_at"], "900");
     // Late events after shutdown must not instantiate or drive anything.
     await emit("agent_end", { messages: turn(user("late"), assistant("late done")) });
     await emit("session_start");
     await emit("agent_start");
     await emit("tool_approval_requested", { toolCallId: "late" });
     assert.equal(createdControllers.length, 1);
-    assert.equal(tmux.pane(PANE)["@opencode_pane_status"], undefined);
+    assert.equal(tmux.pane(PANE)["@omp_pane_status"], undefined);
     assert.equal(tmux.status(), "working");
   }, { panes: [PANE, "%2"] });
 });
@@ -424,7 +424,7 @@ test("shutdown with no sibling activity unsets the window status", async () => {
     await emit("agent_start");
     await emit("session_shutdown");
     assert.equal(tmux.status(), null);
-    assert.equal(tmux.window["@opencode_started_at"], undefined);
+    assert.equal(tmux.window["@omp_started_at"], undefined);
   });
 });
 

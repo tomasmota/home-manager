@@ -16,18 +16,16 @@
 - `flake.nix`, `flake.lock`: flake entrypoint and pinned inputs (`nixpkgs`, `home-manager`, `nix-darwin`, `omp`).
 - `home.nix`: shared Home Manager module; imports most local modules and declares common packages.
 - `darwin/macos.nix`: macOS-only nix-darwin config (system defaults, Homebrew casks, Tailscale).
-- `darwin/cliproxyapi.nix`: CLIProxyAPI (OpenCode's Claude subscription gateway, loopback 8317) and the OpenChamber launchd service; local secret-bearing state lives under `~/.config/cliproxyapi` (see `darwin/cliproxyapi/README.md`).
 - `darwin/paseo.nix`, `darwin/paseo/`: locked Paseo runtime and user launchd services for native Android access to omp; private state stays in `~/.paseo`. See `darwin/paseo/README.md` for pairing and exclusive TUI/phone handoffs.
-- `omp/`: Oh My Pi (omp) agent, Mac-only via the pinned `omp` flake input. Self-contained Home Manager module (`omp/default.nix`) plus everything it installs into `~/.omp/agent/` (`AGENTS.md`, `RULES.md`, `mcp.json`, extensions). Independent of OpenCode and `agents/`; see `omp/README.md`.
+- `omp/`: Oh My Pi (omp), Mac-only via the pinned `omp` flake input. `omp/default.nix` manages its runtime configuration, MCP servers, extensions and native agent definitions. Shared user instructions and skills live under `agents/`; see `omp/README.md`.
 - `darwin/codex-usage/`: Codex Usage menu bar app (Swift). Built into `~/Applications/CodexUsage.app` by `install.sh` via a home-manager activation script when sources change; kept running by the `codex-usage` launchd agent.
 - `terminal/ghostty.nix`: Ghostty config; expects `fontSize` from flake `extraSpecialArgs`.
 - `shell/zsh.nix`, `shell/aliases.nix`, `shell/functions.nix`: shell behavior, aliases, helper functions.
 - `git.nix`: git identity/signing, difftastic, activation hook for `allowed_signers` files.
 - `tmux.nix`: tmux settings/plugins/keybindings.
 - `nvim/`: Neovim config (lazy.nvim, plugin specs under `nvim/lua/plugins`, core config under `nvim/lua/config`).
-- `agents.nix`, `agents/**`: AI tool configs (OpenCode/OpenChamber), **Mac-only**: `agents.nix` is imported only by the macbook Home Manager user in `flake.nix`; the Linux target carries no OpenCode config, runtime or activation. `agents/global/AGENTS.md` is installed as the global agent instructions; `agents/AGENTS.md` applies only while working in the tracked `agents/` tree.
-- Shared roles, routing code, portable skills and instructions are canonical in public `tomasmota/agents`. `agents/config/lock.json` pins that source; `agents/config/mac.json` and `platform.*` are the workstation adapters. See `agents/config/README.md` for the update/deploy/rollback workflow.
-- `agents/skills/**`: generated portable skills plus local workstation-only skills. Do not edit generated files; local/team skill ownership remains separate.
+- `agents.nix`, `agents/**`: locally owned shared instructions and public skills, installed into `~/.agents/` on the Mac. Edit these files directly; there is no upstream renderer, inventory or central source lock.
+- OpenChamber is used through the homelab web UI. Do not install local OpenCode, OpenChamber servers, the desktop bundle or subscription gateways.
 - `secrets.env`: local secrets file at repo root, intentionally gitignored.
 
 ## Configuration Composition Notes
@@ -37,13 +35,9 @@
   - `./git.nix`
   - `./tmux.nix`
 - The macbook Home Manager user additionally imports `./agents.nix` and `./omp` (`flake.nix`).
-- `home.nix` uses out-of-store symlinks for `nvim` and `agents` directories.
-  - Once a switch has created the links, editing files in this repo updates live config targets directly; a further switch is needed only to change the links, packages or services (see `agents/config/README.md`).
-- `agents.nix` symlinks repo files into:
-  - `~/.config/opencode/opencode.json` (from `agents/opencode/opencode.macos.json`)
-- Every shared server package, including agent-routes, uses the immutable central SHA. Full-SHA packages are skipped by `plugin update`; a location reload reconciles new pins. Pulling the repository alone is not installed/active proof.
-- `agents/opencode/lib/` includes generated shared helpers and the locally owned session registry. The local `plugins/agent-routes/quota.js` is only a credential/quota adapter, not a discovered server plugin.
-- `agents/runtime/` locks OpenCode/OpenChamber and installs the content-addressed runtime; Nix/launchd select it rather than Homebrew or npm-global binaries.
+- `home.nix` uses an out-of-store symlink for `nvim`; `agents.nix` links shared instructions and skills from this checkout into `~/.agents/`.
+- Once those links exist, saved files are live on disk. Reload omp discovery or start a fresh session for instruction/skill changes; a switch is needed for links, packages or services.
+- `omp/` owns local agent runtime behavior; `agents/` owns shared user instructions and skills. Neither depends on the external agents repository.
 
 ## Apply and Validate Workflows
 - Preferred validation before applying:
@@ -69,11 +63,10 @@
 - Shell:
   - Keep aliases/functions concise and compatible with zsh.
   - `secrets.env` may be sourced by zsh init; never commit credentials.
-- Agent policies:
-  - Edit the central source for shared behavior, platform adapters here for workstation choices; render and check before switching. Generated `opencode*.json`, routes and global instructions are not policy sources.
-- Agent skills:
-  - Add portable public skills centrally. Only workstation-specific tracked skills belong under `agents/skills/<skill-name>/SKILL.md`; private local/team contents never enter either public repository.
-  - Keep the existing frontmatter style (`name`, `description`, and `metadata`) and include usage-oriented sections.
+- Agent instructions and skills:
+  - Edit locally owned shared instructions and public skills directly in `agents/`.
+  - Private machine skills stay in `~/.agents/local-skills/`; team skills stay in `~/.agents/team-skills/`. Never copy their contents into this public repo.
+  - Keep the existing skill frontmatter style (`name`, `description`, and `metadata`) and usage-oriented sections.
 
 ## Safety and Gotchas
 - `git.nix` writes `allowed_signers` files during activation; keep this behavior in mind when changing git/signing config.

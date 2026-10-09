@@ -1,19 +1,19 @@
-// Jev-first permission reviewer shared by the OpenCode plugin and other hosts.
+// omp-owned Jev-first permission reviewer.
 // Runtime-neutral: no host imports; callers supply text generation and directory.
 //
 // Runtime configuration:
 //   TYPESAFE_API_KEY                         required for Jev; falls back to ~/.config/home-manager/secrets.env, then LLM
-//   OPENCODE_JEV_MODEL=jev-latest            TypeSafe model alias or version
-//   OPENCODE_JEV_TIMEOUT_MS=5000             total Jev request/retry budget
-//   OPENCODE_JEV_DANGER_MIN=2.5              deny threshold for dangerousness score
-//   OPENCODE_JEV_BLAST_MIN=2.5               deny threshold for blast-radius score
-//   OPENCODE_JEV_PURPOSE_MAX=0.4             maximum legitimate-purpose probability for deny
-//   OPENCODE_JEV_CONFIDENCE_MIN=0.5          minimum Score confidence for deny
-//   OPENCODE_JEV_FALLBACK_MODELS=...         default "openai/gpt-5.6-luna,inco/glm-5.3-flash:fast"; do not set per platform
-//   OPENCODE_JEV_FALLBACK_TIMEOUT_MS=15000   timeout per fallback model
-//   OPENCODE_JEV_ON_EXHAUSTION=allow         allow|manual|deny
-//   OPENCODE_JEV_DEBUG=1                     opt in to 30-day private audit; unset/0 disables, or use an absolute .jsonl base path
-//   OPENCODE_REVIEW_DIR                      overrides the project directory sent to reviewers
+//   OMP_JEV_MODEL=jev-latest            TypeSafe model alias or version
+//   OMP_JEV_TIMEOUT_MS=5000             total Jev request/retry budget
+//   OMP_JEV_DANGER_MIN=2.5              deny threshold for dangerousness score
+//   OMP_JEV_BLAST_MIN=2.5               deny threshold for blast-radius score
+//   OMP_JEV_PURPOSE_MAX=0.4             maximum legitimate-purpose probability for deny
+//   OMP_JEV_CONFIDENCE_MIN=0.5          minimum Score confidence for deny
+//   OMP_JEV_FALLBACK_MODELS=...         default "openai-codex/gpt-5.6-luna,inco/glm-5.3-flash:fast"
+//   OMP_JEV_FALLBACK_TIMEOUT_MS=15000   timeout per fallback model
+//   OMP_JEV_ON_EXHAUSTION=allow         allow|manual|deny
+//   OMP_JEV_DEBUG=1                     opt in to 30-day private audit; unset/0 disables, or use an absolute .jsonl base path
+//   OMP_REVIEW_DIR                      overrides the project directory sent to reviewers
 
 import {
   answerChoice,
@@ -173,10 +173,10 @@ function parseJevResponse(value) {
 }
 
 function composeJevDecision(result) {
-  const dangerMin = numberEnv("OPENCODE_JEV_DANGER_MIN", 2.5, 0, 3)
-  const blastMin = numberEnv("OPENCODE_JEV_BLAST_MIN", 2.5, 0, 3)
-  const purposeMax = numberEnv("OPENCODE_JEV_PURPOSE_MAX", 0.4, 0, 1)
-  const confidenceMin = numberEnv("OPENCODE_JEV_CONFIDENCE_MIN", 0.5, 0, 1)
+  const dangerMin = numberEnv("OMP_JEV_DANGER_MIN", 2.5, 0, 3)
+  const blastMin = numberEnv("OMP_JEV_BLAST_MIN", 2.5, 0, 3)
+  const purposeMax = numberEnv("OMP_JEV_PURPOSE_MAX", 0.4, 0, 1)
+  const confidenceMin = numberEnv("OMP_JEV_CONFIDENCE_MIN", 0.5, 0, 1)
   const deny =
     result.dangerousness.score >= dangerMin &&
     result.dangerousness.confidence >= confidenceMin &&
@@ -201,7 +201,7 @@ async function jevReview(request, req, directory) {
   const value = await request({
     state: jevState(req, directory),
     questions: QUESTIONS,
-    timeoutMs: numberEnv("OPENCODE_JEV_TIMEOUT_MS", 5000, 500, 30000),
+    timeoutMs: numberEnv("OMP_JEV_TIMEOUT_MS", 5000, 500, 30000),
   })
   const result = parseJevResponse(value)
   if (!result) throw new Error("Jev returned an invalid response")
@@ -209,11 +209,11 @@ async function jevReview(request, req, directory) {
 }
 
 function diagnosticsPath() {
-  const raw = process.env.OPENCODE_JEV_DEBUG
+  const raw = process.env.OMP_JEV_DEBUG
   if (!raw || raw === "0" || raw === "false") return null
   if (raw && raw !== "1" && raw !== "true") return raw
   const base = process.env.XDG_STATE_HOME || `${process.env.HOME || "/tmp"}/.local/state`
-  return `${base}/opencode/jev-auto-approve/decisions.jsonl`
+  return `${base}/omp/jev-auto-approve/decisions.jsonl`
 }
 
 let auditWrites = Promise.resolve()
@@ -244,7 +244,7 @@ function errorText(error) {
   }
 }
 
-// Shared by every platform; consumers do not override it. A colon is part of
+// Direct omp provider/model selectors. A colon is part of
 // the literal model ID, so only the first slash separates the provider.
 const DEFAULT_FALLBACK_MODELS = "openai/gpt-5.6-luna,inco/glm-5.3-flash:fast"
 
@@ -275,7 +275,7 @@ function withTimeout(promise, ms, label) {
 }
 
 async function fallbackChain(generate, req, models) {
-  const timeoutMs = numberEnv("OPENCODE_JEV_FALLBACK_TIMEOUT_MS", 15000, 1000, 60000)
+  const timeoutMs = numberEnv("OMP_JEV_FALLBACK_TIMEOUT_MS", 15000, 1000, 60000)
   const errors = []
   for (const model of models) {
     try {
@@ -306,15 +306,15 @@ export const permissionReviewHelpers = {
 }
 
 // context.generate.text({ model: { providerID, id }, prompt }) -> Promise<{ text }>
-// context.directory: project directory reported to reviewers (OPENCODE_REVIEW_DIR wins)
+// context.directory: project directory reported to reviewers (OMP_REVIEW_DIR wins)
 // context.requestJev: optional replacement for jev-client's requestJev, same signature
-// Returns evaluate(event), which mutates an OpenCode-compatible permission event
+// Returns evaluate(event), which mutates a permission event
 // { effect: "ask" | "allow" | "deny", sessionID, action, resources, message? }.
 export function createPermissionEvaluator({ generate, directory, requestJev: request = requestJev }) {
   let fallbackModels
   let fallbackConfigError
   try {
-    fallbackModels = parseFallbackModels(process.env.OPENCODE_JEV_FALLBACK_MODELS)
+    fallbackModels = parseFallbackModels(process.env.OMP_JEV_FALLBACK_MODELS)
   } catch (error) {
     fallbackConfigError = error
   }
@@ -325,7 +325,7 @@ export function createPermissionEvaluator({ generate, directory, requestJev: req
     const req = normalizeRequest(event)
     if (!req) return
     const initialEffect = event.effect
-    const reviewDirectory = process.env.OPENCODE_REVIEW_DIR || directory || undefined
+    const reviewDirectory = process.env.OMP_REVIEW_DIR || directory || undefined
     let jevOutcome = "not_called"
     const audit = (decision, source, reasonCode, model) => appendDiagnostic({
       event: "decision",
@@ -384,7 +384,7 @@ export function createPermissionEvaluator({ generate, directory, requestJev: req
           source = "llm-fallback"
           model = `${fallback.model.providerID}/${fallback.model.modelID}`
         } catch {
-          const onExhaustion = (process.env.OPENCODE_JEV_ON_EXHAUSTION || "allow").toLowerCase()
+          const onExhaustion = (process.env.OMP_JEV_ON_EXHAUSTION || "allow").toLowerCase()
           if (onExhaustion === "manual") {
             event.effect = "ask"
             await audit("ask", "exhaustion", "reviewers_unavailable")

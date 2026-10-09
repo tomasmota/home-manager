@@ -2,6 +2,7 @@
 # Build the Codex Usage menu bar app with the system Swift toolchain and
 # install it as ~/Applications/CodexUsage.app. Restarts a running instance
 # (launchd KeepAlive picks it back up).
+# Runtime requires a logged-in Codex CLI (`codex app-server`) only.
 set -euo pipefail
 
 cd "$(dirname "$0")"

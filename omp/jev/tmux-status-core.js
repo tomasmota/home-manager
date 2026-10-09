@@ -1,7 +1,7 @@
-// omp-owned tmux status controller. It writes the shared @opencode_* tmux wire
+// omp-owned tmux status controller. It writes the shared @omp_* tmux wire
 // contract consumed by tmux.nix, and optionally asks Jev whether a cleanly
-// finished turn actually needs the user. It must not depend on OpenCode code or
-// OPENCODE_* settings.
+// finished turn actually needs the user. Configuration uses native
+// OMP_* settings.
 import { spawnSync } from "node:child_process"
 import { closeSync, constants, openSync, writeSync } from "node:fs"
 
@@ -439,11 +439,11 @@ export function createTmuxStatus(overrides = {}) {
   const paneSnapshot = () => {
     const format = [
       "#{pane_id}",
-      "#{@opencode_pane_status}",
-      "#{@opencode_pane_started_at}",
-      "#{@opencode_pane_duration}",
-      "#{@opencode_pane_updated_at}",
-      "#{@opencode_status}",
+      "#{@omp_pane_status}",
+      "#{@omp_pane_started_at}",
+      "#{@omp_pane_duration}",
+      "#{@omp_pane_updated_at}",
+      "#{@omp_status}",
       "#{window_active_clients}",
     ].join("\t")
     const result = runtime.spawnSync("tmux", ["list-panes", "-t", pane, "-F", format], { encoding: "utf8" })
@@ -504,14 +504,14 @@ export function createTmuxStatus(overrides = {}) {
       }
       for (const row of rows) {
         if (!changed.has(row.paneID)) continue
-        addCommand(setOptionArgs("-p", row.paneID, "@opencode_pane_status", row.state))
-        addCommand(setOptionArgs("-p", row.paneID, "@opencode_pane_started_at", row.startedAt))
-        addCommand(setOptionArgs("-p", row.paneID, "@opencode_pane_duration", row.duration))
-        addCommand(setOptionArgs("-p", row.paneID, "@opencode_pane_updated_at", row.updatedAt))
+        addCommand(setOptionArgs("-p", row.paneID, "@omp_pane_status", row.state))
+        addCommand(setOptionArgs("-p", row.paneID, "@omp_pane_started_at", row.startedAt))
+        addCommand(setOptionArgs("-p", row.paneID, "@omp_pane_duration", row.duration))
+        addCommand(setOptionArgs("-p", row.paneID, "@omp_pane_updated_at", row.updatedAt))
       }
-      addCommand(setOptionArgs("-w", pane, "@opencode_status", aggregate.state))
-      addCommand(setOptionArgs("-w", pane, "@opencode_started_at", aggregate.startedAt))
-      addCommand(setOptionArgs("-w", pane, "@opencode_duration", aggregate.duration))
+      addCommand(setOptionArgs("-w", pane, "@omp_status", aggregate.state))
+      addCommand(setOptionArgs("-w", pane, "@omp_started_at", aggregate.startedAt))
+      addCommand(setOptionArgs("-w", pane, "@omp_duration", aggregate.duration))
       runtime.spawnSync("tmux", args, { stdio: "ignore" })
     } catch {}
   }

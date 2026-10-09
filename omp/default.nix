@@ -1,5 +1,5 @@
-# Oh My Pi (omp), Mac only. Self-contained: everything omp loads comes from
-# this directory, except the private skill directories under ~/.agents.
+# Oh My Pi (omp), Mac only. Native configuration lives here; standard shared
+# instructions and public skills are owned in ../agents.
 #
 # ~/.omp/agent/config.yml is a writable file because omp locks and rewrites it
 # at runtime. merge-config.sh rebuilds it on every switch as
@@ -18,19 +18,18 @@
 
   # Directory interpolation alone does not check that imported modules exist.
   # Fail during evaluation if Git's flake snapshot omits a new runtime file.
-  jevDir =
-    assert lib.assertMsg
-      (builtins.all (name: builtins.pathExists (./jev + "/${name}")) [
-        "auto-approve-jev.ts"
-        "decision-audit.js"
-        "jev-client.js"
-        "permission-review.js"
-        "tmux-title.ts"
-        "tmux-title-core.js"
-        "tmux-status.ts"
-        "tmux-status-core.js"
-      ])
-      "omp: Jev extension modules are missing from the flake source; git add the new modules before rebuilding.";
+  jevDir = assert lib.assertMsg
+  (builtins.all (name: builtins.pathExists (./jev + "/${name}")) [
+    "auto-approve-jev.ts"
+    "decision-audit.js"
+    "jev-client.js"
+    "permission-review.js"
+    "tmux-title.ts"
+    "tmux-title-core.js"
+    "tmux-status.ts"
+    "tmux-status-core.js"
+  ])
+  "omp: Jev extension modules are missing from the flake source; git add the new modules before rebuilding.";
     ./jev;
 
   # Inco is not an omp builtin. INCO_API_KEY comes from secrets.env (sourced
@@ -93,12 +92,9 @@
     # Max review budget: 30s Jev + 2 x 60s fallback, plus auth overhead.
     extensionHandlers.toolCallTimeoutMs = 180000;
 
-    # ~/.agents/skills belongs to OpenCode; only the private dirs are shared.
-    # skills/ is read live from this repo, so edits apply without a switch.
+    # Public skills use standard ~/.agents discovery; private/team stay private.
     skills = {
-      enableAgentsUser = false;
       customDirectories = [
-        "${ompDir}/skills"
         "~/.agents/local-skills"
         "~/.agents/team-skills"
       ];
@@ -166,13 +162,8 @@ in {
       ".omp/agent/models.yml".source = yaml.generate "omp-models.yml" models;
       ".omp/agent/google-developer-knowledge.mjs".source =
         config.lib.file.mkOutOfStoreSymlink "${ompDir}/google-developer-knowledge.mjs";
-      # Portable skill stays canonical upstream; omp loads its own pinned file.
-      ".omp/agent/skills/tmux-control/SKILL.md".source = pkgs.fetchurl {
-        url = "https://raw.githubusercontent.com/tomasmota/agents/27519890c40e04efcb5676640f378e0c9f6fbbde/skills/tmux-control/SKILL.md";
-        hash = "sha256-PssVuBe0f3zPKGyuTWGksCz+h6v9aHTVdcCTuupA1HA=";
-      };
-      # Shadows ~/.agents/AGENTS.md: omp keeps one user context file, native wins.
-      ".omp/agent/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink "${ompDir}/AGENTS.md";
+      # Sticky rules use omp's native standard rules mechanism, not user-context
+      # shadowing. Shared instructions come from ~/.agents/AGENTS.md.
       ".omp/agent/RULES.md".source = config.lib.file.mkOutOfStoreSymlink "${ompDir}/RULES.md";
       ".omp/agent/agents".source = config.lib.file.mkOutOfStoreSymlink "${ompDir}/agents";
     };

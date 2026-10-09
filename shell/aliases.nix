@@ -1,9 +1,9 @@
 {config}: {
   # home-manager
   hm = "home-manager";
-  hmcd = ''cd ${config.xdg.configHome}/home-manager \
-            && [[ -n $TMUX ]] \
-            && tmux rename-window "home-manager"'';
+  hmcd = ''    cd ${config.xdg.configHome}/home-manager \
+                && [[ -n $TMUX ]] \
+                && tmux rename-window "home-manager"'';
   hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && home-manager switch --impure && popd";
 
   # nix-darwin
@@ -24,9 +24,6 @@
   kc = ''kubectl config current-context'';
   kn = ''kubectl get ns --no-headers | awk '{print $1}' | fzf | xargs -I {} kubectl config set-context --current --namespace "{}"'';
   knettool = ''kubectl run --rm  -it --image wbitt/network-multitool tmp-debug -- /bin/bash'';
-  oc = ''opencode'';
-  ocweb = ''oc web --hostname "$(hostname)" --port 4096'';
-  cda = "cd ${config.home.homeDirectory}/dev/personal/local-agent && opencode";
 
   # Git
   g = "git";
