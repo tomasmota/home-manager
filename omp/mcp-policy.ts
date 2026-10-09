@@ -11,7 +11,9 @@ const confluenceAllowed = new Set([
   "editJiraIssue",
   "transitionJiraIssue",
   "getTransitionsForJiraIssue",
+  "createConfluencePage",
   "updateConfluencePage",
+  "getContentFormatGuide",
 ].map(name => `mcp__confluence_${name.toLowerCase()}`));
 
 export function blockedReason(toolName: string): string | undefined {

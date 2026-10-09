@@ -241,6 +241,10 @@ overhead to avoid repeated mount/unmount notices at prompt and turn boundaries.
 Calls are still blocked, including unknown Confluence tools. Initial MCP
 discovery can still emit a mount notice.
 
+The Confluence allow-list includes `createConfluencePage` and
+`getContentFormatGuide`. For HTML/default page bodies, fetch the format guide
+before creating the page.
+
 ## Android access with Paseo
 
 The Mac-only service in `darwin/paseo.nix` uses Paseo's native omp `rpc-ui`
