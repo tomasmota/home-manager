@@ -1,18 +1,19 @@
 # Oh My Pi (omp)
 
 Mac-only: `default.nix` owns native omp configuration. Shared user instructions
-and public skills are locally owned in `../agents/`. The flake input follows upstream;
-`flake.lock` fixes the installed revision. Update only omp with
+and public skills are locally owned alongside it in `../global/` and `../skills/`.
+The flake input follows upstream; `flake.lock` fixes the installed revision.
+Run commands below from the checkout root. Update only omp with
 `nix flake update omp`, or all inputs (including omp) with `nix flake update`.
 Apply with `sudo darwin-rebuild switch --flake .#macbook`, then start a fresh omp
-process.
+process. Installed `~/.omp/agent/` and shared `~/.agents/` paths stay unchanged.
 
 | File | Installed as | Notes |
 | --- | --- | --- |
 | `default.nix` `policy` | `~/.omp/agent/config.yml` | reapplied on every switch |
 | `default.nix` `preferences` | `~/.omp/agent/config.yml` | seed only; live edits win (`merge-config.sh`) |
 | `default.nix` `models` | `~/.omp/agent/models.yml` | Inco custom provider |
-| `../agents/global/AGENTS.md` | `~/.agents/AGENTS.md` | standard shared user context, linked by `agents.nix` |
+| `../global/AGENTS.md` | `~/.agents/AGENTS.md` | standard shared user context, linked by `../../agents.nix` |
 | `RULES.md` | `~/.omp/agent/RULES.md` | sticky MCP safety rule |
 | `mcp.json` | `~/.omp/agent/mcp.json` | writable 0600 copy, reset on switch |
 | `google-developer-knowledge.mjs` | `~/.omp/agent/google-developer-knowledge.mjs` | live symlink; stdio-to-HTTP bridge with user ADC renewal |
@@ -21,7 +22,7 @@ process.
 | `jev/tmux-title.ts` | extension | Jev-powered `<repo>:<task>` tmux window names |
 | `jev/tmux-status.ts` | extension | tmux tab state, timers, bells and Jev completion classification |
 | `status-line.ts` | extension | `ctx used/window` and accumulated Inco cost in the status line |
-| `../agents/skills/` | `~/.agents/skills/` | locally owned public skills; `ste`, `handoff` and `tmux-control` included |
+| `../skills/` | `~/.agents/skills/` | locally owned public skills; `ste`, `handoff` and `tmux-control` included |
 
 Skills use standard shared `~/.agents/skills` discovery, enabled by default and
 explicitly enabled by policy. Only private `~/.agents/local-skills` and
@@ -45,7 +46,7 @@ Discovery semantics: [pinned omp context-file guide](https://github.com/can1357/
 
 ## Handoff
 
-`../agents/skills/handoff/` starts fresh native omp sessions. Say:
+`../skills/handoff/` starts fresh native omp sessions. Say:
 
 - “Handoff to a new agent to continue the work.”
 - “Create a new GPT 6.1 Sol High session to investigate X.”
@@ -71,7 +72,7 @@ use `/reload-plugins` to refresh skills (and reconnect MCP servers).
 ## tmux control: CLI/TUI testing and debugging
 
 The [`tmux-control` skill](https://github.com/tomasmota/agents/blob/27519890c40e04efcb5676640f378e0c9f6fbbde/skills/tmux-control/SKILL.md)
-is vendored locally at `../agents/skills/tmux-control/SKILL.md` from upstream
+is vendored locally at `../skills/tmux-control/SKILL.md` from upstream
 revision `27519890c40e04efcb5676640f378e0c9f6fbbde` (MIT). Its imported SHA-256
 is `PssVuBe0f3zPKGyuTWGksCz+h6v9aHTVdcCTuupA1HA=`.
 No network fetch, separate native skill install or duplicate discovery is needed.
@@ -175,13 +176,13 @@ All naming settings are omp-specific; other agents' settings are ignored.
 | `OMP_TMUX_TITLE_SECRETS_FILE` | `$HOME/.config/home-manager/secrets.env` |
 
 Start a fresh omp process after activation; `/reload-plugins` does not reload
-extensions. Regression checks: `node --test omp/jev/tmux-title.test.mjs`.
+extensions. Regression checks: `node --test agents/omp/jev/tmux-title.test.mjs`.
 
 ## tmux tab status
 
 `jev/tmux-status.ts` adapts native omp events to the independent controller in
 `jev/tmux-status-core.js`. Its `@omp_*` window and pane options are the
-tmux wire contract consumed by `../tmux.nix`. Uppercase split hotkeys `V` and
+tmux wire contract consumed by `../../tmux.nix`. Uppercase split hotkeys `V` and
 `S` launch omp in the current pane's working directory.
 
 Only the main TUI owns its pane. Subagents, print/RPC modes and processes
@@ -236,7 +237,7 @@ Apply with `sudo darwin-rebuild switch --flake .#macbook`, then start a fresh
 omp process. Do not use `--flake path:.` here: it can copy gitignored files,
 including `secrets.env`, into the Nix store. Running sessions and
 `/reload-plugins` do not load a new extension. Regression checks:
-`node --test omp/jev/tmux-status-core.test.mjs omp/jev/tmux-status.test.mjs`.
+`node --test agents/omp/jev/tmux-status-core.test.mjs agents/omp/jev/tmux-status.test.mjs`.
 
 ## Permission review
 
@@ -266,7 +267,7 @@ before creating the page.
 
 The Mac-only service in `darwin/paseo.nix` uses Paseo's native omp `rpc-ui`
 provider with this same profile, extensions, credentials, skills and MCP config.
-See [`../darwin/paseo/README.md`](../darwin/paseo/README.md) for secure direct
+See [`../../darwin/paseo/README.md`](../../darwin/paseo/README.md) for secure direct
 Android connection over Tailscale, service management and the tested limitations.
 
 Paseo does **not** attach to a running omp TUI. Finish or interrupt the turn and

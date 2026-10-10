@@ -1,6 +1,6 @@
-# Shared agent instructions and skills
+# Agent configuration
 
-This directory owns the public workstation instructions and skills locally.
+This directory owns the public workstation instructions, skills and native omp configuration locally.
 There is no external source checkout, generator, inventory or render step.
 
 ## Sources of truth
@@ -8,7 +8,7 @@ There is no external source checkout, generator, inventory or render step.
 - `global/AGENTS.md`: shared user instructions, linked to `~/.agents/AGENTS.md`.
 - `skills/<name>/`: public skills, linked together at `~/.agents/skills`.
 - `../agents.nix`: generic Home Manager links for the shared sources.
-- `../omp/`: native omp configuration, safety rules, extensions and task agents.
+- `omp/`: native omp configuration, safety rules, extensions and task agents.
 
 ## Ownership
 
@@ -30,4 +30,4 @@ file; do not install a second user `AGENTS.md` under `~/.omp/agent/`.
 
 Follow the applicable repository instructions before running checks. Existing
 behavior regressions live beside the handoff launcher and omp extensions; see
-`../omp/README.md` for their commands. There is no generated-file validation step.
+`omp/README.md` for their commands. There is no generated-file validation step.

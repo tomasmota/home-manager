@@ -87,7 +87,7 @@
                 username = user;
                 homeDirectory = macHome;
                 # Local shared instructions/skills and omp are Mac-only.
-                extraModules = [./agents.nix ./omp];
+                extraModules = [./agents.nix ./agents/omp];
               };
             };
           }

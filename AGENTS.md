@@ -17,14 +17,14 @@
 - `home.nix`: shared Home Manager module; imports most local modules and declares common packages.
 - `darwin/macos.nix`: macOS-only nix-darwin config (system defaults, Homebrew casks, Tailscale).
 - `darwin/paseo.nix`, `darwin/paseo/`: locked Paseo runtime and user launchd services for native Android access to omp; private state stays in `~/.paseo`. See `darwin/paseo/README.md` for pairing and exclusive TUI/phone handoffs.
-- `omp/`: Oh My Pi (omp), Mac-only via the pinned `omp` flake input. `omp/default.nix` manages its runtime configuration, MCP servers, extensions and native agent definitions. Shared user instructions and skills live under `agents/`; see `omp/README.md`.
+- `agents/omp/`: Oh My Pi (omp), Mac-only via the pinned `omp` flake input. `agents/omp/default.nix` manages its runtime configuration, MCP servers, extensions and native agent definitions. Shared user instructions and skills live alongside it under `agents/`; see `agents/omp/README.md`.
 - `darwin/codex-usage/`: Codex Usage menu bar app (Swift). Built into `~/Applications/CodexUsage.app` by `install.sh` via a home-manager activation script when sources change; kept running by the `codex-usage` launchd agent.
 - `terminal/ghostty.nix`: Ghostty config; expects `fontSize` from flake `extraSpecialArgs`.
 - `shell/zsh.nix`, `shell/aliases.nix`, `shell/functions.nix`: shell behavior, aliases, helper functions.
 - `git.nix`: git identity/signing, difftastic, activation hook for `allowed_signers` files.
 - `tmux.nix`: tmux settings/plugins/keybindings.
 - `nvim/`: Neovim config (lazy.nvim, plugin specs under `nvim/lua/plugins`, core config under `nvim/lua/config`).
-- `agents.nix`, `agents/**`: locally owned shared instructions and public skills, installed into `~/.agents/` on the Mac. Edit these files directly; there is no upstream renderer, inventory or central source lock.
+- `agents.nix`, `agents/**`: locally owned shared instructions, public skills and native omp configuration, installed into `~/.agents/` and `~/.omp/agent/` on the Mac. Edit these files directly; there is no upstream renderer, inventory or central source lock.
 - OpenChamber is used through the homelab web UI. Do not install local OpenCode, OpenChamber servers, the desktop bundle or subscription gateways.
 - `secrets.env`: local secrets file at repo root, intentionally gitignored.
 
@@ -34,10 +34,10 @@
   - `./shell/zsh.nix`
   - `./git.nix`
   - `./tmux.nix`
-- The macbook Home Manager user additionally imports `./agents.nix` and `./omp` (`flake.nix`).
+- The macbook Home Manager user additionally imports `./agents.nix` and `./agents/omp` (`flake.nix`).
 - `home.nix` uses an out-of-store symlink for `nvim`; `agents.nix` links shared instructions and skills from this checkout into `~/.agents/`.
 - Once those links exist, saved files are live on disk. Reload omp discovery or start a fresh session for instruction/skill changes; a switch is needed for links, packages or services.
-- `omp/` owns local agent runtime behavior; `agents/` owns shared user instructions and skills. Neither depends on the external agents repository.
+- `agents/omp/` owns local agent runtime behavior; `agents/global/` and `agents/skills/` own shared user instructions and skills. None depends on the external agents repository.
 
 ## Apply and Validate Workflows
 - Preferred validation before applying:

@@ -126,7 +126,7 @@ After host activation installed omp 18.6.3, the native question, Jev manual
 approve/deny, MCP/skill inventory checks passed again. A Full Access scratch-file
 write completed with a real Jev allow decision and no native approval prompt.
 Always Ask is only an additional manual gate: it still prompts after Jev allows.
-The existing Jev fallback/exhaustion policy is unchanged (see `omp/README.md`).
+The existing Jev fallback/exhaustion policy is unchanged (see `agents/omp/README.md`).
 
 All three declared launchd jobs are installed: daemon and sleep inhibitor are
 running, and the tailnet route job exits successfully. A daemon stop was followed

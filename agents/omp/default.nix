@@ -1,5 +1,5 @@
 # Oh My Pi (omp), Mac only. Native configuration lives here; standard shared
-# instructions and public skills are owned in ../agents.
+# instructions and public skills are owned in the parent directory.
 #
 # ~/.omp/agent/config.yml is a writable file because omp locks and rewrites it
 # at runtime. merge-config.sh rebuilds it on every switch as
@@ -13,7 +13,7 @@
   omp,
   ...
 }: let
-  ompDir = "${config.xdg.configHome}/home-manager/omp";
+  ompDir = "${config.xdg.configHome}/home-manager/agents/omp";
   yaml = pkgs.formats.yaml {};
 
   # Directory interpolation alone does not check that imported modules exist.
