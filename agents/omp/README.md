@@ -22,7 +22,7 @@ process. Installed `~/.omp/agent/` and shared `~/.agents/` paths stay unchanged.
 | `jev/tmux-title.ts` | extension | Jev-powered `<repo>:<task>` tmux window names |
 | `jev/tmux-status.ts` | extension | tmux tab state, timers, bells and Jev completion classification |
 | `status-line.ts` | extension | `ctx used/window` and accumulated Inco cost in the status line |
-| `../skills/` | `~/.agents/skills/` | locally owned public skills; `ste`, `handoff` and `tmux-control` included |
+| `../skills/` | `~/.agents/skills/` | locally owned public skills; `ste`, `handoff-custom` and `tmux-control` included |
 
 Skills use standard shared `~/.agents/skills` discovery, enabled by default and
 explicitly enabled by policy. Only private `~/.agents/local-skills` and
@@ -44,9 +44,10 @@ native user state, so they need their own native safety configuration if used.
 These paths/defaults were also inspected in the installed omp 18.8.6 executable.
 Discovery semantics: [pinned omp context-file guide](https://github.com/can1357/oh-my-pi/blob/579da1d661c5cb8d43bc2ddd429ab72e67165ad8/docs/context-files.md).
 
-## Handoff
+## Custom handoff
 
-`../skills/handoff/` starts fresh native omp sessions. Say:
+`../skills/handoff-custom/` starts fresh native omp sessions, separate from omp's
+built-in same-session handoff. Invoke `handoff-custom` explicitly. Examples:
 
 - “Handoff to a new agent to continue the work.”
 - “Create a new GPT 6.1 Sol High session to investigate X.”
@@ -64,7 +65,7 @@ ownership; a focused investigation carries only its own scope.
 Explicit models and thinking resolve against the selected transport's live
 catalog: Paseo's omp provider or `omp models --json`. Without a model request,
 omp uses its configured default. Unavailable/ambiguous requests never silently
-fall back. Regressions: `node --test agents/skills/handoff/scripts/start.test.mjs`.
+fall back. Regressions: `node --test agents/skills/handoff-custom/scripts/start.test.mjs`.
 
 No switch is needed: fresh processes discover the skill; existing sessions can
 use `/reload-plugins` to refresh skills (and reconnect MCP servers).

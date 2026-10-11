@@ -1,5 +1,5 @@
 ---
-name: handoff
+name: handoff-custom
 description: >
   Transfer work to a fresh native omp session in Paseo or a full omp TUI in tmux,
   or start a focused investigation with an explicitly requested model and thinking level.
@@ -11,7 +11,7 @@ metadata:
   runtime: omp
 ---
 
-# Handoff to a fresh omp session
+# Custom handoff to a fresh omp session
 
 Transfer durable task state through a self-contained document, not conversation
 history. The successor has no access to your eval kernel, tool handles or memory.
@@ -163,7 +163,7 @@ owned by the successor merely because it appears in the document.
 
 Find `scripts/start.mjs` beside this skill. Use its absolute path from the skill's
 resolved filesystem location (tracked workstation path:
-`~/.config/home-manager/agents/skills/handoff/scripts/start.mjs`). Run with absolute
+`~/.config/home-manager/agents/skills/handoff-custom/scripts/start.mjs`). Run with absolute
 handoff and working-directory paths, preserving the current checkout:
 
 ```sh

@@ -16,7 +16,7 @@ metadata:
 Use existing shell access and tmux, not a new daemon or tool wrapper. A private,
 detached tmux server supplies a real PTY even when the assistant runs outside
 tmux. Prefer ordinary non-interactive commands when terminal behavior is not
-under test. For transferring an agent session, use the specialized handoff skill;
+under test. For transferring work to a fresh agent session, use `handoff-custom`;
 this skill does not change ownership or authorize prompting a successor.
 
 ## Targets and ownership
