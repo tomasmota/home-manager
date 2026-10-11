@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: {
-  imports = [./paseo.nix];
+  imports = [./paseo.nix ./tern.nix];
 
   nixpkgs.hostPlatform = "aarch64-darwin";
 
