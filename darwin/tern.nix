@@ -12,11 +12,27 @@
   assetsDir = "${home}/.local/share/tern-web/${runtime.version}";
   tailscale = "/run/current-system/sw/bin/tailscale";
   runtime = import ./tern/runtime {inherit pkgs home;};
+  ternSdk = pkgs.fetchFromGitHub {
+    owner = "stencil-hq";
+    repo = "tern-sdk";
+    rev = "13d3cca8bbd8f055431f8eb3caa434a22e966f8f";
+    hash = "sha256-9QW++GEcXzvr+csjAsUtr139KKH9jfeJ5ery7fKc4rc=";
+  };
   labels = ["tern-pilot-daemon" "tern-pilot-web" "tern-pilot-gateway" "tern-pilot-tailnet"];
   keyboardSettings = pkgs.writeText "tern-keyboard-settings.json" (builtins.toJSON {
     keymap = "tmux";
     keymap_prefix = "ctrl+space";
     keybinds = {
+      "ctrl+space>1" = "goto_tab:1";
+      "ctrl+space>2" = "goto_tab:2";
+      "ctrl+space>3" = "goto_tab:3";
+      "ctrl+space>4" = "goto_tab:4";
+      "ctrl+space>5" = "goto_tab:5";
+      "ctrl+space>6" = "goto_tab:6";
+      "ctrl+space>7" = "goto_tab:7";
+      "ctrl+space>8" = "goto_tab:8";
+      "ctrl+space>9" = "goto_tab:9";
+      "ctrl+space>0" = "goto_tab:10";
       "ctrl+space>h" = "focus_pane:left";
       "ctrl+space>j" = "focus_pane:down";
       "ctrl+space>k" = "focus_pane:up";
@@ -289,6 +305,8 @@
 in {
   home-manager.users.tomas = {lib, ...}: {
     home.packages = [runtime.tern activate applySettings];
+    home.file."Library/Application Support/Tern/plugins/terraform".source =
+      "${ternSdk}/plugins/examples/terraform";
     # Keep settings writable for Tern's UI; only managed keyboard keys win.
     home.activation.ternSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
       run ${applySettings}/bin/tern-settings-apply

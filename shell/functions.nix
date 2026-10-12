@@ -1,4 +1,13 @@
-{config}: ''
+{
+  config,
+  pkgs,
+}: let
+  sudoTerminalAskpass = pkgs.writeShellScript "sudo-terminal-askpass" ''
+    IFS= read -r -s -p '[sudo] Password: ' password </dev/tty || exit 1
+    printf '\n' >/dev/tty
+    printf '%s\n' "$password"
+  '';
+in ''
   # delete a tag from local and origin
   delete_tag() {
     if [ -z "$1" ]; then
@@ -93,6 +102,17 @@
     else
       home-manager switch --flake ".#$1"
     fi
+  }
+
+  # nix-darwin switch
+  nds() {
+    sudo darwin-rebuild switch --flake "${config.xdg.configHome}/home-manager#macbook" "$@"
+  }
+
+  # nix-darwin switch with a hidden terminal password instead of Touch ID
+  ndsh() {
+    SUDO_ASKPASS="${sudoTerminalAskpass}" /usr/bin/sudo -A \
+      darwin-rebuild switch --flake "${config.xdg.configHome}/home-manager#macbook" "$@"
   }
 
   # sync dotfiles

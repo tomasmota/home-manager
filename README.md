@@ -38,7 +38,9 @@ cd ~/.config/home-manager
 
 - After bootstrap (daily use)
   - Linux: use `hms`
-  - macOS: use `nds`
+  - macOS: use `nds` for normal sudo authentication (including Touch ID), or
+    `ndsh` for a hidden password prompt in the terminal without the Touch ID dialog.
+    This choice is explicit because Tern's local and phone clients share the same shell.
 
 ### 5) (Optional) Ensure zsh is login shell
 

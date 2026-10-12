@@ -144,6 +144,26 @@ To apply only these settings from a built pilot, run
 switch is needed. Use Tern's **Reload settings** command after an external
 settings update.
 
+## Terraform plan plugin
+
+Home Manager installs the SDK's [Terraform plan plugin](https://docs.stencil.so/tern/examples/terraform.html)
+as a directory symlink at `~/Library/Application Support/Tern/plugins/terraform`.
+`darwin/tern.nix` fetches `stencil-hq/tern-sdk` at revision
+`13d3cca8bbd8f055431f8eb3caa434a22e966f8f`, with a fixed source hash.
+No `tern plugin install` or `tern plugin link` command is required.
+
+The next normal Home Manager activation (through the Darwin switch above)
+installs the link; `tern-pilot-activate` does not activate Home Manager files.
+Tern watches its plugin directory; **Reload plugins** or `tern plugin reload`
+can also reload it without restarting the daemon. Keep the managed package
+read-only; update its Nix revision and hash rather than using Tern to replace it.
+
+The lens handles `terraform plan`, `tofu plan`, and their `-chdir=` forms,
+but not `apply`. Plugins, native command output (`command_lenses`), and shell
+integration must be enabled; all are enabled by default. Use `-input=false`
+or supply required variables so the native view does not cover an input prompt.
+The block's **Raw** toggle retains the original plan output.
+
 ## Services and private state
 
 LaunchAgents live in `~/Library/LaunchAgents/` as `<label>.plist` and run in the

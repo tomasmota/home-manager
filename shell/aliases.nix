@@ -6,9 +6,6 @@
                 && tmux rename-window "home-manager"'';
   hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && home-manager switch --impure && popd";
 
-  # nix-darwin
-  nds = "sudo darwin-rebuild switch --flake ${config.xdg.configHome}/home-manager#macbook";
-
   # Misc
   ls = "eza -G --color auto -a -s type";
   la = "eza -l --color always -a -s type";

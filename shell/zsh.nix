@@ -165,7 +165,7 @@
             source ${config.xdg.configHome}/home-manager/shell/local.zsh
           fi
         ''
-        + import ./functions.nix {inherit config;});
+        + import ./functions.nix {inherit config pkgs;});
 
       shellAliases = import ./aliases.nix {inherit config;};
     };
