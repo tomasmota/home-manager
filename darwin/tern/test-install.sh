@@ -16,8 +16,8 @@ cat >"$app/Contents/Info.plist" <<'PLIST'
 <key>CFBundleIdentifier</key><string>so.stencil.tern.installer-fixture</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleExecutable</key><string>tern</string>
-<key>CFBundleShortVersionString</key><string>0.7.2</string>
-<key>CFBundleVersion</key><string>0.7.2</string>
+<key>CFBundleShortVersionString</key><string>0.8.2</string>
+<key>CFBundleVersion</key><string>0.8.2</string>
 </dict></plist>
 PLIST
 printf 'int main(void) { return 0; }\n' >"$scratch/fixture.c"
@@ -28,7 +28,7 @@ sha=$(/usr/bin/shasum -a 256 "$scratch/fixture.dmg")
 sha=${sha%% *}
 install_fixture() {
   bash "$here/runtime/install.sh" "$1" "$scratch/fixture.dmg" "$sha" \
-    TernFixture.app so.stencil.tern.installer-fixture 0.7.2 Contents/MacOS/tern
+    TernFixture.app so.stencil.tern.installer-fixture 0.8.2 Contents/MacOS/tern
 }
 install_fixture "$scratch/home" >"$scratch/install.log" 2>&1 || { cat "$scratch/install.log" >&2; fail 'publishing signed release'; }
 release=$(dirname "$(readlink "$scratch/home/Applications/TernFixture.app")")

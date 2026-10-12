@@ -2,8 +2,8 @@
   pkgs,
   home,
 }: let
-  version = "0.7.2";
-  sha256 = "0a3e9ffef15c54202d5c1a5e45d1db0d7ba9d732242f0fea26bebce5cb44c7bd";
+  version = "0.8.2";
+  sha256 = "ec249dd7cfb7e195db4e0170c500f49612874cd4cc4afb0dd23edcda25c9500c";
   appName = "Tern.app";
   bundleId = "so.stencil.tern";
   cliPath = "Contents/MacOS/tern";

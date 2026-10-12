@@ -56,7 +56,7 @@ esac
 [ -d "$home" ] || fail 'HOME does not exist.'
 [ "$(/usr/bin/stat -f %u "$home")" = "$(/usr/bin/id -u)" ] || fail 'HOME belongs to another user.'
 [[ "$expected_sha" =~ ^[0-9a-f]{64}$ ]] || fail 'Supply the independently recorded lowercase SHA256 of the real DMG.'
-[ "$version" = 0.7.2 ] || fail 'This installer is pinned to Tern 0.7.2.'
+[ "$version" = 0.8.2 ] || fail 'This installer is pinned to Tern 0.8.2.'
 case "$app_name" in
   ''|.*|*/*) fail 'APP_NAME must be the inspected top-level app basename.' ;;
   *.app) ;;
@@ -137,8 +137,8 @@ plist_value() {
 }
 [ "$(plist_value CFBundlePackageType)" = APPL ] || fail 'The bundle is not a macOS application.'
 [ "$(plist_value CFBundleIdentifier)" = "$bundle_id" ] || fail 'The bundle identifier does not match the inspected release.'
-[ "$(plist_value CFBundleShortVersionString)" = "$version" ] || fail 'The app version is not the pinned 0.7.2 release.'
-[ "$(plist_value CFBundleVersion)" = "$version" ] || fail 'The app build version is not the inspected 0.7.2 release.'
+[ "$(plist_value CFBundleShortVersionString)" = "$version" ] || fail 'The app version is not the pinned 0.8.2 release.'
+[ "$(plist_value CFBundleVersion)" = "$version" ] || fail 'The app build version is not the inspected 0.8.2 release.'
 main_executable=$(plist_value CFBundleExecutable)
 case "$main_executable" in
   ''|.*|*/*) fail 'Invalid CFBundleExecutable.' ;;

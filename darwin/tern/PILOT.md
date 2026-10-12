@@ -1,8 +1,8 @@
 # Tern pilot: purpose, checkpoint and next steps
 
-Checkpoint: **2026-10-11**. This records the work and observations from the pilot;
-it is not a fresh service-health check. See [README.md](README.md) for build,
-activation, private-state handling and withdrawal commands.
+Checkpoint: **2026-10-12**. Current verification is recorded below; the
+2026-10-11 observations are retained as history. See [README.md](README.md)
+for build, activation, private-state handling and withdrawal commands.
 
 ## Purpose
 
@@ -17,7 +17,54 @@ not automatically imported into Tern. Attaching an existing tmux session is a
 possible ANSI bridge; direct omp in a Tern pane is the native Tern Surface
 Protocol (TSP) path.
 
-## Where we got
+## Current checkpoint: 2026-10-12
+
+- Pulled the companion homelab checkout. Its working Linux browser deployment
+  runs Tern 0.8.1; it was not upgraded or reconfigured.
+- Installed the supplied notarized Apple Silicon **0.8.2 (`44c7f76`)** DMG.
+  The app symlink and managed CLI select that release. The existing private
+  shell hook now prefers only the pinned Tern package over the older system
+  CLI; a fresh interactive login shell reported 0.8.2.
+- This release embeds the real browser HTML, JavaScript and icons. Downloaded
+  its matching WASM from the release URL, verified the embedded SHA-384 SRI,
+  and cached the complete genuine client privately. It is served locally with
+  the SRI retained, resolving the old missing-assets blocker.
+- Exercised the actual browser UI and keyboard input: an isolated Mac shell
+  returned `Darwin:arm64` and `RESULT:42`. The persistent Tailnet HTTPS endpoint
+  executed a command returning `TAILNET_MAC_WEB:Darwin:42`. The live session
+  also rendered at a 412 × 915 phone-sized viewport.
+- Submitted a real prompt to omp **18.9.2** / **GPT-6.1-Sol** through the Mac
+  HTTPS browser; its live reply was `42`. Browser reload retained the same
+  pane and conversation, which also rendered at the phone-sized viewport.
+- Activated browser services with the new **`--web-only`** mode. Existing
+  native-app/daemon PIDs and all five original panes were preserved. The
+  running app and daemon deliberately remain 0.7.2; 0.8.2 web/CLI interoperability
+  was exercised, not assumed to cover every newer feature.
+- Removed task-owned smoke panes, sessions, browser tabs and workspaces. All
+  five original panes and the original selected tab remained intact.
+- Repaired the bare-origin phone handoff after the owner reported a closed
+  connection. The native web log confirmed `denied: no token`; earlier proof
+  had used the authenticated URL, not the owner's bare link.
+- Added an owner-only Tailscale identity gateway on loopback **18377** behind
+  HTTPS **8377**. It injects the private backend token server-side; the plain
+  HTTPS URL now works without a browser token or login. Paseo's **6767** route
+  is unchanged; no Funnel or QUIC/iroh service was enabled.
+- The tokenless browser submitted a real omp prompt and displayed
+  `TOKENLESS_MAC_OK`. Reload retained that conversation, including at phone
+  dimensions. Live missing-identity/foreign-Origin rejection and Serve's
+  identity-header spoof removal passed; all nine gateway regression groups
+  and the updated pilot build/flake evaluation passed.
+- The web client's Add remote host dialog rejects multi-host access. Native
+  multi-host support is not browser support. Following the owner's choice,
+  the Mac uses its own endpoint; the existing Linux endpoint stays independent.
+- The pilot build, final `nix flake check --no-build` and all four updated
+  offline installer regressions passed.
+
+Physical Android operation, phone reconnection, approvals and a full shared
+omp handoff have not been exercised in this change window. Browser/PTY proof
+does not claim those device-specific checks or a completed terminal cutover.
+
+## Previous checkpoint: 2026-10-11
 
 ### Installed and configured
 
@@ -55,7 +102,7 @@ Protocol (TSP) path.
 laptop-to-phone handoff, mobile approval/input handling or post-login service
 ownership. Mac-side daemon/TSP proof is not proof of a finished phone pilot.
 
-## Blocking findings
+## Previous blocking findings: 0.7.2
 
 ### 1. No usable browser client supplied by the inspected packages
 
@@ -120,26 +167,16 @@ FileVault reboot before login.
 - `tern.build` and the Shubham-1994 project are unrelated to Stencil Tern. One
   investigator mixed in those links; their provenance claims were discarded.
 
-## Next steps, in order
+## Remaining adoption checks
 
-1. **Confirm distribution with Stencil.** Establish whether invited 0.7.2 users
-   can use the browser client on Android, where the matching `tern-web` assets
-   come from, and whether missing assets in these packages are expected. If the
-   route requires source access, obtain the real source/build instructions.
-   Another desktop archive or a Darwin switch is not an established remedy.
-2. **Complete first native sign-in** with the invited account. Observe the real
-   app and check that only one daemon owns the shared socket afterward; do not
-   independently enable the bundled daemon while the pilot daemon is active.
-3. **Inspect and install genuine matching browser assets**, following the
-   README's versioned path and private-state rules. Prove the actual browser
-   interface works locally before publishing the tailnet route. Keep the token
-   and connection URL out of Git, chat, screenshots and shared logs.
-4. **Exercise one live omp process across Mac and phone.** Verify shared output,
-   typing, scrolling, a real turn, an input/approval interaction, phone reconnect
-   and return to the Mac without a second writer. Check Android rendering and
-   the actual surfaces, not just HTTP 200 or daemon captures.
-5. **Decide whether to adopt Tern only after that proof.** Keep Paseo available
-   during a trial with real work. A later full Darwin switch remains deliberate;
-   it was not performed for this pilot. If browser distribution is unavailable,
-   retain a desktop-only experiment or withdraw using the README rather than
-   claiming Tern has replaced the phone workflow.
+The browser-packaging prerequisite is now resolved. Before replacing the
+existing phone workflow, exercise one live omp process across laptop and
+physical Android: shared output, typing, scrolling, a real turn, an
+input/approval interaction, phone reconnect and return to the Mac without a
+second transcript writer. Keep Paseo available during that trial.
+
+The native daemon cutover is separate from the working browser deployment.
+Finish existing pane work before replacing its managed launchd owner; no
+unverified hot-upgrade trigger or forced restart was used here. A full Darwin
+switch remains a deliberate operation, not a prerequisite for this pilot.
+

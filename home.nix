@@ -21,6 +21,8 @@
 
   fonts.fontconfig.enable = true;
 
+  nixpkgs.config.allowUnfreePredicate = pkg: pkgs.lib.getName pkg == "bws";
+
   home.packages = with pkgs; [
     fd # better find
     dua # better du
@@ -37,6 +39,7 @@
     gnumake
     gh
     bitwarden-cli
+    bws # Bitwarden Secrets Manager
     tldr
     dive
     wget

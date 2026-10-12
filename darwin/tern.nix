@@ -9,10 +9,43 @@
   stateDir = "${home}/.local/state/tern-pilot";
   configDir = "${home}/Library/Application Support/Tern";
   tokenFile = "${stateDir}/web-token";
-  assetsDir = "${home}/.local/share/tern-web/0.7.2";
+  assetsDir = "${home}/.local/share/tern-web/${runtime.version}";
   tailscale = "/run/current-system/sw/bin/tailscale";
   runtime = import ./tern/runtime {inherit pkgs home;};
-  labels = ["tern-pilot-daemon" "tern-pilot-web" "tern-pilot-tailnet"];
+  labels = ["tern-pilot-daemon" "tern-pilot-web" "tern-pilot-gateway" "tern-pilot-tailnet"];
+  keyboardSettings = pkgs.writeText "tern-keyboard-settings.json" (builtins.toJSON {
+    keymap = "tmux";
+    keymap_prefix = "ctrl+space";
+    keybinds = {
+      "ctrl+space>h" = "focus_pane:left";
+      "ctrl+space>j" = "focus_pane:down";
+      "ctrl+space>k" = "focus_pane:up";
+      "ctrl+space>l" = "focus_pane:right";
+      "ctrl+space>v" = "split_right";
+      "ctrl+space>s" = "split_down";
+      "ctrl+space>q" = "close_pane";
+      "ctrl+space>ctrl+q" = "close_tab";
+    };
+  });
+  applySettings = pkgs.writeShellScriptBin "tern-settings-apply" ''
+    set -euo pipefail
+    umask 077
+    directory="''${TERN_CONFIG_DIR:-$HOME/Library/Application Support/Tern}"
+    target="$directory/settings.json"
+    mkdir -p "$directory"
+    tmp=$(mktemp "$directory/.settings.json.XXXXXX")
+    trap 'rm -f "$tmp"' EXIT
+    if [ -e "$target" ]; then
+      ${pkgs.jq}/bin/jq -e -s '
+        if all(.[]; type == "object") then .[0] * .[1]
+        else error("Tern settings must be JSON objects") end
+      ' "$target" ${keyboardSettings} > "$tmp"
+    else
+      cp ${keyboardSettings} "$tmp"
+    fi
+    chmod 600 "$tmp"
+    mv -f "$tmp" "$target"
+  '';
   preflight = pkgs.writeShellScript "tern-pilot-preflight" ''
     set -euo pipefail
     ${runtime.install}
@@ -29,16 +62,18 @@
     token=$(cat "${tokenFile}")
     [[ "$token" =~ ^[0-9a-f]{64}$ ]]
     chmod 600 "${tokenFile}"
-    for log in daemon.out daemon.err web.out web.err tailnet.out tailnet.err; do
+    for log in daemon.out daemon.err web.out web.err gateway.out gateway.err tailnet.out tailnet.err; do
       touch "${stateDir}/logs/$log"
       chmod 600 "${stateDir}/logs/$log"
     done
-    # The app registers its own service. One socket needs one launchd owner;
-    # use the pilot's configured omp environment, not a second daemon loop.
-    native_service="gui/$(id -u)/so.stencil.tern.daemon"
-    /bin/launchctl disable "$native_service"
-    if /bin/launchctl print "$native_service" >/dev/null 2>&1; then
-      /bin/launchctl bootout "$native_service"
+    # Full activation establishes one socket owner. A browser-only upgrade
+    # must not disable or unload either daemon service.
+    if [ "''${1:-}" != "--web-only" ]; then
+      native_service="gui/$(id -u)/so.stencil.tern.daemon"
+      /bin/launchctl disable "$native_service"
+      if /bin/launchctl print "$native_service" >/dev/null 2>&1; then
+        /bin/launchctl bootout "$native_service"
+      fi
     fi
   '';
   daemonCommand = pkgs.writeShellScript "tern-pilot-daemon" ''
@@ -53,37 +88,57 @@
     fi
     exec "${runtime.binary}" daemon
   '';
+  tailnetIdentity = pkgs.writeShellScript "tern-pilot-tailnet-identity" ''
+    set -euo pipefail
+    ${tailscale} status --json | ${pkgs.jq}/bin/jq -ce '
+      .Self as $self |
+      (.User[($self.UserID | tostring)].LoginName // "") as $owner |
+      (($self.DNSName // "") | rtrimstr(".")) as $dns |
+      if $dns == "" or ($owner | test("^[!-~]+$") | not)
+          or (($self.Tags // []) | length) != 0 then
+        error("Tern gateway requires a user-owned Tailscale identity")
+      else
+        {publicOrigin: ("https://" + $dns + ":8377"), ownerLogin: $owner}
+      end
+    '
+  '';
   webCommand = pkgs.writeShellScript "tern-pilot-web" ''
     set -euo pipefail
-    # The arm64 DMG does not include the separately distributed WASM client.
-    # Refuse to listen until the real client has been installed, never a fallback.
+    # Cache the genuine release client and its integrity-pinned WASM locally.
+    # Never listen with missing assets or substitute a replacement client.
     if [ ! -f "${assetsDir}/index.html" ] || [ -L "${assetsDir}" ]; then
       echo "tern: browser assets missing from ${assetsDir}; web access not started" >&2
       exit 1
     fi
-    dns=$(${tailscale} status --json | ${pkgs.nodejs_24}/bin/node -e '
-      const fs = require("fs");
-      const status = JSON.parse(fs.readFileSync(0, "utf8"));
-      const name = (status.Self?.DNSName || "").replace(/\.$/, "");
-      if (!name) process.exit(1);
-      process.stdout.write(name);
-    ')
-    umask 077
-    ${pkgs.nodejs_24}/bin/node -e '
-      const fs = require("fs");
-      const [file, tokenFile, dns] = process.argv.slice(1);
-      const token = fs.readFileSync(tokenFile, "utf8").trim();
-      fs.writeFileSync(file, JSON.stringify({url: `https://''${dns}:8377/?token=''${token}`}) + "\n", {mode: 0o600});
-    ' "${stateDir}/phone-connection.json" "${tokenFile}" "$dns"
+    identity=$(${tailnetIdentity})
+    origin=$(printf '%s\n' "$identity" | ${pkgs.jq}/bin/jq -r .publicOrigin)
     exec "${runtime.binary}" web serve --listen 127.0.0.1:8377 \
       --token "${tokenFile}" --assets "${assetsDir}" \
-      --allow-origin "http://127.0.0.1:8377" --allow-origin "https://$dns:8377"
+      --allow-origin "http://127.0.0.1:8377" --allow-origin "$origin"
+  '';
+  gatewayCommand = pkgs.writeShellScript "tern-pilot-gateway" ''
+    set -euo pipefail
+    umask 077
+    identity=$(${tailnetIdentity})
+    export TERN_PUBLIC_ORIGIN="$(printf '%s\n' "$identity" | ${pkgs.jq}/bin/jq -r .publicOrigin)"
+    export TERN_OWNER_LOGIN="$(printf '%s\n' "$identity" | ${pkgs.jq}/bin/jq -r .ownerLogin)"
+    export TERN_TOKEN_FILE="${tokenFile}"
+    export TERN_WASM_FILE="${assetsDir}/pkg/stencil_tern_web_bg.wasm"
+    ${pkgs.nodejs_24}/bin/node -e '
+      const fs = require("fs");
+      const [file, origin] = process.argv.slice(1);
+      fs.writeFileSync(file, JSON.stringify({url: origin + "/"}) + "\n", {mode: 0o600});
+    ' "${stateDir}/phone-connection.json" "$TERN_PUBLIC_ORIGIN"
+    exec ${pkgs.nodejs_24}/bin/node ${./tern/gateway.mjs}
   '';
   tailnetCommand = pkgs.writeShellScript "tern-pilot-tailnet" ''
     set -eu
-    ${pkgs.curl}/bin/curl --fail --silent --output /dev/null http://127.0.0.1:8377/
+    identity=$(${tailnetIdentity})
+    owner=$(printf '%s\n' "$identity" | ${pkgs.jq}/bin/jq -r .ownerLogin)
+    ${pkgs.curl}/bin/curl --fail --silent --output /dev/null \
+      --header "Tailscale-User-Login: $owner" http://127.0.0.1:18377/
     # A new port only: do not change Paseo's 6767 route, and never enable Funnel.
-    exec ${tailscale} serve --bg --yes --https=8377 http://127.0.0.1:8377
+    exec ${tailscale} serve --bg --yes --https=8377 http://127.0.0.1:18377
   '';
   environment = {
     HOME = home;
@@ -105,9 +160,26 @@
   ];
   plist = name: pkgs.writeText "org.nixos.${name}.plist"
     config.environment.userLaunchAgents."org.nixos.${name}.plist".text;
+  cliEnvironment = pkgs.writeText "tern-pilot-cli-env.zsh" ''
+    case "$PATH" in
+      "${runtime.tern}/bin"|"${runtime.tern}/bin":*) ;;
+      *) export PATH="${runtime.tern}/bin:$PATH" ;;
+    esac
+  '';
   activate = pkgs.writeShellScriptBin "tern-pilot-activate" ''
     set -euo pipefail
+    web_only=false
+    if [ "$#" -eq 1 ] && [ "$1" = "--web-only" ]; then
+      web_only=true
+    elif [ "$#" -ne 0 ]; then
+      echo "Usage: tern-pilot-activate [--web-only]" >&2
+      exit 2
+    fi
     test "$(id -un)" = "${user}" || { echo "Run as ${user}, without sudo" >&2; exit 1; }
+    if "$web_only" && ! launchctl print "gui/$(id -u)/org.nixos.tern-pilot-daemon" >/dev/null 2>&1; then
+      echo "Web-only activation requires the managed daemon; activate the full pilot first" >&2
+      exit 1
+    fi
     umask 077
     test ! -L "${stateDir}"
     mkdir -p "${stateDir}/gcroots"
@@ -117,15 +189,33 @@
     # its referenced plists/wrappers before launchd can outlive the build.
     ${config.nix.package}/bin/nix-store --realise "$activationStore" \
       --add-root "${stateDir}/gcroots/$(basename "$activationStore")" --indirect >/dev/null
-    ${preflight}
+    if "$web_only"; then
+      ${preflight} --web-only
+    else
+      ${preflight}
+    fi
+    ${applySettings}/bin/tern-settings-apply
     mkdir -p "${home}/Library/LaunchAgents" "${home}/.local/bin"
     ${lib.concatMapStringsSep "\n" (name: ''
       target="${home}/Library/LaunchAgents/org.nixos.${name}.plist"
-      if launchctl print "gui/$(id -u)/org.nixos.${name}" >/dev/null 2>&1; then
-        cmp -s ${plist name} "$target" || {
-          echo "org.nixos.${name} is already loaded with different configuration; finish Tern turns before unloading it" >&2
+      service="gui/$(id -u)/org.nixos.${name}"
+      if "$web_only" && [ "${name}" = "tern-pilot-daemon" ]; then
+        # A browser upgrade must not stop the user's pane-owning daemon.
+        launchctl print "$service" >/dev/null 2>&1 || {
+          echo "Web-only activation requires the managed daemon; activate the full pilot first" >&2
           exit 1
         }
+      elif launchctl print "$service" >/dev/null 2>&1; then
+        if ! cmp -s ${plist name} "$target"; then
+          if ! "$web_only"; then
+            echo "org.nixos.${name} is already loaded with different configuration; finish Tern turns before unloading it" >&2
+            exit 1
+          fi
+          # Only disposable browser/route clients are replaced in this mode.
+          launchctl bootout "$service"
+          install -m 600 ${plist name} "$target"
+          launchctl bootstrap "gui/$(id -u)" "$target"
+        fi
       else
         install -m 600 ${plist name} "$target"
         launchctl bootstrap "gui/$(id -u)" "$target"
@@ -177,13 +267,36 @@
     fi
     printf '%s\n' "$(readlink "$target")" > "$receipt"
     chmod 600 "$receipt"
-    echo "Tern-only pilot activated; no Darwin switch or Paseo restart."
+    # The system profile can still contain the preceding pilot release.
+    # Use the existing private shell hook to prefer only this Tern package.
+    hook="${home}/.config/home-manager/shell/local.zsh"
+    test ! -L "$hook"
+    if [ -e "$hook" ] && [ ! -f "$hook" ]; then
+      echo "Refusing a non-file shell hook: $hook" >&2
+      exit 1
+    fi
+    install -m 600 ${cliEnvironment} "${stateDir}/cli-env.zsh"
+    hook_line='[ ! -r "$HOME/.local/state/tern-pilot/cli-env.zsh" ] || . "$HOME/.local/state/tern-pilot/cli-env.zsh"'
+    if ! ${pkgs.gnugrep}/bin/grep -qxF "$hook_line" "$hook" 2>/dev/null; then
+      printf '\n%s\n' "$hook_line" >> "$hook"
+    fi
+    if "$web_only"; then
+      echo "Tern web pilot activated; existing daemon and pane programs preserved."
+    else
+      echo "Tern-only pilot activated; no Darwin switch or Paseo restart."
+    fi
   '';
 in {
-  home-manager.users.tomas.home.packages = [runtime.tern activate];
+  home-manager.users.tomas = {lib, ...}: {
+    home.packages = [runtime.tern activate applySettings];
+    # Keep settings writable for Tern's UI; only managed keyboard keys win.
+    home.activation.ternSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      run ${applySettings}/bin/tern-settings-apply
+    '';
+  };
   system.build.ternPilot = pkgs.symlinkJoin {
     name = "tern-pilot";
-    paths = [runtime.tern activate];
+    paths = [runtime.tern activate applySettings];
   };
   system.activationScripts.extraActivation.text = lib.mkAfter ''
     echo "installing pinned Tern pilot for ${user}..." >&2
@@ -218,6 +331,20 @@ in {
         WorkingDirectory = home;
         StandardOutPath = "${stateDir}/logs/web.out";
         StandardErrorPath = "${stateDir}/logs/web.err";
+      };
+    };
+    tern-pilot-gateway = {
+      inherit environment path;
+      command = "${gatewayCommand}";
+      serviceConfig = {
+        RunAtLoad = true;
+        KeepAlive = true;
+        ProcessType = "Standard";
+        ThrottleInterval = 60;
+        Umask = 63;
+        WorkingDirectory = home;
+        StandardOutPath = "${stateDir}/logs/gateway.out";
+        StandardErrorPath = "${stateDir}/logs/gateway.err";
       };
     };
     tern-pilot-tailnet = {
