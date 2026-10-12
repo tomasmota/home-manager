@@ -22,6 +22,7 @@
   (builtins.all (name: builtins.pathExists (./jev + "/${name}")) [
     "auto-approve-jev.ts"
     "decision-audit.js"
+    "infra-guard.js"
     "jev-client.js"
     "permission-review.js"
     "tmux-title.ts"

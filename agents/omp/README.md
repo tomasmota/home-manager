@@ -242,18 +242,43 @@ including `secrets.env`, into the Nix store. Running sessions and
 
 ## Permission review
 
-`jev/permission-review.js`, `jev-client.js` and `decision-audit.js` are locally
-owned reviewer modules; edit them here. Read-only tools and `task` spawns skip
-review; everything else is scored by Jev, with `openai-codex/gpt-5.6-luna` then
-`inco/glm-5.3-flash:fast` as direct omp-provider fallbacks. Knobs are the
-`OMP_JEV_*` environment variables documented at the top of `permission-review.js`
-(exhaustion default: allow). `OMP_SECRETS_FILE` overrides the secret-file fallback;
-`OMP_REVIEW_DIR` overrides the reviewed project directory. Opt-in permission
-audits default to `${XDG_STATE_HOME:-$HOME/.local/state}/omp/jev-auto-approve/decisions.jsonl`.
-Subagents inherit the
-extensions but always run `yolo`; if an extension fails to load, its review is
-absent, so check startup warnings after changing extension code. Extension
-changes need a new omp process, not `/reload-plugins`.
+`jev/permission-review.js`, `infra-guard.js`, `jev-client.js` and
+`decision-audit.js` are locally owned reviewer modules; edit them here.
+Read-only tools and `task` spawns skip review. A `write xd://<tool>` that omp
+re-dispatches to a registered tool (MCP tools, `lsp`, `debug`, `ast_edit`, ...)
+is reviewed once, as that tool's own call; self-handled devices
+(`report_issue`, `resolve`, `reject`, `propose`) and unknown devices are
+reviewed as the write. Every reviewed call first meets deterministic denies
+that no reviewer, threshold or outage can loosen: catastrophic commands, then
+`infra-guard.js`. The guard parses bash commands
+(and local shell scripts they run), eval code and executable xd:// device
+arguments, seeing through `bash -c`, wrappers such as `sudo`/`env`/`xargs`,
+`ssh`, `tmux send-keys` and subprocess calls. It does not inspect write/edit
+content or files passed to node/python. It hard-denies:
+
+- any non-read-only kubectl/helm/IaC/cloud/database/ssh call whose target, or
+  any token of the command, is `prod`, `production` or `prd`, or a name in
+  `OMP_JEV_PROTECTED_TARGETS` (comma-separated; keep internal names there,
+  not in this repo);
+- destructive calls (delete, destroy, uninstall, drain, `DROP TABLE`, ...)
+  unless an explicit target names a non-production environment (dev, test,
+  staging, sandbox, kind, ...); implicit defaults count as unknown;
+- force-pushes or deletions of main/master/release/prod branches, and
+  repository deletion.
+
+Remaining infrastructure mutations go to Jev, which also asks a
+production-impact question, then to `openai-codex/gpt-5.6-luna` and
+`inco/glm-5.3-flash:fast` as direct omp-provider fallbacks. When reviewers are
+unavailable these mutations deny regardless of `OMP_JEV_ON_EXHAUSTION`; other
+actions follow it (default: allow). Knobs are the `OMP_JEV_*` environment
+variables documented at the top of `permission-review.js`.
+`OMP_SECRETS_FILE` overrides the secret-file fallback; `OMP_REVIEW_DIR`
+overrides the reviewed project directory. Opt-in permission audits default to
+`${XDG_STATE_HOME:-$HOME/.local/state}/omp/jev-auto-approve/decisions.jsonl`.
+Regression checks: `node --test agents/omp/jev/permission-review.test.mjs agents/omp/jev/auto-approve-jev.test.mjs`.
+Subagents inherit the extensions but always run `yolo`; if an extension fails
+to load, its review is absent, so check startup warnings after changing
+extension code. Extension changes need a new omp process, not `/reload-plugins`.
 
 MCP policy leaves denied tools mounted and visible in context, accepting that
 overhead to avoid repeated mount/unmount notices at prompt and turn boundaries.

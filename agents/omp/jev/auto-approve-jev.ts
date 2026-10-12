@@ -34,11 +34,37 @@ export type AutoApproveJevDeps = { requestJev?: RequestJev; completeSimple?: Com
 
 // Subagent creation never executes by itself; children inherit the policy
 // extensions, so delegation runs without a parent review. Native read-only
-// and scheduling tools skip as well. Everything else, including `write`
-// (also xd:// device dispatch) and `eval`, is reviewed.
+// and scheduling tools skip as well. Everything else, including `write` and
+// `eval`, is reviewed; a `write xd://<tool>` that omp re-dispatches to a
+// registered tool is reviewed once, as that tool's own call (see
+// `reviewedAsInnerToolCall`).
 // Membership is checked with `=== true` so inherited keys never match.
 export const SKIPPED_TOOLS: Record<string, true> = {
   read: true, grep: true, glob: true, find: true, web_search: true, ask: true, todo: true, wait: true, task: true,
+}
+
+// omp handles these xd:// names itself, before its tool registry, so their
+// writes run without a nested `tool_call`; a same-named registered tool never
+// receives them.
+const SELF_HANDLED_DEVICES: Record<string, true> = { report_issue: true, resolve: true, reject: true, propose: true }
+
+// `write xd://<tool>` hands its JSON arguments to the session's registered
+// tool, whose omp wrapper emits a nested `tool_call` (same toolCallId, the
+// tool's own name and validated arguments) before anything runs. Only that
+// inner call is reviewed. Deferral needs the canonical `xd://<name>` spelling
+// and a name omp dispatches through the registry (`getActiveTools()`: enabled
+// tools plus mounted devices); self-handled devices, unknown names, other
+// spellings or a failing lookup keep the outer review.
+export function reviewedAsInnerToolCall(event: ToolCallEvent, host: { getActiveTools(): string[] }): boolean {
+  const path = event.input?.path
+  if (event.toolName !== "write" || typeof path !== "string" || !path.startsWith("xd://")) return false
+  const name = path.slice("xd://".length)
+  if (!/^[\w.-]+$/.test(name) || SELF_HANDLED_DEVICES[name] === true) return false
+  try {
+    return host.getActiveTools().includes(name)
+  } catch {
+    return false
+  }
 }
 
 const NO_AUTH = "N/A"
@@ -180,8 +206,11 @@ export async function reviewToolCall(
 }
 
 export default function autoApproveJev(
-  pi: { on(event: "tool_call", handler: (event: ToolCallEvent, ctx: ToolCallContext) => Promise<ToolCallResult>): void },
+  pi: {
+    on(event: "tool_call", handler: (event: ToolCallEvent, ctx: ToolCallContext) => Promise<ToolCallResult>): void
+    getActiveTools(): string[]
+  },
   deps: AutoApproveJevDeps = {},
 ): void {
-  pi.on("tool_call", (event, ctx) => reviewToolCall(event, ctx, deps))
+  pi.on("tool_call", async (event, ctx) => (reviewedAsInnerToolCall(event, pi) ? undefined : reviewToolCall(event, ctx, deps)))
 }
