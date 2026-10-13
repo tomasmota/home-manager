@@ -75,6 +75,7 @@
   - Private machine skills stay in `~/.agents/local-skills/`; team skills stay in `~/.agents/team-skills/`. Never copy their contents into this public repo.
   - Keep the existing skill frontmatter style (`name`, `description`, and `metadata`) and usage-oriented sections.
 - Documentation:
+  - Across the repo, keep `README.md` and `AGENTS.md` additions to one or two sentences or a few short bullets; link existing guidance instead of repeating it.
   - Keep READMEs to durable guidance: purpose, setup, operation, upgrades, safety boundaries, private-state locations and withdrawal.
   - Pins and hashes belong in configuration, not prose. Do not add dated checkpoints, verification logs, smoke markers, PIDs, version-specific test results or incident narratives.
 

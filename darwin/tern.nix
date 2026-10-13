@@ -18,6 +18,12 @@
     rev = "13d3cca8bbd8f055431f8eb3caa434a22e966f8f";
     hash = "sha256-9QW++GEcXzvr+csjAsUtr139KKH9jfeJ5ery7fKc4rc=";
   };
+  ternKube = pkgs.fetchFromGitHub {
+    owner = "contrafy";
+    repo = "tern-kube";
+    rev = "220aa65c78eeb6f3a92f55e67561da3c111410fd";
+    hash = "sha256-hPwAUVqtIvqcgcGapoKzk0NRZya5/USEfZecK5v3kQI=";
+  };
   labels = ["tern-pilot-daemon" "tern-pilot-web" "tern-pilot-gateway" "tern-pilot-tailnet"];
   keyboardSettings = pkgs.writeText "tern-keyboard-settings.json" (builtins.toJSON {
     keymap = "tmux";
@@ -319,6 +325,7 @@ in {
       "${ternSdk}/plugins/examples/terraform";
     home.file."Library/Application Support/Tern/plugins/jsonx".source =
       "${ternSdk}/plugins/examples/jsonx";
+    home.file."Library/Application Support/Tern/plugins/tern-kube".source = ternKube;
     # Keep settings writable for Tern's UI; only managed keyboard keys win.
     home.activation.ternSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
       run ${applySettings}/bin/tern-settings-apply

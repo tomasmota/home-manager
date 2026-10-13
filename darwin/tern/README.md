@@ -179,6 +179,11 @@ Use **Toggle JSON explorer for .json opens** to disable automatic routing;
 reloads it. Files over 4 MiB are refused. For remote files, install the plugin
 on their host too, or disable automatic routing.
 
+## Kubernetes plugin
+
+Home Manager pins [Tern Kube](https://github.com/contrafy/tern-kube) in `darwin/tern.nix`; settings live at `~/.config/tern-kube/config.json`, and the optional shell guard stays off.
+Use trusted kubeconfigs and manifests; mutation previews and secret masking are advisory, not security guarantees.
+
 ## Services and private state
 
 LaunchAgents live in `~/Library/LaunchAgents/` as `<label>.plist` and run in the
