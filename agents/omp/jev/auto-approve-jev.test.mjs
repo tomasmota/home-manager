@@ -77,7 +77,6 @@ test("re-dispatched devices are reviewed once, as the inner tool call", async ()
     ["lsp", { action: "status" }],
     ["debug", { action: "sessions" }],
     ["mcp__chrome_devtools_click", { uid: "1_2" }],
-    ["bash", { command: "ls" }],
   ]) {
     const { calls, call } = load()
     // omp order: the loop emits the outer write, then the device dispatch

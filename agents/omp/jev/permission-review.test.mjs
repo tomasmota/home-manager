@@ -150,11 +150,8 @@ const NOT_HARD_DENIED = [
   bash("terramate run -- tofu plan"),
   bash("gcloud --project acme-prod compute instances list"),
   bash("rm -rf node_modules dist"),
-  bash("git status"),
-  bash("git push origin feature/x"),
   bash("npm run build"),
   bash("echo product"),
-  bash("grep -r prod src/"),
   bash("cat production.log"),
   bash("node --test agents/omp/jev/permission-review.test.mjs"),
   { action: "write", resources: ["path: notes.md", "content: kubectl --context prod delete ns payments"] },
@@ -168,6 +165,78 @@ for (const item of NOT_HARD_DENIED) {
     assert.equal(result.calls.jev, 1)
   })
 }
+
+test("trusted executables and their subcommands bypass unavailable reviewers", async () => {
+  for (const command of [
+    "tern ctl state",
+    "/Users/test/.local/bin/tern ctl key Enter",
+    "~/bin/tern serve --control /tmp/tern.sock",
+    "tern ctl state && tern ctl tree",
+    "nix build .#example",
+    "nix run nixpkgs#hello",
+    "nix store delete /nix/store/example",
+    "nix eval --expr '\"$literal\"'",
+    "nix build .#example && tern ctl state",
+    "git status",
+    "/usr/bin/git diff",
+    "git add .",
+    "git commit -m 'local development'",
+    "git push origin feature/x",
+    "cd /tmp && ls",
+    "strings /bin/ls | grep pattern",
+    "grep -r prod src/",
+    "pgrep -fl example",
+  ]) {
+    const result = await withEnv("OMP_JEV_ON_EXHAUSTION", "manual",
+      () => review("bash", [command], { jev: "down", fallback: "down" }))
+    assert.equal(result.effect, "allow", command)
+    assert.equal(result.calls.jev, 0, command)
+    assert.equal(result.calls.fallback, 0, command)
+  }
+})
+
+test("trusted commands cannot exempt excluded executables or shell side effects", async () => {
+  for (const command of [
+    "tern ctl state && echo unrelated",
+    "echo unrelated; nix build .#example",
+    "nix build .#example | cat",
+    "tern ctl state > /tmp/output",
+    "tern ctl state <<EOF\n$(echo unrelated)\nEOF",
+    "tern ctl key \"$(echo unrelated)\"",
+    "nix eval --expr \"${value:-$(echo unrelated)}\"",
+    "tern ctl key \"'${value:-$(echo unrelated)}'\"",
+    "tern ctl key `echo unrelated`",
+    "tern ctl key <(echo unrelated)",
+    "env FOO=1 nix build .#example",
+    "nix-wrapper build .#example",
+    "tern ctl key \"unterminated",
+    "node --test example.test.mjs",
+    "glab api projects",
+    "command -v git",
+    "rm -rf ./build",
+    "ssh localhost 'ls /tmp'",
+    "git status && rm -rf ./build",
+    "cd /tmp && node --version",
+    "ls\nssh localhost 'ls /tmp'",
+  ]) {
+    const result = await withEnv("OMP_JEV_ON_EXHAUSTION", "manual",
+      () => review("bash", [command], { jev: "down", fallback: "down" }))
+    assert.equal(result.effect, "ask", command)
+    assert.equal(result.calls.jev, 1, command)
+    assert.ok(result.calls.fallback > 0, command)
+  }
+})
+
+test("trusted commands do not weaken deterministic denies or existing denials", async () => {
+  const result = await review("bash", ["tern ctl state && kubectl --context prod delete ns payments"])
+  assert.equal(result.effect, "deny")
+  assert.equal(result.calls.jev, 0)
+  const event = { effect: "deny", sessionID: "test", action: "bash", resources: ["nix build .#example"] }
+  const deps = stubs()
+  await createPermissionEvaluator({ ...deps, directory: "/repo" })(event)
+  assert.equal(event.effect, "deny")
+  assert.equal(deps.calls.jev, 0)
+})
 
 test("flagged infrastructure mutations fail closed when reviewers are unavailable", async () => {
   for (const setting of [undefined, "allow", "manual"]) {

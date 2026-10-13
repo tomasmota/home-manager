@@ -139,12 +139,25 @@ After Ctrl+Space:
 
 | Key | Action |
 | --- | --- |
+| `Space` | Return to the last visited tab (tmux `last-window`) |
+| `Tab` | Next session |
+| `Shift+Tab` | Previous session |
 | `h` / `j` / `k` / `l` | Focus left / down / up / right |
 | `v` | Split right |
 | `s` | Split down |
 | `q` | Close the focused pane |
 | `Ctrl+q` | Close the active tab, including all its panes |
 | `c` | New tab (unchanged tmux preset default) |
+
+Session cycling is native-only. The local `session-navigation` window plugin
+uses Tern's session-list order, wraps in either direction, and switches directly
+to each session's remembered tab and pane without traversing its other tabs.
+One session is a no-op; switching does not stop programs. Window plugins do not
+run in the browser client, so these two bindings are unavailable there.
+`tern-settings-apply` also installs the managed plugin symlink from
+`darwin/tern/session-navigation`; Home Manager and pilot activation use the same
+command. Tern watches the plugin directory and reloads plugins without a daemon
+restart.
 
 A tmux window corresponds to a Tern tab, not an entire native macOS window.
 To apply only these settings from a built pilot, run

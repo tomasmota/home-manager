@@ -3,8 +3,8 @@
 //
 // Order: read-only auto-allow; deterministic denies (catastrophic commands, then
 // ./infra-guard.js for production and destructive infrastructure operations);
-// Jev; LLM fallback; exhaustion default. Deterministic denies are final, and
-// infrastructure mutations the guard flags fail closed when reviewers are down.
+// trusted commands; Jev; LLM fallback; exhaustion default.
+// Deterministic denies are final, and flagged infrastructure mutations fail closed.
 //
 // Runtime configuration:
 //   TYPESAFE_API_KEY                         required for Jev; falls back to ~/.config/home-manager/secrets.env, then LLM
@@ -31,7 +31,7 @@ import {
   requestJev,
 } from "./jev-client.js"
 import { writeDecisionAudit } from "./decision-audit.js"
-import { guardPermission } from "./infra-guard.js"
+import { guardPermission, parseShell } from "./infra-guard.js"
 
 const REVIEW_POLICY = `You are the permission reviewer for an AI coding agent on a developer workstation.
 ALLOW ordinary development work: editing, building, testing, package management, local git (including
@@ -125,6 +125,40 @@ const AUTO_ALLOW_ACTIONS = new Set([
 
 function isAutoAllowable(req) {
   return AUTO_ALLOW_ACTIONS.has(String(req.action).toLowerCase())
+}
+
+const TRUSTED_COMMANDS = new Set(["tern", "git", "nix", "cd", "ls", "strings", "grep", "pgrep"])
+
+function isTrustedCommand(req) {
+  if (req.action !== "bash") return false
+  const command = req.resources[0]
+  // The guard's parser leaves ${...} opaque. Reject shell expansions outside
+  // single quotes so nested substitutions cannot smuggle in another command.
+  let quote = null
+  for (let i = 0; i < command.length; i++) {
+    const char = command[i]
+    if (quote === "'") {
+      if (char === "'") quote = null
+      continue
+    }
+    if (char === "\\") {
+      i++
+      continue
+    }
+    if (char === "'" && quote !== '"') quote = "'"
+    else if (char === '"') quote = quote === '"' ? null : '"'
+    else if (char === "$" || char === "`") return false
+  }
+  if (quote) return false
+  const parsed = parseShell(command)
+  return parsed.substitutions.length === 0 && parsed.segments.length > 0 &&
+    parsed.segments.every((segment) => {
+      const executable = segment.words[0]?.value || ""
+      const name = executable.slice(executable.lastIndexOf("/") + 1)
+      return (executable === name || executable.startsWith("/") || executable.startsWith("~/")) &&
+        TRUSTED_COMMANDS.has(name) &&
+        segment.redirects.length === 0 && segment.stdin.length === 0
+    })
 }
 
 function stringList(value) {
@@ -407,6 +441,13 @@ export function createPermissionEvaluator({ generate, directory, requestJev: req
         return
       }
       if (guard?.decision === "infra") infraMutation = guard.summary.slice(0, 400)
+
+      if (!infraMutation && isTrustedCommand(req)) {
+        event.effect = "allow"
+        event.message = undefined
+        await audit("allow", "auto-allow", "trusted_command")
+        return
+      }
 
       let decision
       let jevModel

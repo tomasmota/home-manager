@@ -295,6 +295,19 @@ content or files passed to node/python. It hard-denies:
 - force-pushes or deletions of main/master/release/prod branches, and
   repository deletion.
 
+Direct `tern`, `git`, `nix`, `cd`, `ls`, `strings`, `grep` and `pgrep` bash
+commands auto-allow after these hard denies, without Jev or fallback requests.
+All subcommands are trusted, including ordinary Git writes and command execution
+through `tern` and `nix run`; this is not a read-only rule. Bare names, absolute
+paths and `~/` paths are supported, as are compound commands and pipelines
+containing only these executables. Other executables, shell expansions,
+redirections and wrappers such as `env` still go through normal review.
+`node`, `glab`, `command`, `rm` and `ssh` are explicitly not in the trusted set,
+including when chained after `cd` or another trusted command.
+Guard-flagged infrastructure mutations never use this bypass. Audits label
+the bypass `source: auto-allow`, `reasonCode: trusted_command`,
+`jevOutcome: not_called`.
+
 Remaining infrastructure mutations go to Jev, which also asks a
 production-impact question, then to `openai-codex/gpt-5.6-luna` and
 `inco/glm-5.3-flash:fast` as direct omp-provider fallbacks. When reviewers are

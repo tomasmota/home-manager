@@ -33,6 +33,9 @@
       "ctrl+space>8" = "goto_tab:8";
       "ctrl+space>9" = "goto_tab:9";
       "ctrl+space>0" = "goto_tab:10";
+      "ctrl+space>space" = "show_previous_tab";
+      "ctrl+space>tab" = "plugin.session-navigation.next";
+      "ctrl+space>shift+tab" = "plugin.session-navigation.previous";
       "ctrl+space>h" = "focus_pane:left";
       "ctrl+space>j" = "focus_pane:down";
       "ctrl+space>k" = "focus_pane:up";
@@ -49,6 +52,11 @@
     directory="''${TERN_CONFIG_DIR:-$HOME/Library/Application Support/Tern}"
     target="$directory/settings.json"
     mkdir -p "$directory"
+    plugin="$directory/plugins/session-navigation"
+    if [ -e "$plugin" ] && [ ! -L "$plugin" ]; then
+      echo "Tern session-navigation path is not a symlink; refusing replacement" >&2
+      exit 1
+    fi
     tmp=$(mktemp "$directory/.settings.json.XXXXXX")
     trap 'rm -f "$tmp"' EXIT
     if [ -e "$target" ]; then
@@ -61,6 +69,8 @@
     fi
     chmod 600 "$tmp"
     mv -f "$tmp" "$target"
+    mkdir -p "$directory/plugins"
+    ln -sfn ${./tern/session-navigation} "$plugin"
   '';
   preflight = pkgs.writeShellScript "tern-pilot-preflight" ''
     set -euo pipefail

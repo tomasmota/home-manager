@@ -1,0 +1,6 @@
+schema = 1
+id = "session-navigation"
+name = "Session navigation"
+version = "0.1.0"
+description = "Cycle between sessions without traversing their tabs."
+window = "window.luau"

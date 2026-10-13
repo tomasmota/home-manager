@@ -91,8 +91,8 @@
 
   # Reapplied on every switch: wins over anything set at runtime.
   policy = {
-    # `yolo` is only safe while jev/auto-approve-jev.ts reviews every
-    # executable action first. Explicit bash denies stay authoritative.
+    # `yolo` relies on jev/auto-approve-jev.ts: hard guards, trusted commands,
+    # then review of other actions. Explicit bash denies stay authoritative.
     tools.approvalMode = "yolo";
     todo.enabled = false;
     bash.patterns =
