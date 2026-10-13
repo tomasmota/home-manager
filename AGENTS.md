@@ -76,8 +76,8 @@
   - Keep the existing skill frontmatter style (`name`, `description`, and `metadata`) and usage-oriented sections.
 - Documentation:
   - Across the repo, keep `README.md` and `AGENTS.md` additions to one or two sentences or a few short bullets; link existing guidance instead of repeating it.
-  - Keep READMEs to durable guidance: purpose, setup, operation, upgrades, safety boundaries, private-state locations and withdrawal.
-  - Pins and hashes belong in configuration, not prose. Do not add dated checkpoints, verification logs, smoke markers, PIDs, version-specific test results or incident narratives.
+  - READMEs consume agent context: include only factual, relevant, permanent information needed for future work that is not obvious from the corresponding code.
+  - Omit history, checkpoints, incident narratives, verification logs and other transient details; keep pins and hashes in configuration.
 
 ## Safety and Gotchas
 - `git.nix` writes `allowed_signers` files during activation; keep this behavior in mind when changing git/signing config.
