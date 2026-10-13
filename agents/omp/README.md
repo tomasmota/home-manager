@@ -110,6 +110,35 @@ omp login typesafe       # Jev review; also the judge role if you set one
 Inco reads `INCO_API_KEY` from `secrets.env`. Jev review falls back to
 `TYPESAFE_API_KEY` there.
 
+## Inco models
+
+`default.nix` declares `inco/glm-5.3` and `inco/glm-5.3-flash` using
+`https://api.inco.ai/v1` with omp's `openai-completions` transport. The provider's
+`apiKey` is the environment variable name `INCO_API_KEY`, never a credential.
+Authenticated `/v1/models` metadata advertises a 1,048,576-token context and
+reasoning-effort support for both standard IDs. Prices per million tokens
+(input / cached input / output) are $1.40 / $0.26 / $4.40 for GLM 5.3 and
+$0.15 / $0.03 / $0.50 for Flash. The metadata does not advertise an output-token
+limit or input modalities for these standard routes, so their declarations
+leave the output limit to omp's default and enable text input only.
+The existing `inco/glm-5.3-flash:fast` route is retained unchanged for explicit
+callers; adding the standard routes does not select a default or change roles.
+
+Home Manager generates `~/.omp/agent/models.yml` from this declaration. To
+activate only that generated file without a privileged rebuild, run from this
+checkout:
+
+```sh
+models_path=$(nix build --no-link --print-out-paths \
+  '.#darwinConfigurations.macbook.config.home-manager.users.tomas.home.file.".omp/agent/models.yml".source')
+ln -sfn "$models_path" "$HOME/.omp/agent/models.yml"
+```
+
+This uses the same generated Nix store file as Home Manager's normal link
+activation; it does not modify `config.yml`, defaults, roles or credentials.
+Start a fresh omp process to load the models. `omp models --json` lists the live
+catalog without making a generation request.
+
 ## Google Developer Knowledge MCP
 
 `mcp.json` registers Google's hosted documentation server through the local

@@ -10,6 +10,13 @@ browser-packaging blocker and adoption criteria.
 
 ## Status and prerequisites
 
+**Blocked by mobile usability (2026-10-13).** The phone trial reports that
+scrolling up through omp does not work and the unusable right-hand scrollbar
+opens the software keyboard unexpectedly. Tern does not meet the pilot's
+phone-workflow requirement. Keep Paseo, Ghostty and tmux available; no scrolling
+fix or phone workaround has been verified. See the [current checkpoint](PILOT.md#current-checkpoint-2026-10-13--mobile-usability-blocked)
+for related upstream reports and physical-phone acceptance criteria.
+
 The pinned **0.8.2** release embeds the real browser HTML, JavaScript and icons.
 Its matching WASM is distributed separately by Stencil. The complete client is
 cached privately at `~/.local/share/tern-web/0.8.2/`, with `index.html` at the
@@ -23,8 +30,9 @@ integrity-checked WASM. Browser keyboard input returned `Darwin:arm64` and
 `RESULT:42`; the persistent HTTPS endpoint returned `TAILNET_MAC_WEB:Darwin:42`.
 A real omp **18.9.2** / **GPT-6.1-Sol** turn returned `42` from a prompt entered
 through that HTTPS browser. Reloading retained the same pane and conversation;
-the live reply also rendered at a 412 × 915 phone-sized viewport. Physical
-Android operation remains separate acceptance.
+the live reply also rendered at a 412 × 915 phone-sized viewport. That desktop
+viewport check does not prove physical-phone touch scrolling or keyboard/focus
+behavior; the subsequent phone trial failed scrolling acceptance.
 
 The phone entrypoint now uses the plain HTTPS origin, without `?token=`.
 An owner-only Tailscale Serve gateway authenticates the requester and injects

@@ -34,14 +34,42 @@
     ./jev;
 
   # Inco is not an omp builtin. INCO_API_KEY comes from secrets.env (sourced
-  # by zsh). Inco reports reasoning_effort unsupported for this SKU; `:fast`
-  # is part of its literal model id, not a thinking level.
+  # by zsh). Standard model metadata advertises reasoning_effort support.
+  # Keep the existing `:fast` route for callers that select it explicitly.
   models = {
     providers.inco = {
       baseUrl = "https://api.inco.ai/v1";
       api = "openai-completions";
       apiKey = "INCO_API_KEY";
       models = [
+        {
+          id = "glm-5.3";
+          name = "GLM 5.3";
+          reasoning = true;
+          input = ["text"];
+          cost = {
+            input = 1.4;
+            output = 4.4;
+            cacheRead = 0.26;
+            cacheWrite = 0;
+          };
+          contextWindow = 1048576;
+          compat.supportsReasoningEffort = true;
+        }
+        {
+          id = "glm-5.3-flash";
+          name = "GLM 5.3 Flash";
+          reasoning = true;
+          input = ["text"];
+          cost = {
+            input = 0.15;
+            output = 0.5;
+            cacheRead = 0.03;
+            cacheWrite = 0;
+          };
+          contextWindow = 1048576;
+          compat.supportsReasoningEffort = true;
+        }
         {
           id = "glm-5.3-flash:fast";
           name = "GLM-5.3-Flash (Fast)";

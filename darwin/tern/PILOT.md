@@ -1,8 +1,9 @@
 # Tern pilot: purpose, checkpoint and next steps
 
-Checkpoint: **2026-10-12**. Current verification is recorded below; the
-2026-10-11 observations are retained as history. See [README.md](README.md)
-for build, activation, private-state handling and withdrawal commands.
+Checkpoint: **2026-10-13 — blocked by mobile scrolling**. The phone trial
+failed the core omp usability requirement. Earlier desktop/browser verification
+is retained below. See [README.md](README.md) for build, activation,
+private-state handling and withdrawal commands.
 
 ## Purpose
 
@@ -17,7 +18,45 @@ not automatically imported into Tern. Attaching an existing tmux session is a
 possible ANSI bridge; direct omp in a Tern pane is the native Tern Surface
 Protocol (TSP) path.
 
-## Current checkpoint: 2026-10-12
+## Current checkpoint: 2026-10-13 — mobile usability blocked
+
+The owner reports that omp is not usable from the phone:
+
+- Scrolling up through the conversation does not work.
+- The right-hand scrollbar is unusable on touch; interacting with it opens
+  the software keyboard unexpectedly.
+- Other mobile usability issues remain, but transcript scrolling is the
+  primary blocker.
+
+This is a **failed mobile acceptance check**, not a completed phone workflow
+or a minor UI issue. The earlier 412 × 915 desktop-browser rendering, real omp
+turn and reload checks prove only those exercised paths; they do not prove
+physical-phone touch scrolling or keyboard/focus behavior. No scrolling fix,
+device-specific workaround or root cause has been verified.
+
+### Upstream issue check
+
+Checked all 46 issues in the [public Tern tracker](https://github.com/stencil-hq/tern-sdk/issues),
+including the relevant scrolling discussion. No exact report of failed phone
+touch scrolling plus scrollbar-triggered keyboard opening was found.
+Related open reports are not confirmed duplicates:
+
+- [#5](https://github.com/stencil-hq/tern-sdk/issues/5): Mac trackpad scrolling
+  accidentally triggers tab gestures; a second user confirms it.
+- [#17](https://github.com/stencil-hq/tern-sdk/issues/17): scrolling an omp
+  Console transcript leaves ghost rows on Linux.
+- [#28](https://github.com/stencil-hq/tern-sdk/issues/28): virtual-list selection
+  changes blank the rows until mouse scrolling or scrollbar dragging.
+- [#43](https://github.com/stencil-hq/tern-sdk/issues/43): an iPhone web client
+  repeatedly reconnects with a Windows host, also reproduced on desktop.
+
+None demonstrates a fix for this phone-scrolling symptom. A separate upstream
+report is warranted; none was filed during this investigation.
+
+Keep Paseo, Ghostty and tmux available. Do not adopt Tern as the phone workflow
+until the physical-phone acceptance checks below pass.
+
+## Previous checkpoint: 2026-10-12
 
 - Pulled the companion homelab checkout. Its working Linux browser deployment
   runs Tern 0.8.1; it was not upgraded or reconfigured.
@@ -61,8 +100,9 @@ Protocol (TSP) path.
   offline installer regressions passed.
 
 Physical Android operation, phone reconnection, approvals and a full shared
-omp handoff have not been exercised in this change window. Browser/PTY proof
-does not claim those device-specific checks or a completed terminal cutover.
+omp handoff were not exercised at this checkpoint. The subsequent phone trial
+reported above failed scrolling acceptance; browser/PTY proof does not override
+that finding.
 
 ## Previous checkpoint: 2026-10-11
 
@@ -169,11 +209,19 @@ FileVault reboot before login.
 
 ## Remaining adoption checks
 
-The browser-packaging prerequisite is now resolved. Before replacing the
-existing phone workflow, exercise one live omp process across laptop and
-physical Android: shared output, typing, scrolling, a real turn, an
-input/approval interaction, phone reconnect and return to the Mac without a
-second transcript writer. Keep Paseo available during that trial.
+The browser-packaging prerequisite is resolved; **mobile scrolling remains a
+blocking failure**. Before replacing the existing phone workflow, verify on a
+physical Android phone that:
+
+- A finger swipe scrolls backward and forward through a long omp conversation,
+  making earlier messages readable without opening the software keyboard.
+- Scrolling and scrollbar interaction do not steal composer focus; deliberate
+  composer focus opens the keyboard and allows typing and a real omp turn.
+- One live omp process supports shared output, an input/approval interaction,
+  phone reconnect and return to the Mac without a second transcript writer.
+
+Keep Paseo available. Phone-sized desktop rendering is not a substitute for
+these checks, and the pilot remains blocked until they pass.
 
 The native daemon cutover is separate from the working browser deployment.
 Finish existing pane work before replacing its managed launchd owner; no
