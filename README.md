@@ -76,8 +76,7 @@ nix flake update
   flake input. Its native configuration lives in `agents/omp/`, alongside shared
   instructions and public skills discovered through standard `~/.agents/` paths.
   See `agents/omp/README.md`.
-- OpenChamber is accessed through the homelab web UI. No OpenCode runtime,
-  OpenChamber desktop/backend or subscription gateway is installed locally.
+- OpenChamber is used through the homelab web UI; nothing is installed locally.
 
 ## Optional work git config + signing
 

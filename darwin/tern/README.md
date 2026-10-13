@@ -1,44 +1,24 @@
 # Stencil Tern parallel pilot
 
 This is [Stencil's Rust-native Tern](https://stencil.so/tern), not tern.build.
-It runs alongside the existing Paseo, tmux and Ghostty setup; Paseo's port
-6767 and current omp installation are unchanged. No full Darwin switch is
-needed for the pilot.
+It runs alongside Paseo, tmux and Ghostty without changing them or Paseo's
+port 6767. The pilot does not need a full Darwin switch.
 
-See [the pilot checkpoint](PILOT.md) for current verification, the earlier
-browser-packaging blocker and adoption criteria.
+See [PILOT.md](PILOT.md) for the pilot's purpose, status and adoption checks.
 
-## Status and prerequisites
+## Prerequisites
 
-**Blocked by mobile usability (2026-10-13).** The phone trial reports that
-scrolling up through omp does not work and the unusable right-hand scrollbar
-opens the software keyboard unexpectedly. Tern does not meet the pilot's
-phone-workflow requirement. Keep Paseo, Ghostty and tmux available; no scrolling
-fix or phone workaround has been verified. See the [current checkpoint](PILOT.md#current-checkpoint-2026-10-13--mobile-usability-blocked)
-for related upstream reports and physical-phone acceptance criteria.
+Use the authenticated Apple Silicon release from Stencil and its matching
+browser client. The browser HTML, JavaScript and icons come from the app;
+its matching WASM is distributed separately. Cache the complete client at
+`~/.local/share/tern-web/<version>/`, with `index.html` at the root and the
+WASM at `pkg/stencil_tern_web_bg.wasm`. Serve the WASM locally while retaining
+the release's SHA-384 integrity check.
 
-The pinned **0.8.2** release embeds the real browser HTML, JavaScript and icons.
-Its matching WASM is distributed separately by Stencil. The complete client is
-cached privately at `~/.local/share/tern-web/0.8.2/`, with `index.html` at the
-root and the WASM at `pkg/stencil_tern_web_bg.wasm`. The page serves that WASM
-locally and retains the signed release's SHA-384 integrity check. The old
-0.7.2 missing-client blocker no longer applies to this release.
-
-Verified on this Mac: notarized arm64 `tern 0.8.2 (44c7f76)` installation,
-the genuine browser client over loopback and Tailnet HTTPS, and locally served
-integrity-checked WASM. Browser keyboard input returned `Darwin:arm64` and
-`RESULT:42`; the persistent HTTPS endpoint returned `TAILNET_MAC_WEB:Darwin:42`.
-A real omp **18.9.2** / **GPT-6.1-Sol** turn returned `42` from a prompt entered
-through that HTTPS browser. Reloading retained the same pane and conversation;
-the live reply also rendered at a 412 × 915 phone-sized viewport. That desktop
-viewport check does not prove physical-phone touch scrolling or keyboard/focus
-behavior; the subsequent phone trial failed scrolling acceptance.
-
-The phone entrypoint now uses the plain HTTPS origin, without `?token=`.
+The phone entrypoint uses the plain HTTPS origin, without `?token=`.
 An owner-only Tailscale Serve gateway authenticates the requester and injects
 the private token into the loopback backend's WebSocket handshake. The browser
-never receives that token. The previous bare-origin handoff failed because
-the native web server rejected requests with no token.
+never receives that token.
 
 The web client supports **only its serving machine**. Its Add remote host
 dialog explicitly rejects other hosts; multi-host connections belong to the
@@ -46,46 +26,37 @@ native Tern app. The Mac browser endpoint and a separate Linux endpoint remain
 independent. Native Stencil-account sign-in and omp-provider authentication are
 separate from the web server's private bearer token.
 
-The browser upgrade deliberately retained the running native app and daemon
-at **0.7.2**. The 0.8.2 web/CLI clients interoperated with that daemon, and all
-five original pane IDs and both original process IDs were preserved. This is
-not a claim that every 0.8.2 feature works with the older daemon.
+## Runtime and activation
 
-## Pinned runtime and activation
+[`runtime/default.nix`](runtime/default.nix) owns the pinned version, DMG
+digest and bundle identity. Cache the matching download at
+`~/.cache/tern/Tern-<version>-macos-arm64.dmg` after signing in at
+[the build portal](https://build.stencil.so/tern). Never cache the DMG,
+browser archive or account data in this public repository.
 
-The private download belongs at `~/.cache/tern/Tern-0.8.2-macos-arm64.dmg`.
-Download it after signing in at [the build portal](https://build.stencil.so/tern);
-never cache the DMG, browser archive or account data in this public repository.
-
-- Version: **0.8.2**, native Apple Silicon (`arm64`).
-- DMG SHA256: `ec249dd7cfb7e195db4e0170c500f49612874cd4cc4afb0dd23edcda25c9500c`.
+- Platform: native Apple Silicon (`arm64`).
 - Bundle: `Tern.app`, identifier `so.stencil.tern`.
-- Immutable release: `~/.local/share/tern-runtime/0.8.2-<DMG SHA256>-<installer SHA256>/`.
+- Immutable release: `~/.local/share/tern-runtime/<version>-<DMG SHA256>-<installer SHA256>/`.
   Both digests are full SHA256 values. A changed installation recipe publishes
   a fresh release rather than modifying a previously launched app bundle.
 - App entry: `~/Applications/Tern.app`, a symlink into that release.
 - Real CLI: `Tern.app/Contents/MacOS/tern` inside the release; the package's
   `bin/tern` delegates to it. Activation preserves an app-installed
   `~/.local/bin/tern` link to this same binary, or installs its package link
-  when absent. It migrates older pilot-owned links and records ownership in
-  `~/.local/state/tern-pilot/cli-target`; unrelated entries are never replaced.
+  when absent. It records ownership in `~/.local/state/tern-pilot/cli-target`
+  and replaces only links it owns; unrelated entries are never replaced.
 
 Activation also installs `~/.local/state/tern-pilot/cli-env.zsh` (mode 0600)
 and adds one guarded source line to the existing gitignored `shell/local.zsh`
 hook. It puts only the pinned Tern package ahead of the system profile, so an
-older system-installed CLI cannot shadow 0.8.2. Other tools keep their existing
-precedence. A fresh interactive login shell verified `tern 0.8.2 (44c7f76)`;
-existing shells need to source that environment file or start a new shell.
-
-- Cached browser WASM SHA256:
-  `72a34fbce53735ed10afb87737aca9aba773b10b29b9f033d673e5d38607a20b`.
-- Its SHA-384 SRI is retained from the installed release's embedded HTML; only
-  the WASM URL is changed to the local `/pkg/stencil_tern_web_bg.wasm`.
+older system-installed CLI cannot shadow the pinned runtime. Other tools keep
+their existing precedence. Existing shells need to source that environment
+file or start a new shell.
 
 The installer verifies the app signature. If the candidate is quarantined,
 Gatekeeper must accept it before its quarantine attribute is removed, before
-publication. System Gatekeeper remains enabled. The 0.8.2 bundle passed a
-notarized-developer assessment; the already-running native window was not relaunched.
+publication. System Gatekeeper remains enabled. Do not enable Tern-managed omp
+installation or background updates; omp stays Nix-managed.
 
 From the repository, build only the pilot:
 
@@ -104,9 +75,29 @@ open "$HOME/Applications/Tern.app"
 Full activation validates/installs the privately cached runtime and bootstraps
 four pilot LaunchAgents. It does not switch Darwin or restart Paseo. Repeating
 it accepts identical configuration; differing loaded configuration is refused
-so ongoing Tern turns can finish before a daemon-owner cutover.
+so ongoing Tern turns can finish before the daemon owner changes.
 
-For an existing managed daemon with live work, upgrade only browser components:
+A `sudo darwin-rebuild switch --flake .#macbook` also applies this module, but
+it is not the pilot activation path.
+
+### Upgrades
+
+Use full activation for a normal upgrade. Replacing files does not update
+already-running app or daemon processes.
+
+1. Finish active Tern work first; restarting the daemon may interrupt programs
+   and replace shell state.
+2. When changing releases, cache the reviewed release artifact and matching
+   browser client, then update the runtime and web-asset pins. Never substitute
+   a guessed URL, a login page or an unreviewed version. Build and activate the
+   pilot using the commands above.
+3. Quit the old native app and reopen `~/Applications/Tern.app`. If the daemon
+   still runs the old build, use Tern's **Restart session daemon** command.
+4. Check `tern --version` and the service status (see Inspect and withdraw).
+
+### Browser-only updates
+
+For a browser-only update that deliberately leaves the native app and daemon running:
 
 ```sh
 <returned-store-path>/bin/tern-pilot-activate --web-only
@@ -115,18 +106,10 @@ For an existing managed daemon with live work, upgrade only browser components:
 This requires the managed daemon before preflight, does not disable/unload
 either daemon service, and replaces only changed web/gateway/tailnet jobs.
 It updates the managed CLI and keyboard settings without stopping pane
-programs. The running daemon's version is intentionally unchanged. The
-authentication repair replaced browser services, not the native app or daemon.
+programs. It deliberately does not upgrade the running native app or daemon.
 
 Missing web assets still leave browser access blocked. A fresh installation
 uses full activation, not `--web-only`.
-
-Later, a deliberate `sudo darwin-rebuild switch --flake .#macbook` applies the
-full Darwin configuration, including this module; it is **not** the pilot
-activation path. Upgrades require the actual reviewed release artifact, its
-recorded digest, inspected bundle/CLI identity, and corresponding runtime and
-web-assets pins. Do not substitute a guessed URL, a login page or an unreviewed
-new version for the pinned artifact.
 
 ## Keyboard settings
 
@@ -165,25 +148,36 @@ To apply only these settings from a built pilot, run
 switch is needed. Use Tern's **Reload settings** command after an external
 settings update.
 
-## Terraform plan plugin
+## SDK example plugins
 
-Home Manager installs the SDK's [Terraform plan plugin](https://docs.stencil.so/tern/examples/terraform.html)
-as a directory symlink at `~/Library/Application Support/Tern/plugins/terraform`.
-`darwin/tern.nix` fetches `stencil-hq/tern-sdk` at revision
-`13d3cca8bbd8f055431f8eb3caa434a22e966f8f`, with a fixed source hash.
+Home Manager installs the SDK's example plugins as directory symlinks:
+
+- [Terraform plan](https://docs.stencil.so/tern/examples/terraform.html) at
+  `~/Library/Application Support/Tern/plugins/terraform`.
+- [JSON Explorer](https://docs.stencil.so/tern/examples/jsonx.html) at
+  `~/Library/Application Support/Tern/plugins/jsonx`.
+
+`darwin/tern.nix` owns the SDK revision and fixed source hash.
 No `tern plugin install` or `tern plugin link` command is required.
 
 The next normal Home Manager activation (through the Darwin switch above)
-installs the link; `tern-pilot-activate` does not activate Home Manager files.
+installs the links; `tern-pilot-activate` does not activate Home Manager files.
 Tern watches its plugin directory; **Reload plugins** or `tern plugin reload`
 can also reload it without restarting the daemon. Keep the managed package
 read-only; update its Nix revision and hash rather than using Tern to replace it.
 
-The lens handles `terraform plan`, `tofu plan`, and their `-chdir=` forms,
+The Terraform lens handles `terraform plan`, `tofu plan`, and their `-chdir=` forms,
 but not `apply`. Plugins, native command output (`command_lenses`), and shell
 integration must be enabled; all are enabled by default. Use `-input=false`
 or supply required variables so the native view does not cover an input prompt.
 The block's **Raw** toggle retains the original plan output.
+
+JSON Explorer opens `.json` files from the Files pane or palette as a
+collapsible tree. **Open with › JSON Explorer** also supports `.geojson`.
+Use **Toggle JSON explorer for .json opens** to disable automatic routing;
+`o` opens the current file as text, `y` copies the selected jq path, and `r`
+reloads it. Files over 4 MiB are refused. For remote files, install the plugin
+on their host too, or disable automatic routing.
 
 ## Services and private state
 
@@ -192,7 +186,7 @@ owning user's GUI launchd domain:
 
 | Label | Behavior |
 | --- | --- |
-| `org.nixos.tern-pilot-daemon` | `tern daemon`; RunAtLoad, KeepAlive, Interactive, 5-second throttle, AbandonProcessGroup to preserve pane PTYs on daemon exit. |
+| `org.nixos.tern-pilot-daemon` | `tern daemon`; RunAtLoad, KeepAlive, Interactive, 5-second throttle. AbandonProcessGroup prevents launchd from killing the remaining process group on daemon exit; it does not guarantee uninterrupted panes. |
 | `org.nixos.tern-pilot-web` | RunAtLoad, KeepAlive, Standard, 60-second throttle; genuine assets and token-protected loopback backend on 8377. |
 | `org.nixos.tern-pilot-gateway` | RunAtLoad, KeepAlive, Standard, 60-second throttle; loopback 18377, owner-only Tailscale identity and exact WebSocket Origin, private backend token injection. |
 | `org.nixos.tern-pilot-tailnet` | RunAtLoad; retries unsuccessful exits at a 60-second throttle. Adds the HTTPS route after an authenticated gateway root GET. |
@@ -205,15 +199,14 @@ locations. The daemon silently sources the repository's gitignored
 Do not inspect or copy that file into reports.
 
 The app also registers `so.stencil.tern.daemon`. Full pilot activation disables
-and unloads that bundled service so the configured Nix job alone owns the
-default daemon socket. Web-only activation leaves both daemon services alone.
+and unloads that bundled service and configures the Nix daemon job. An
+already-running app-spawned daemon can still hold the default socket while
+the managed job has no running PID; inspect live process ownership rather
+than inferring it from the installed plist. Web-only activation leaves both
+daemon services alone.
 Account and session data are shared with the native app, not placed in a
 second profile. Withdrawal re-enables the bundled service. Do not enable it
 independently while the pilot daemon owns the socket.
-
-The live browser upgrade left the existing 0.7.2 native app and daemon running,
-with the 0.8.2 browser attached to their actual sessions. An unverified
-in-place daemon-upgrade trigger is not used to risk those pane programs.
 
 Private paths:
 
@@ -248,12 +241,6 @@ The backend bearer token stays private and is injected only server-side.
 No browser login or secret URL transfer is required. This pilot enables
 **no Funnel** and starts no QUIC/iroh server.
 
-The bare HTTPS origin attached and a real omp turn returned `TOKENLESS_MAC_OK`.
-Browser reload retained that conversation, including at phone dimensions.
-Live rejection checks passed for missing identity and a foreign Origin;
-Serve stripped a spoofed identity header. Physical Android input,
-reconnection and the laptop-to-phone omp handoff remain unverified.
-
 ## Sessions and gradual adoption
 
 Tern's daemon owns panes and their authoritative screen; clients mirror the
@@ -264,18 +251,17 @@ Closing a client window does not normally end daemon-owned panes. See the
 
 An omp already running in Ghostty is **not imported** into Tern. For a gradual
 bridge, open a Tern shell pane and run `tmux attach -t <existing-session>` to
-reach an existing tmux PTY. This is the ANSI fallback path, not proof of native
+reach an existing tmux PTY. This is the ANSI fallback path, not native
 Tern Surface Protocol rendering. For native integration, start `omp` directly
 in a Tern pane (or a Tern agent block); its terminal probe must reach Tern
-without tmux in between. The existing omp version is unchanged. Native TSP
-transport and one model turn were verified through the daemon; actual client
-rendering still requires sign-in/the browser bundle. See the
+without tmux in between. Native rendering requires Stencil-account sign-in;
+browser rendering requires the matching browser bundle. See the
 [protocol reference](https://docs.stencil.so/tern/protocol/index.md).
 
 Do not resume the same transcript in a second omp while its original owner is
 still running: two writers can conflict. Mirroring one Tern-owned process is
-different from starting another process. Keep current Ghostty/tmux/Paseo work
-intact until a separate pilot session proves the workflow.
+different from starting another process. Keep Ghostty/tmux/Paseo work intact
+until the pilot passes its adoption checks.
 
 The Mac must remain powered, reachable and awake. Reuse Paseo's existing
 caffeinate service; no redundant awake service is added. Caffeinate does not
@@ -307,11 +293,11 @@ it does not require beta access or touch real Tern state:
 bash darwin/tern/test-install.sh
 ```
 
-It passed publication on macOS, retry with a distinct generated-pin timestamp,
-damaged-release refusal, and preservation of an unrelated Applications entry.
+It covers publication, idempotent retry, damaged-release refusal and
+preservation of an unrelated Applications entry.
 
 Gateway security regressions use fictional tokens and isolated loopback
-fixtures; all nine groups passed:
+fixtures:
 
 ```sh
 node --test darwin/tern/gateway-test.mjs

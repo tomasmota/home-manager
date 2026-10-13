@@ -317,6 +317,8 @@ in {
     home.packages = [runtime.tern activate applySettings];
     home.file."Library/Application Support/Tern/plugins/terraform".source =
       "${ternSdk}/plugins/examples/terraform";
+    home.file."Library/Application Support/Tern/plugins/jsonx".source =
+      "${ternSdk}/plugins/examples/jsonx";
     # Keep settings writable for Tern's UI; only managed keyboard keys win.
     home.activation.ternSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
       run ${applySettings}/bin/tern-settings-apply

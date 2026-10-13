@@ -7,7 +7,6 @@ description: >
   Sol High session to investigate X", or requests to write a handoff document.
 license: MIT
 metadata:
-  verified: '2026-10-07'
   runtime: omp
 ---
 
@@ -155,9 +154,9 @@ owned by the successor merely because it appears in the document.
 - If unavailable, do not silently substitute a model or create a default session.
   Report the blocker and saved document. For ambiguity, ask the user to choose
   among the exact selectors returned. A full selector removes ambiguity.
-- Example: `GPT 6.1 Sol High` resolves to `openai-codex/gpt-6.1-sol` with
-  `--thinking high` in the verified catalogs. This is an example, not an alias
-  table; resolve it again at launch time.
+- Example: `GPT 6.1 Sol High` may resolve to `openai-codex/gpt-6.1-sol` with
+  `--thinking high`. This is an example, not an alias table; resolve it at
+  launch time.
 
 ## Launch
 

@@ -5,7 +5,6 @@ description: >
   says "STE", "ASD-STE100", "Simplified Technical English", or asks for
   answers in simple controlled English.
 metadata:
-  verified: '2026-10-06'
   source: ASD-STE100 writing rules (approximation; the official dictionary is not bundled)
 ---
 

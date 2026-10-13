@@ -22,7 +22,7 @@ process. Installed `~/.omp/agent/` and shared `~/.agents/` paths stay unchanged.
 | `jev/tmux-title.ts` | extension | Jev-powered `<repo>:<task>` tmux window names |
 | `jev/tmux-status.ts` | extension | tmux tab state, timers, bells and Jev completion classification |
 | `status-line.ts` | extension | `ctx used/window` and accumulated Inco cost in the status line |
-| `../skills/` | `~/.agents/skills/` | locally owned public skills; `ste`, `handoff-custom` and `tmux-control` included |
+| `../skills/` | `~/.agents/skills/` | locally owned public skills |
 
 Skills use standard shared `~/.agents/skills` discovery, enabled by default and
 explicitly enabled by policy. Only private `~/.agents/local-skills` and
@@ -34,14 +34,11 @@ and per-agent model overrides are runtime-owned: set them with `/model`,
 
 The `agents` discovery provider loads `~/.agents/AGENTS.md` at user scope.
 Native `~/.omp/agent/AGENTS.md` has higher priority and would shadow it, so the
-module deliberately installs no native user context file. Remove an old native
-shadow and old native `skills/tmux-control` link during the cutover; Home Manager
-removes managed links when the former declarations disappear.
+module deliberately installs no native user context file.
 The short `RULES.md` remains at `~/.omp/agent/RULES.md`: native top-level rules
 are always-apply sticky content, unlike ordinary opening context. A shared
 `~/.agents/RULES.md` would not supply that behavior. Named profiles relocate
 native user state, so they need their own native safety configuration if used.
-These paths/defaults were also inspected in the installed omp 18.8.6 executable.
 Discovery semantics: [pinned omp context-file guide](https://github.com/can1357/oh-my-pi/blob/579da1d661c5cb8d43bc2ddd429ab72e67165ad8/docs/context-files.md).
 
 ## Custom handoff
@@ -73,10 +70,8 @@ use `/reload-plugins` to refresh skills (and reconnect MCP servers).
 ## tmux control: CLI/TUI testing and debugging
 
 The [`tmux-control` skill](https://github.com/tomasmota/agents/blob/27519890c40e04efcb5676640f378e0c9f6fbbde/skills/tmux-control/SKILL.md)
-is vendored locally at `../skills/tmux-control/SKILL.md` from upstream
-revision `27519890c40e04efcb5676640f378e0c9f6fbbde` (MIT). Its imported SHA-256
-is `PssVuBe0f3zPKGyuTWGksCz+h6v9aHTVdcCTuupA1HA=`.
-No network fetch, separate native skill install or duplicate discovery is needed.
+is vendored at `../skills/tmux-control/SKILL.md` from upstream revision
+`27519890c40e04efcb5676640f378e0c9f6fbbde` (MIT).
 
 Discover it with requests such as:
 
@@ -86,14 +81,10 @@ Discover it with requests such as:
 
 It covers explicit server/pane IDs, isolated PTYs, bounded readiness checks,
 literal input versus keys, multiline paste hazards, scrollback/process/exit
-inspection and cleanup restricted to task-owned resources. The Python REPL
-example was exercised on tmux 3.7c: result `42`, `ZeroDivisionError`, normal exit
-status `0`, bad-option startup status `2`, and removal of the private test server.
-This is terminal text evidence, not verification of another TUI's visuals.
+inspection and cleanup restricted to task-owned resources.
 
-Edit this local source directly. For an upstream update, import the chosen
-revision and preserve provenance/license information here; no external checkout,
-render or lock update is required. Fresh omp processes discover the shared
+Edit this local source directly. When importing an upstream revision, update
+the provenance/license information here. Fresh omp processes discover the shared
 skill, or use `/reload-plugins` in an existing session. Check discovery without
 a model call with `omp read skill://tmux-control`.
 
@@ -112,17 +103,10 @@ Inco reads `INCO_API_KEY` from `secrets.env`. Jev review falls back to
 
 ## Inco models
 
-`default.nix` declares `inco/glm-5.3` and `inco/glm-5.3-flash` using
-`https://api.inco.ai/v1` with omp's `openai-completions` transport. The provider's
-`apiKey` is the environment variable name `INCO_API_KEY`, never a credential.
-Authenticated `/v1/models` metadata advertises a 1,048,576-token context and
-reasoning-effort support for both standard IDs. Prices per million tokens
-(input / cached input / output) are $1.40 / $0.26 / $4.40 for GLM 5.3 and
-$0.15 / $0.03 / $0.50 for Flash. The metadata does not advertise an output-token
-limit or input modalities for these standard routes, so their declarations
-leave the output limit to omp's default and enable text input only.
-The existing `inco/glm-5.3-flash:fast` route is retained unchanged for explicit
-callers; adding the standard routes does not select a default or change roles.
+`default.nix` declares the Inco provider (`https://api.inco.ai/v1`, omp's
+`openai-completions` transport) and its model metadata. The provider's `apiKey`
+is the environment variable name `INCO_API_KEY`, never a credential. Declaring
+models does not select a default or change roles.
 
 Home Manager generates `~/.omp/agent/models.yml` from this declaration. To
 activate only that generated file without a privileged rebuild, run from this
@@ -179,9 +163,8 @@ Change `preferences` only to alter fresh-machine defaults.
 
 The main omp TUI names its containing window `<repo>:<task>` through Jev.
 This extension reads only omp sessions; it does not listen to other agents.
-`jev/tmux-title-core.js` was vendored from `tomasmota/agents` revision
-`83972c78b953e97e37c66b8c6e3d6a600cef680e`; omp owns this independent copy
-and reuses the local `jev-client.js`.
+`jev/tmux-title-core.js` holds the naming logic and reuses the local
+`jev-client.js`.
 
 Initial, renamed, resumed and switched sessions get a short branch-like name.
 After a completed user turn, Jev changes the name only when the current one
@@ -336,7 +319,7 @@ before creating the page.
 The Mac-only service in `darwin/paseo.nix` uses Paseo's native omp `rpc-ui`
 provider with this same profile, extensions, credentials, skills and MCP config.
 See [`../../darwin/paseo/README.md`](../../darwin/paseo/README.md) for secure direct
-Android connection over Tailscale, service management and the tested limitations.
+Android connection over Tailscale, service management and limitations.
 
 Paseo does **not** attach to a running omp TUI. Finish or interrupt the turn and
 exit omp before importing its transcript. Archive the Paseo agent before resuming

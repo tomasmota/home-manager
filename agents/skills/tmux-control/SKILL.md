@@ -8,7 +8,6 @@ description: >
 license: MIT
 metadata:
   source: owner-maintained
-  verified: '2026-10-07'
 ---
 
 # tmux control for CLI/TUI testing and debugging

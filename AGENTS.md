@@ -17,6 +17,7 @@
 - `home.nix`: shared Home Manager module; imports most local modules and declares common packages.
 - `darwin/macos.nix`: macOS-only nix-darwin config (system defaults, Homebrew casks, Tailscale).
 - `darwin/paseo.nix`, `darwin/paseo/`: locked Paseo runtime and user launchd services for native Android access to omp; private state stays in `~/.paseo`. See `darwin/paseo/README.md` for pairing and exclusive TUI/phone handoffs.
+- `darwin/tern.nix`, `darwin/tern/`: Stencil Tern parallel pilot (private-artifact runtime, launchd services, owner-only phone browser gateway). See `darwin/tern/README.md` for activation, upgrades and withdrawal.
 - `agents/omp/`: Oh My Pi (omp), Mac-only via the pinned `omp` flake input. `agents/omp/default.nix` manages its runtime configuration, MCP servers, extensions and native agent definitions. Shared user instructions and skills live alongside it under `agents/`; see `agents/omp/README.md`.
 - `darwin/codex-usage/`: Codex Usage menu bar app (Swift). Built into `~/Applications/CodexUsage.app` by `install.sh` via a home-manager activation script when sources change; kept running by the `codex-usage` launchd agent.
 - `terminal/ghostty.nix`: Ghostty config; expects `fontSize` from flake `extraSpecialArgs`.
@@ -24,7 +25,7 @@
 - `git.nix`: git identity/signing, difftastic, activation hook for `allowed_signers` files.
 - `tmux.nix`: tmux settings/plugins/keybindings.
 - `nvim/`: Neovim config (lazy.nvim, plugin specs under `nvim/lua/plugins`, core config under `nvim/lua/config`).
-- `agents.nix`, `agents/**`: locally owned shared instructions, public skills and native omp configuration, installed into `~/.agents/` and `~/.omp/agent/` on the Mac. Edit these files directly; there is no upstream renderer, inventory or central source lock.
+- `agents.nix`, `agents/**`: locally owned shared instructions, public skills and native omp configuration, installed into `~/.agents/` and `~/.omp/agent/` on the Mac. Edit these files directly.
 - OpenChamber is used through the homelab web UI. Do not install local OpenCode, OpenChamber servers, the desktop bundle or subscription gateways.
 - `secrets.env`: local secrets file at repo root, intentionally gitignored.
 
@@ -37,7 +38,7 @@
 - The macbook Home Manager user additionally imports `./agents.nix` and `./agents/omp` (`flake.nix`).
 - `home.nix` uses an out-of-store symlink for `nvim`; `agents.nix` links shared instructions and skills from this checkout into `~/.agents/`.
 - Once those links exist, saved files are live on disk. Reload omp discovery or start a fresh session for instruction/skill changes; a switch is needed for links, packages or services.
-- `agents/omp/` owns local agent runtime behavior; `agents/global/` and `agents/skills/` own shared user instructions and skills. None depends on the external agents repository.
+- `agents/omp/` owns local agent runtime behavior; `agents/global/` and `agents/skills/` own shared user instructions and skills.
 
 ## Apply and Validate Workflows
 - Preferred validation before applying:
@@ -51,6 +52,12 @@
   - Apply: `sudo darwin-rebuild switch --flake .#macbook`
 - Update dependencies:
   - `nix flake update` (then commit `flake.lock` changes)
+
+## Tern upgrades
+- Follow `darwin/tern/README.md`: use the documented pilot build/activation and normal app/daemon restarts, not a full Darwin switch.
+- Warn that a daemon restart may interrupt active work or replace shell state. Do not promise process or session continuity.
+- Keep routine upgrades simple. Do not create isolated upgrade rehearsals, inventory every pane/process, automate the native UI or capture screenshots unless explicitly requested.
+- Basic version/service checks are sufficient for a routine upgrade. The owner verifies plans, applies, rendering and phone behavior.
 
 ## Editing Conventions
 - Nix:
@@ -67,6 +74,9 @@
   - Edit locally owned shared instructions and public skills directly in `agents/`.
   - Private machine skills stay in `~/.agents/local-skills/`; team skills stay in `~/.agents/team-skills/`. Never copy their contents into this public repo.
   - Keep the existing skill frontmatter style (`name`, `description`, and `metadata`) and usage-oriented sections.
+- Documentation:
+  - Keep READMEs to durable guidance: purpose, setup, operation, upgrades, safety boundaries, private-state locations and withdrawal.
+  - Pins and hashes belong in configuration, not prose. Do not add dated checkpoints, verification logs, smoke markers, PIDs, version-specific test results or incident narratives.
 
 ## Safety and Gotchas
 - `git.nix` writes `allowed_signers` files during activation; keep this behavior in mind when changing git/signing config.

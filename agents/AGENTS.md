@@ -1,7 +1,6 @@
 # Agent configuration
 
 This directory owns the public workstation instructions, skills and native omp configuration locally.
-There is no external source checkout, generator, inventory or render step.
 
 ## Sources of truth
 
@@ -30,4 +29,4 @@ file; do not install a second user `AGENTS.md` under `~/.omp/agent/`.
 
 Follow the applicable repository instructions before running checks. Existing
 behavior regressions live beside the handoff launcher and omp extensions; see
-`omp/README.md` for their commands. There is no generated-file validation step.
+`omp/README.md` for their commands.

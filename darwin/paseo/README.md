@@ -10,8 +10,6 @@ this Mac. `darwin/paseo.nix` owns three user launchd agents:
   http://127.0.0.1:6767`: tailnet-only HTTPS on port 6767. Funnel is never used.
 - `org.nixos.paseo-awake` — `/usr/bin/caffeinate -i` (see Sleep below).
 
-OpenChamber is accessed through the homelab web UI; no local server is installed.
-
 ## Trust model
 
 There is no Paseo password. The security boundary is the tailnet:
@@ -19,8 +17,8 @@ There is no Paseo password. The security boundary is the tailnet:
 - Any tailnet peer that Tailscale ACLs allow to reach this Mac on port 6767 can
   control the daemon, i.e. run `omp` with your user's full access.
 - Any local process can reach `127.0.0.1:6767` directly.
-- The relay is disabled and locked off (`PASEO_RELAY_ENABLED=false`); 0.10.3
-  relay sessions are admitted without credentials. Do not enable it.
+- The relay is disabled and locked off (`PASEO_RELAY_ENABLED=false`); the
+  pinned release admits relay sessions without credentials. Do not enable it.
 - Listening is locked to loopback (`PASEO_LISTEN`). Serve forwards the Mac's
   MagicDNS name as `Host`; the daemon wrapper reads `Self.DNSName` from
   `tailscale status` at start and allows exactly that name
@@ -30,7 +28,7 @@ There is no Paseo password. The security boundary is the tailnet:
 
 ## Runtime and state
 
-`runtime/` pins `@getpaseo/cli` 0.10.3 with an integrity-checked lockfile.
+`runtime/` pins `@getpaseo/cli` with an integrity-checked lockfile.
 System activation (before launchd agents are reloaded) runs `runtime/install.sh`
 with Node 24's `npm ci --strict-allow-scripts` into
 `~/.local/share/paseo-runtime/<sha256 of package.json + lock + btw.patch + btw.js>`, then verifies
@@ -68,7 +66,7 @@ Use the official Apple Silicon desktop release matching the locked daemon
 version. The desktop is a client of this background service, not its owner.
 Disable **Manage built-in daemon** in desktop settings; the local workstation
 setting is `~/Library/Application Support/Paseo/desktop-settings.json` under
-`settings.daemon.manageBuiltInDaemon`. It is already disabled on this Mac.
+`settings.daemon.manageBuiltInDaemon`.
 Restart the desktop app after editing that writable setting outside the UI.
 
 Add a direct connection to `127.0.0.1`, port `6767`, **SSL off**, password
@@ -94,54 +92,24 @@ monitor the agent in an already-running TUI. Use explicit ownership handoffs:
   Paseo's Stop only interrupts a turn; disconnecting/closing the app also does
   not release the omp process.
 
-Default omp behavior is unchanged: overlapping writers silently fork a stale
-conversation, and can still act independently on the same project. No global
-single-process guard is installed. Native task subagents display as read-only
-views in Paseo rather than independent live controllers.
+Overlapping writers silently fork a stale conversation and can still act
+independently on the same project. No global single-process guard is
+installed. Native task subagents display as read-only views in Paseo rather
+than independent live controllers.
 
-The existing omp profile, extensions, skill directories, MCP servers and auth
-database remain in use. Full Access matches the existing `yolo` policy with
-Jev review before execution. Use Always Ask **when creating a new session** if
-you want additional native tool approvals. In Paseo 0.10.3, changing approval
-mode on an existing omp session warns that a new session is required.
-
-### Verified on this Mac
-
-Initial integration tests used Paseo 0.10.3 and omp 18.6.1:
-
-- External omp session → exit → import → follow-up → archive → external
-  resume preserved the session identity, all turns and the original transcript
-  prefix, with no duplicate entry IDs. Archive released the provider process.
-- A disposable competing-writer test produced a separate session missing the
-  other writer's latest turn, confirming that it is not live shared control.
-- Native tool approval and question answers passed through Paseo's client API.
-  A real Jev review produced an allow decision; a controlled reviewer-failure
-  test exercised the existing Jev adapter's manual confirm approve and deny.
-- The native runtime exposed 86 active tools, including 71 MCP tools, and seven
-  skill commands. No private tool/skill contents are included here.
-- Android direct connection over Tailscale HTTPS was confirmed by the user.
-  Phone-side rendering/interaction of approval cards still needs a user check.
-
-After host activation installed omp 18.6.3, the native question, Jev manual
-approve/deny, MCP/skill inventory checks passed again. A Full Access scratch-file
-write completed with a real Jev allow decision and no native approval prompt.
-Always Ask is only an additional manual gate: it still prompts after Jev allows.
-The existing Jev fallback/exhaustion policy is unchanged (see `agents/omp/README.md`).
-
-All three declared launchd jobs are installed: daemon and sleep inhibitor are
-running, and the tailnet route job exits successfully. A daemon stop was followed
-by an automatic launchd restart. The deployed wrapper also passed isolated
-missing/invalid Tailscale-status, restored-name and broken-secrets-file tests.
-
-Full system activation is deliberately separate from testing these three user agents.
+Paseo uses the same omp profile, extensions, skill directories, MCP servers and
+auth database as the TUI. Full Access matches the `yolo` policy with Jev review
+before execution. For additional native tool approvals, choose Always Ask
+**when creating a session**; it still prompts after Jev allows. Changing the
+approval mode of an existing omp session requires a new session.
 
 ## Side questions with `/btw`
 
-The locked Paseo 0.10.3 runtime applies `runtime/btw.patch` and installs
-`runtime/btw.js` to bridge omp's native BTW RPC API (verified with omp 18.8.0).
-The patch is part of the runtime identity; installation rejects mismatched
-upstream hunks and reverifies the patch and bridge on subsequent switches.
-Remove the local patch when a pinned upstream release provides this integration.
+The locked runtime applies `runtime/btw.patch` and installs `runtime/btw.js`
+to bridge omp's native BTW RPC API. The patch is part of the runtime identity;
+installation rejects mismatched upstream hunks and reverifies the patch and
+bridge on subsequent switches. Remove the local patch when a pinned upstream
+release provides this integration.
 
 - `/btw <question>` starts a side question while the main task runs, or while idle.
 - `/btw` or `/btw --history` shows the session's saved side conversations.
@@ -153,18 +121,9 @@ They do not enter omp's main model conversation; omp owns their sidecar history.
 Only one side question runs at a time. Provider failures appear as failed cards,
 not successful empty answers. This does not add the TUI's floating BTW panel.
 
-An isolated daemon/client smoke with `openai-codex/gpt-6.1-sol` returned `42`
-alongside an uninterrupted main turn; a contextual follow-up returned `43`.
-Neither side question appeared in the main omp journal. The bundled browser UI
-displayed the expanded answer card. Android rendering was not independently checked.
-An Anthropic follow-up in the tool-disabled smoke session returned a native
-provider error about all tools being deferred; the bridge displayed that error.
-
-Apply the Home Manager/nix-darwin configuration to select the new runtime.
-Restarting the existing daemon without selecting the new runtime keeps the old
-implementation. Activation disconnects clients and interrupts active turns;
-finish them first. Regression and installer checks:
-`bash darwin/paseo/test-install.sh`.
+Patch or bridge changes take effect only after a Home Manager/nix-darwin switch
+selects the new runtime; restarting the daemon alone keeps the old one.
+Activation disconnects clients and interrupts active turns; finish them first.
 
 ## Sleep
 
