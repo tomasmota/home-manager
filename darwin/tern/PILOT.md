@@ -1,4 +1,4 @@
-# Tern pilot: purpose, status and adoption checks
+# Tern pilot: purpose and adoption checks
 
 See [README.md](README.md) for build, activation, private-state handling and
 withdrawal commands.
@@ -16,20 +16,9 @@ Ghostty omp is not automatically imported into Tern. Attaching an existing tmux
 session is a possible ANSI bridge; direct omp in a Tern pane is the native Tern
 Surface Protocol (TSP) path.
 
-## Status: blocked by mobile scrolling
-
-omp is not usable from the phone:
-
-- Scrolling up through the conversation does not work.
-- The right-hand scrollbar is unusable on touch; interacting with it opens
-  the software keyboard unexpectedly.
-- Other mobile usability issues remain, but transcript scrolling is the
-  primary blocker.
-
-Desktop-browser rendering at phone dimensions does not prove touch scrolling
-or keyboard/focus behavior. No root cause or workaround is known. Report the
-symptom in the [public Tern tracker](https://github.com/stencil-hq/tern-sdk/issues)
-if no matching issue exists.
+Desktop-browser emulation at phone dimensions does not validate touch
+scrolling or keyboard/focus behavior; use a physical phone. Track current
+blockers in the [upstream Tern tracker](https://github.com/stencil-hq/tern-sdk/issues), not this repository.
 
 ## Adoption checks
 

@@ -4,7 +4,7 @@ This is [Stencil's Rust-native Tern](https://stencil.so/tern), not tern.build.
 It runs alongside Paseo, tmux and Ghostty without changing them or Paseo's
 port 6767. The pilot does not need a full Darwin switch.
 
-See [PILOT.md](PILOT.md) for the pilot's purpose, status and adoption checks.
+See [PILOT.md](PILOT.md) for the pilot's purpose and adoption checks.
 
 ## Prerequisites
 
@@ -34,24 +34,17 @@ digest and bundle identity. Cache the matching download at
 [the build portal](https://build.stencil.so/tern). Never cache the DMG,
 browser archive or account data in this public repository.
 
-- Platform: native Apple Silicon (`arm64`).
-- Bundle: `Tern.app`, identifier `so.stencil.tern`.
-- Immutable release: `~/.local/share/tern-runtime/<version>-<DMG SHA256>-<installer SHA256>/`.
-  Both digests are full SHA256 values. A changed installation recipe publishes
-  a fresh release rather than modifying a previously launched app bundle.
-- App entry: `~/Applications/Tern.app`, a symlink into that release.
-- Real CLI: `Tern.app/Contents/MacOS/tern` inside the release; the package's
-  `bin/tern` delegates to it. Activation preserves an app-installed
-  `~/.local/bin/tern` link to this same binary, or installs its package link
-  when absent. It records ownership in `~/.local/state/tern-pilot/cli-target`
-  and replaces only links it owns; unrelated entries are never replaced.
+The runtime is an immutable release under `~/.local/share/tern-runtime/`,
+linked from `~/Applications/Tern.app`; a changed installation recipe publishes
+a fresh release rather than modifying a previously launched bundle. Activation
+keeps an app-installed `~/.local/bin/tern` link to this binary, or installs the
+package link when absent. It records ownership in
+`~/.local/state/tern-pilot/cli-target` and replaces only links it owns.
 
-Activation also installs `~/.local/state/tern-pilot/cli-env.zsh` (mode 0600)
-and adds one guarded source line to the existing gitignored `shell/local.zsh`
-hook. It puts only the pinned Tern package ahead of the system profile, so an
-older system-installed CLI cannot shadow the pinned runtime. Other tools keep
-their existing precedence. Existing shells need to source that environment
-file or start a new shell.
+Activation also installs `~/.local/state/tern-pilot/cli-env.zsh` and one
+guarded source line in the gitignored `shell/local.zsh`, so only the pinned
+Tern package precedes the system profile. Existing shells need a new shell or
+to source that file.
 
 The installer verifies the app signature. If the candidate is quarantined,
 Gatekeeper must accept it before its quarantine attribute is removed, before
@@ -113,71 +106,29 @@ uses full activation, not `--web-only`.
 
 ## Keyboard settings
 
-Home Manager activation and `tern-pilot-activate` merge the managed keyboard
-settings into Tern's writable `settings.json`. The tmux preset uses
-**Ctrl+Space** as its prefix. Unrelated UI preferences and custom bindings
-survive activation; the managed preset, prefix and bindings are reapplied.
+Home Manager activation and `tern-pilot-activate` run `tern-settings-apply`,
+which merges the managed tmux-preset settings (Ctrl+Space prefix, bindings in
+[`tern.nix`](../tern.nix)) into Tern's writable `settings.json`. Unrelated UI
+preferences survive; managed preset, prefix and bindings are reapplied. To
+apply only these settings from a built pilot, run
+`<returned-store-path>/bin/tern-settings-apply`, then use Tern's **Reload
+settings** command; no service restart or Darwin switch is needed.
 
-After Ctrl+Space:
-
-| Key | Action |
-| --- | --- |
-| `Space` | Return to the last visited tab (tmux `last-window`) |
-| `Tab` | Next session |
-| `Shift+Tab` | Previous session |
-| `h` / `j` / `k` / `l` | Focus left / down / up / right |
-| `v` | Split right |
-| `s` | Split down |
-| `q` | Close the focused pane |
-| `Ctrl+q` | Close the active tab, including all its panes |
-| `c` | New tab (unchanged tmux preset default) |
-
-Session cycling is native-only. The local `session-navigation` window plugin
-uses Tern's session-list order, wraps in either direction, and switches directly
-to each session's remembered tab and pane without traversing its other tabs.
-One session is a no-op; switching does not stop programs. Window plugins do not
-run in the browser client, so these two bindings are unavailable there.
-`tern-settings-apply` also installs the managed plugin symlink from
-`darwin/tern/session-navigation`; Home Manager and pilot activation use the same
-command. Tern watches the plugin directory and reloads plugins without a daemon
-restart.
-
-A tmux window corresponds to a Tern tab, not an entire native macOS window.
-To apply only these settings from a built pilot, run
-`<returned-store-path>/bin/tern-settings-apply`; no service restart or Darwin
-switch is needed. Use Tern's **Reload settings** command after an external
-settings update.
+Session cycling (`Ctrl+Space Tab` / `Shift+Tab`) is native-only: the
+[`session-navigation`](session-navigation) window plugin does not run in the
+browser client. `tern-settings-apply` links it into Tern's plugin directory,
+and Tern reloads plugins without a daemon restart.
 
 ## SDK example plugins
 
-Home Manager installs the SDK's example plugins as directory symlinks:
-
-- [Terraform plan](https://docs.stencil.so/tern/examples/terraform.html) at
-  `~/Library/Application Support/Tern/plugins/terraform`.
-- [JSON Explorer](https://docs.stencil.so/tern/examples/jsonx.html) at
-  `~/Library/Application Support/Tern/plugins/jsonx`.
-
-`darwin/tern.nix` owns the SDK revision and fixed source hash.
-No `tern plugin install` or `tern plugin link` command is required.
-
-The next normal Home Manager activation (through the Darwin switch above)
-installs the links; `tern-pilot-activate` does not activate Home Manager files.
-Tern watches its plugin directory; **Reload plugins** or `tern plugin reload`
-can also reload it without restarting the daemon. Keep the managed package
-read-only; update its Nix revision and hash rather than using Tern to replace it.
-
-The Terraform lens handles `terraform plan`, `tofu plan`, and their `-chdir=` forms,
-but not `apply`. Plugins, native command output (`command_lenses`), and shell
-integration must be enabled; all are enabled by default. Use `-input=false`
-or supply required variables so the native view does not cover an input prompt.
-The block's **Raw** toggle retains the original plan output.
-
-JSON Explorer opens `.json` files from the Files pane or palette as a
-collapsible tree. **Open with › JSON Explorer** also supports `.geojson`.
-Use **Toggle JSON explorer for .json opens** to disable automatic routing;
-`o` opens the current file as text, `y` copies the selected jq path, and `r`
-reloads it. Files over 4 MiB are refused. For remote files, install the plugin
-on their host too, or disable automatic routing.
+Home Manager installs the SDK's
+[Terraform plan](https://docs.stencil.so/tern/examples/terraform.html) and
+[JSON Explorer](https://docs.stencil.so/tern/examples/jsonx.html) examples as
+directory symlinks under `~/Library/Application Support/Tern/plugins/`;
+`darwin/tern.nix` owns the SDK revision and source hash. The links come from
+the next Home Manager activation (Darwin switch), not `tern-pilot-activate`.
+Keep the managed package read-only and update its Nix revision and hash rather
+than replacing it through Tern. See the upstream docs for usage.
 
 ## Kubernetes plugin
 
@@ -189,19 +140,17 @@ Use trusted kubeconfigs and manifests; mutation previews and secret masking are 
 LaunchAgents live in `~/Library/LaunchAgents/` as `<label>.plist` and run in the
 owning user's GUI launchd domain:
 
-| Label | Behavior |
+| Label | Role |
 | --- | --- |
-| `org.nixos.tern-pilot-daemon` | `tern daemon`; RunAtLoad, KeepAlive, Interactive, 5-second throttle. AbandonProcessGroup prevents launchd from killing the remaining process group on daemon exit; it does not guarantee uninterrupted panes. |
-| `org.nixos.tern-pilot-web` | RunAtLoad, KeepAlive, Standard, 60-second throttle; genuine assets and token-protected loopback backend on 8377. |
-| `org.nixos.tern-pilot-gateway` | RunAtLoad, KeepAlive, Standard, 60-second throttle; loopback 18377, owner-only Tailscale identity and exact WebSocket Origin, private backend token injection. |
-| `org.nixos.tern-pilot-tailnet` | RunAtLoad; retries unsuccessful exits at a 60-second throttle. Adds the HTTPS route after an authenticated gateway root GET. |
+| `org.nixos.tern-pilot-daemon` | `tern daemon`; AbandonProcessGroup keeps launchd from killing the remaining process group on exit but does not guarantee uninterrupted panes. |
+| `org.nixos.tern-pilot-web` | Genuine assets and token-protected loopback backend on 8377. |
+| `org.nixos.tern-pilot-gateway` | Loopback 18377: owner-only Tailscale identity, exact WebSocket Origin, private backend token injection. |
+| `org.nixos.tern-pilot-tailnet` | Adds the HTTPS route after an authenticated gateway root GET. |
 
-All four use umask 077. Daemon/web/gateway work from the home directory. They set
-`TERN_CONFIG_DIR` to `~/Library/Application Support/Tern` and `STENCIL_LOG_DIR`
-to `~/.local/state/tern-pilot/logs`, with the configured shell/PATH and XDG
-locations. The daemon silently sources the repository's gitignored
-`secrets.env` for the existing omp environment; a failed load stops startup.
-Do not inspect or copy that file into reports.
+Exact settings (throttles, umask 077, environment) are in
+[`tern.nix`](../tern.nix). The daemon silently sources the repository's
+gitignored `secrets.env` for the existing omp environment; a failed load stops
+startup. Do not inspect or copy that file into reports.
 
 The app also registers `so.stencil.tern.daemon`. Full pilot activation disables
 and unloads that bundled service and configures the Nix daemon job. An

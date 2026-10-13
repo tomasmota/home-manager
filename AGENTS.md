@@ -30,12 +30,6 @@
 - `secrets.env`: local secrets file at repo root, intentionally gitignored.
 
 ## Configuration Composition Notes
-- `home.nix` imports:
-  - `./terminal/ghostty.nix`
-  - `./shell/zsh.nix`
-  - `./git.nix`
-  - `./tmux.nix`
-- The macbook Home Manager user additionally imports `./agents.nix` and `./agents/omp` (`flake.nix`).
 - `home.nix` uses an out-of-store symlink for `nvim`; `agents.nix` links shared instructions and skills from this checkout into `~/.agents/`.
 - Once those links exist, saved files are live on disk. Reload omp discovery or start a fresh session for instruction/skill changes; a switch is needed for links, packages or services.
 - `agents/omp/` owns local agent runtime behavior; `agents/global/` and `agents/skills/` own shared user instructions and skills.

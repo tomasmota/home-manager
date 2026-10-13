@@ -30,14 +30,12 @@ There is no Paseo password. The security boundary is the tailnet:
 
 `runtime/` pins `@getpaseo/cli` with an integrity-checked lockfile.
 System activation (before launchd agents are reloaded) runs `runtime/install.sh`
-with Node 24's `npm ci --strict-allow-scripts` into
-`~/.local/share/paseo-runtime/<sha256 of package.json + lock + btw.patch + btw.js>`, then verifies
-the immutable release on every switch. All three install scripts are denied:
-`node-pty` and `msgpackr-extract` ship darwin-arm64 prebuilds and `esbuild`
-resolves its platform package at runtime, so none needs to run. The `paseo`
-command on `PATH` execs this runtime. `agents.providers.omp.options.rpcTimeoutMs`
-is seeded at 180000 so a cold start can finish loading the existing extensions
-and MCP tools.
+into an immutable, content-addressed runtime under `~/.local/share/paseo-runtime/`
+and verifies it on every switch; the `paseo` command on `PATH` execs it.
+Dependency install scripts are denied (`--strict-allow-scripts`) because the
+native packages ship prebuilds or resolve their platform package at runtime.
+The seed extends `agents.providers.omp.options.rpcTimeoutMs` to give cold starts
+time to load extensions and MCP tools.
 
 `~/.paseo` (mode `0700`) is private daemon state. Activation only seeds
 `config.json` (`0600`) from `config.json` here when it is missing: loopback
@@ -53,9 +51,6 @@ phone, if kept, belongs in `~/.paseo/` too.
    (drop the trailing dot).
 2. In the Paseo app add a direct host: that name, port `6767`, SSL on,
     password empty. Do not use relay pairing or QR codes.
-
-The connection values on this Mac are also saved privately in
-`~/.paseo/android-connection.json` (no password or pairing key).
 
 The Mac cannot reach its own Serve address (`https://<name>:6767` times out
 locally); test from another tailnet device.
@@ -123,7 +118,6 @@ not successful empty answers. This does not add the TUI's floating BTW panel.
 
 Patch or bridge changes take effect only after a Home Manager/nix-darwin switch
 selects the new runtime; restarting the daemon alone keeps the old one.
-Activation disconnects clients and interrupts active turns; finish them first.
 
 ## Sleep
 
@@ -137,8 +131,9 @@ start them; screen lock is fine, logout is not.
 
 ## Operations
 
-Finish or interrupt active turns before restarting the daemon; this is not a
-live transfer of in-flight tool calls or approvals.
+Activation or a daemon restart disconnects clients and interrupts active turns,
+and in-flight tool calls and approvals are not transferred: finish or interrupt
+them first.
 
 `tailscale serve` from a user agent needs `tomas` as tailscale operator
 (`sudo tailscale set --operator=tomas`) unless that is already allowed; the
@@ -147,7 +142,7 @@ agent retries every minute and logs to `~/Library/Logs/PaseoTailnet*.log`.
 ```sh
 launchctl kickstart -k "gui/${UID}/org.nixos.paseo"
 curl --fail --silent http://127.0.0.1:6767/api/health
-tailscale serve status            # :443 unchanged, :6767 -> 127.0.0.1:6767
+tailscale serve status            # :6767 -> 127.0.0.1:6767; leave unrelated routes alone
 tailscale funnel status           # must show no Funnel
 pmset -g assertions | grep -i caffeinate
 bash darwin/paseo/test-install.sh # installer + seed tests in a scratch dir
