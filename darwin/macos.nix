@@ -111,7 +111,6 @@
       "raycast"
       "rectangle"
       "bitwarden"
-      "hammerspoon"
       "zed"
     ];
     onActivation = {

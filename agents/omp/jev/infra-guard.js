@@ -19,6 +19,9 @@
 //            directory/var-file/workspace, DB URL/host, ssh host, bucket) or
 //            any token of the analyzed text is a production word, or matches
 //            an OMP_JEV_PROTECTED_TARGETS entry (comma-separated)
+//   trusted  every kube context/cluster named exactly matches an
+//            OMP_JEV_TRUSTED_TARGETS entry (comma-separated, no production
+//            word): any call, destructive included, skips review
 //   nonprod  an explicit identifier names a non-production environment
 //   unknown  anything else, including implicit defaults
 // Hard deny: non-read-only calls on prod; destructive calls on prod/unknown;
@@ -71,6 +74,19 @@ function nonProdToken(tokens) {
 
 export function parseProtectedTargets(raw) {
   return String(raw || "").split(",").map(tokensOf).filter((sequence) => sequence.length > 0)
+}
+
+// Exact kube context/cluster names whose every call is trusted, including
+// destructive ones. Production words and protected targets still win.
+export function parseTrustedTargets(raw) {
+  return new Set(String(raw || "").split(",").map((name) => name.trim().toLowerCase()).filter(Boolean))
+}
+
+function trustedTarget(inv, trustedTargets) {
+  if (!trustedTargets.size) return null
+  const kube = inv.ids.filter((item) => item.kind === "name" && /^kube (?:context|cluster)$/.test(item.label))
+  if (!kube.length || !kube.every((item) => trustedTargets.has(item.value.toLowerCase()))) return null
+  return `${kube[0].label} "${kube[0].value}"`
 }
 
 function isLocalHost(host) {
@@ -686,9 +702,12 @@ function classifyTarget(inv, ctx) {
   }
   if (ctx.taint) return { cls: "prod", evidence: ctx.taint }
   if (ctx.remote?.cls === "prod") return { cls: "prod", evidence: `runs on ${ctx.remote.label}` }
+  const trusted = trustedTarget(inv, ctx.state.trustedTargets)
+  if (trusted) return { cls: "trusted", evidence: trusted }
   const named = inv.ids.find((item) => nonProdId(item, ctx))
   if (named) return { cls: "nonprod", evidence: `${named.label} "${named.value}"` }
-  if (ctx.remote) return { cls: ctx.remote.cls, evidence: `runs on ${ctx.remote.label}` }
+  // A command run inside a trusted target inherits it, unless it names a target of its own.
+  if (ctx.remote && !(ctx.remote.cls === "trusted" && inv.ids.length)) return { cls: ctx.remote.cls, evidence: `runs on ${ctx.remote.label}` }
   if (inv.local) return { cls: "nonprod", evidence: inv.local }
   if (inv.ids.length) {
     return { cls: "unknown", evidence: `${describeIds(inv.ids)} ${inv.ids.length > 1 ? "are" : "is"} not an explicitly non-production target` }
@@ -699,7 +718,9 @@ function classifyTarget(inv, ctx) {
 function judge(inv, segment, ctx) {
   if (!inv || ctx.state.deny) return
   const target = classifyTarget(inv, ctx)
-  if (!inv.readOnly) {
+  if (target.cls === "trusted") {
+    if (ctx.state.trusted.length < 4) ctx.state.trusted.push(`${shown(inv.argv)} [trusted target: ${target.evidence}]`)
+  } else if (!inv.readOnly) {
     const display = `\`${shown(inv.argv)}\``
     if (target.cls === "prod") {
       return deny(ctx, "prod_mutation", `${display} is not a read-only operation and targets production (${target.evidence})`)
@@ -2006,6 +2027,7 @@ function remoteCheck(argv, segment, ctx) {
   if (ctx.remote.cls === "prod") {
     return deny(ctx, "prod_mutation", `\`${shown(argv)}\` runs on ${ctx.remote.label}, a production target, and is not a read-only command`)
   }
+  if (ctx.remote.cls === "trusted") return
   noteInfra(ctx, `${shown(argv)} on ${ctx.remote.label}`)
 }
 
@@ -2145,10 +2167,12 @@ export function guardPermission(req, { directory, env = process.env, aliases } =
     aliases: aliases === undefined ? loadAliases(env) : aliases instanceof Map ? aliases : new Map(Object.entries(aliases)),
     env,
     protectedTargets: parseProtectedTargets(env.OMP_JEV_PROTECTED_TARGETS),
+    trustedTargets: parseTrustedTargets(env.OMP_JEV_TRUSTED_TARGETS),
     budget: MAX_BUDGET,
     files: 0,
     deny: null,
     infra: [],
+    trusted: [],
     truncated: false,
     repoRoots: new Map(),
     virtualFiles: new Map(),
@@ -2177,5 +2201,6 @@ export function guardPermission(req, { directory, env = process.env, aliases } =
     const notes = state.truncated ? [...state.infra, "analysis truncated"] : state.infra
     return { decision: "infra", summary: notes.join("; ") }
   }
+  if (state.trusted.length) return { decision: "trusted", summary: state.trusted.join("; ") }
   return null
 }

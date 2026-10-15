@@ -1,22 +1,23 @@
 ---
 name: handoff-custom
 description: >
-  Transfer work to a fresh native omp session in Paseo or a full omp TUI in tmux,
-  or start a focused investigation with an explicitly requested model and thinking level.
-  Use for "handoff to a new agent to continue the work", "create a new GPT 6.1
-  Sol High session to investigate X", or requests to write a handoff document.
+  Hand off work from omp running inside the tern terminal to a fresh omp session
+  in a new tern pane, or start a focused investigation there with an explicitly
+  requested model and thinking level. Use for "handoff to a new agent to continue
+  the work", "create a new GPT 6.1 Sol High session to investigate X", or requests
+  to write a handoff document. Launching works only for omp inside tern.
 license: MIT
 metadata:
   runtime: omp
 ---
 
-# Custom handoff to a fresh omp session
+# Custom handoff to a fresh omp session in tern
 
 Transfer durable task state through a self-contained document, not conversation
 history. The successor has no access to your eval kernel, tool handles or memory.
-This skill starts a fresh native omp session in Paseo or a full interactive omp
-TUI in tmux. It does not create a `task` subagent, resume a conversation or fork
-the outgoing session.
+This skill is only for omp running inside the tern terminal: it starts a fresh
+interactive omp in a new tern pane beside yours. It does not create a `task`
+subagent, resume a conversation or fork the outgoing session.
 
 ## Request and ownership
 
@@ -31,8 +32,8 @@ the outgoing session.
   owns which scope. Default an investigation to read-only unless the user asked
   it to implement a change; never have both sessions edit the same files.
 - **Document only**: "create/write/update a handoff document". Save the document;
-  do not run the launcher or touch tmux. Report its path and this ready-to-paste
-  prompt: `Taking over after a handoff. Read <path> and follow it.`
+  do not run the launcher or open a tern pane. Report its path and this
+  ready-to-paste prompt: `Taking over after a handoff. Read <path> and follow it.`
 - A follow-up such as "and investigate X" takes priority over the old next steps.
   Record it verbatim, with the context needed to understand references like X.
 - Only the parent creates these sessions. Subagents report state to their parent.
@@ -142,15 +143,13 @@ owned by the successor merely because it appears in the document.
   for a model. Pass the user's model phrase to the launcher. A trailing effort
   word is recognized, so `--model 'GPT 6.1 Sol High'` is valid.
 - Efforts: `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `auto`.
-  For an explicitly selected model, Paseo must advertise the requested option:
-  do not assume that `auto` or `off` is supported just because the TUI accepts it.
-- The live catalog follows the transport: `paseo provider models omp --thinking
-  --json` for Paseo; `omp models --json` for tmux/manual. Exact provider/model
-  selectors take priority, then exact normalized ID/name, then normalized
-  substring. Spaces, dots, underscores and hyphens are equivalent; case is ignored.
-- With an explicit model, the launcher checks the requested thinking level
-  against that transport's catalog before creation. Without an explicit model,
-  the provider uses its default and validates any supplied thinking option.
+- The launcher resolves the phrase against the live `omp models --json` catalog.
+  Exact provider/model selectors take priority, then exact normalized ID/name,
+  then normalized substring. Spaces, dots, underscores and hyphens are
+  equivalent; case is ignored.
+- With an explicit model, the launcher checks the effort against the levels that
+  model advertises; omp accepts `auto` and `off` for every model. Without an
+  explicit model, it checks only that the effort is a known level.
 - If unavailable, do not silently substitute a model or create a default session.
   Report the blocker and saved document. For ambiguity, ask the user to choose
   among the exact selectors returned. A full selector removes ambiguity.
@@ -162,82 +161,61 @@ owned by the successor merely because it appears in the document.
 
 Find `scripts/start.mjs` beside this skill. Use its absolute path from the skill's
 resolved filesystem location (tracked workstation path:
-`~/.config/home-manager/agents/skills/handoff-custom/scripts/start.mjs`). Run with absolute
-handoff and working-directory paths, preserving the current checkout:
+`~/.config/home-manager/agents/skills/handoff-custom/scripts/start.mjs`). Run it
+with the bash tool, not the eval kernel: it needs the `TERN_PANE` variable that
+tern sets in your pane. Use absolute document and working-directory paths,
+preserving the current checkout:
 
 ```sh
 node <skill-directory>/scripts/start.mjs --file <absolute-document-path> --cwd <absolute-working-directory>
 node <skill-directory>/scripts/start.mjs --file <absolute-document-path> --cwd <absolute-working-directory> --model 'GPT 6.1 Sol High'
 ```
 
-These are alternatives, not two launches. `--check` validates the document,
-transport and requested model/thinking without creating a pane/session.
-`--thinking high` can be supplied separately.
+These are alternatives, not two launches. `--thinking high` can be supplied
+separately; `--help` lists every option.
 
-### Transport detection
+- `--check` validates the document, the tern pane, the working directory's
+  direnv state and the model/thinking. It writes no files and opens no pane.
+- A launch writes a private temporary overlay config containing only
+  `autoResume: false`, so omp starts a fresh session. Normal safety extensions,
+  rules, skills and model roles stay enabled; no persistent configuration
+  changes. Then it runs `tern split "$TERN_PANE" right --cwd <dir> --json --
+  <command>` once.
+- omp receives `@<document>` once as an argument and submits it as the first
+  prompt. Never type into a pane to start or prompt a successor: no `tern run`,
+  `tern send` or key input, and never submit the document again.
+- Outside tern the launcher refuses. Save the document and report it as in
+  **Document only**, stating that no successor is running.
 
-The default `--transport auto` selects:
+### Environment
 
-1. **Paseo** when `PASEO_AGENT_ID` or `PASEO_WORKSPACE_ID` is present, or a bounded
-   parent-process check finds `Paseo Daemon`/`Paseo Supervisor`. Native omp tools
-   can omit the environment markers, so ancestry covers that case. Paseo takes
-   precedence over inherited tmux variables.
-2. **tmux** when `TMUX` and a valid `TMUX_PANE` are present.
-3. **manual** otherwise. Installing Paseo or finding a running daemon alone
-   does not turn an unrelated terminal into a Paseo session.
-
-Use `--transport paseo|tmux|manual` only to override the detected surface when
-the user requests another destination or automatic detection is unavailable.
-Forced tmux still requires an explicit current pane. Never pick an arbitrary
-existing user pane or create a detached replacement handoff TUI.
-
-### Native Paseo
-
-The launcher uses `paseo run --background --provider omp` to create a fresh
-native session in the app. A local Paseo workspace record preserves the exact
-requested working directory; no git branch or worktree is created. It passes
-the resolved model/thinking only when requested, preserving normal provider
-configuration, safety extensions, rules and skills.
-
-The initial prompt tells the successor to read the retained document and follow
-it. That prompt is submitted once as part of creation. Do not separately call
-`paseo send`, import/resume the outgoing transcript, or pipe into a headless omp
-process. The returned Paseo agent ID identifies a new live controller, not a
-native task subagent or tmux terminal.
-
-### tmux or manual
-
-The launcher writes a private temporary overlay containing only
-`autoResume: false`; normal safety extensions, rules, skills and model roles
-remain enabled. No persistent configuration is changed.
-
-In tmux it runs `tmux split-window -h` targeting `TMUX_PANE`, with the current
-working directory and actual omp executable. `@<document>` is passed once:
-omp embeds the document in a native file wrapper and submits the initial prompt.
-Never use `send-keys` or submit the document again.
-
-Manual mode creates no session. It returns `status: manual` and a shell-quoted
-command for a new terminal using the same fresh-session overlay and model.
-Report explicitly that no successor is running yet.
+tern runs the command in your login shell. The launcher adds an interactive
+shell, which reads the rc files (zsh sources `secrets.env` there), and
+`direnv exec <dir>`, which loads the working directory's `.envrc`. The successor
+gets the same PATH, secrets and direnv variables as omp typed in a new pane. If
+direnv has not allowed that `.envrc`, the launcher stops before opening a pane:
+report it. Only the user runs `direnv allow`.
 
 ### Receipt and ownership
 
-`status: launched` proves Paseo creation acknowledgement or tmux pane creation,
-not a completed model turn. Report `transport`, the Paseo `agentId`/title or tmux
-`pane`, resolved model/thinking (or configured default), and document path.
-Do not invent a session UUID or claim the successor completed its task.
+`status: launched` means tern created the block and its program is this omp
+invocation with the document argument. It does not prove a completed model
+turn. Report the tern `block`, the resolved model/thinking (or configured
+default) and the document path. Do not invent a session ID or claim the
+successor completed its task.
 
-A visible startup error or uncertain creation receipt requires inspection of
-that destination, not an automatic retry. Preserve the document and any tmux
-pane or Paseo agent; a failed command may already have created a successor.
-The successor owns remaining work after a successful continuation launch:
-stop here. Do not wait for, poll or prompt it again. A manual command transfers
-no ownership until the user starts it.
+A nonzero exit always leaves the document intact. Follow its message:
 
-A nonzero exit always leaves the document intact. If receipt is uncertain,
-stop until ownership is resolved; do not create another session or continue
-editing concurrently. Keep the document and any TUI overlay after launch
+- "No successor was started": nothing is running. Fix the cause or report it.
+- A message that names a block: read it once with
+  `tern capture <block> --surfaces` (omp's TUI text appears only with
+  `--surfaces`) and report what it shows.
+- `tern split` reported no block: check `tern ls --json` once for a new omp block.
+
+Never retry automatically, close a successor's block or start another successor
+while one may be running; the user decides. The successor owns remaining work
+after a successful continuation launch: stop here. Do not wait for, poll,
+capture or prompt it again. Keep the document and the overlay after launch
 because the user may need them for recovery.
 
 Launcher regressions: `node --test <skill-directory>/scripts/start.test.mjs`.
-

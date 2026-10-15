@@ -1,136 +1,193 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { delimiter, join } from "node:path";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir, userInfo } from "node:os";
+import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const launcher = fileURLToPath(new URL("./start.mjs", import.meta.url));
 const selector = "openai-codex/gpt-6.1-sol";
-const nativeModels = [{ id: selector, model: "GPT-6.1-Sol", thinkingOptionIds: ["low", "high"] }];
+const document = "# Handoff: fixture\n\nA bounded test mission.\n";
+
+// The fake tern knows the parent pane 41 and the new block 3. A split records its argv and
+// starts the program as tern would; POSIX sh stands in for the user's interactive shell.
+// Block 3 reports omp as its program once the fake omp has started.
+const fakeTern = `
+import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+const root = process.env.TEST_ROOT;
+const [command, ...args] = process.argv.slice(2);
+if (command === "split") {
+  appendFileSync(root + "/splits.jsonl", JSON.stringify(args) + "\\n");
+  if (process.env.TEST_SPLIT === "fail") {
+    console.error("fixture split failure");
+    process.exit(1);
+  }
+  const [, , , script, ...positional] = args.slice(args.indexOf("--") + 1);
+  spawnSync("/bin/sh", ["-c", script, ...positional], { cwd: args[args.indexOf("--cwd") + 1], stdio: "ignore" });
+  console.log(JSON.stringify({ session: 1, tab: 2, block: 3 }));
+} else if (command === "process" && args[0] === "41") {
+  console.log(JSON.stringify({ pane: 41, child: { name: "zsh", argv: ["/bin/zsh", "-l"] } }));
+} else if (command === "process" && args[0] === "3") {
+  const started = existsSync(root + "/started.json") ? JSON.parse(readFileSync(root + "/started.json", "utf8")) : null;
+  console.log(JSON.stringify({ pane: 3, child: started && { name: "omp", argv: started.argv } }));
+} else if (command === "process") {
+  console.error("tern process: no block is called " + args[0]);
+  process.exit(1);
+} else process.exit(9);
+`;
+const fakeDirenv = `
+import { spawnSync } from "node:child_process";
+const [command, ...args] = process.argv.slice(2);
+if (command === "status") {
+  const foundRC = process.env.TEST_DIRENV === "blocked" ? { allowed: 1, path: process.cwd() + "/.envrc" } : null;
+  console.log(JSON.stringify({ state: { foundRC } }));
+} else if (command === "exec") {
+  const [directory, program, ...rest] = args;
+  const result = spawnSync(program, rest, { stdio: "inherit", env: { ...process.env, TEST_DIRENV_DIR: directory } });
+  process.exit(result.status ?? 1);
+} else process.exit(9);
+`;
+const fakeOmp = `
+import { readFileSync, writeFileSync } from "node:fs";
+const args = process.argv.slice(2);
+if (args[0] === "models") {
+  console.log(process.env.TEST_MODELS ?? JSON.stringify({ models: [
+    { selector: "${selector}", id: "gpt-6.1-sol", name: "GPT-6.1-Sol", thinking: ["high"] }] }));
+} else {
+  const documents = args.filter(arg => arg.startsWith("@"));
+  if (process.env.TEST_OMP === "fail" || documents.length !== 1
+    || !readFileSync(documents[0].slice(1), "utf8").includes("A bounded test mission.")) process.exit(5);
+  writeFileSync(process.env.TEST_ROOT + "/started.json", JSON.stringify({ argv: [process.argv[1], ...args],
+    direnv: process.env.TEST_DIRENV_DIR }));
+}
+`;
 
 function fixture(t, name = "handoff.md") {
   const root = mkdtempSync(join(tmpdir(), "handoff-test-"));
   const bin = join(root, "bin");
+  const overlays = join(root, "tmp");
   mkdirSync(bin);
+  mkdirSync(overlays);
   const file = join(root, name);
-  writeFileSync(file, "# Handoff: fixture\n\nA bounded test mission.\n");
-  const attempts = join(root, "attempts");
-  const env = { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}`, TMPDIR: root,
-    TEST_ATTEMPTS: attempts, TEST_NATIVE_MODELS: JSON.stringify(nativeModels), TEST_PARENT: "1 launchd" };
-  for (const key of ["TMUX", "TMUX_PANE", "PASEO_AGENT_ID", "PASEO_WORKSPACE_ID"]) delete env[key];
-  writeFileSync(join(bin, "ps"), `#!${process.execPath}\nconsole.log(process.env.TEST_PARENT);\n`, { mode: 0o700 });
-  writeFileSync(join(bin, "omp"), `#!${process.execPath}
-import { readFileSync } from 'node:fs';
-const args = process.argv.slice(2);
-if (args[0] === 'models') {
-  console.log(JSON.stringify({ models: [{ selector: '${selector}', id: 'gpt-6.1-sol', name: 'GPT-6.1-Sol', thinking: ['high'] }] }));
-} else {
-  const file = args.find(value => value.startsWith('@'))?.slice(1);
-  if (!file || !readFileSync(file, 'utf8').includes('A bounded test mission.')) process.exit(5);
-  console.log('fixture launched');
-}
-`, { mode: 0o700 });
-  writeFileSync(join(bin, "paseo"), `#!${process.execPath}
-import { appendFileSync } from 'node:fs';
-const args = process.argv.slice(2);
-if (args[0] === 'provider') {
-  console.log(process.env.TEST_NATIVE_MODELS);
-} else if (args[0] === 'run') {
-  appendFileSync(process.env.TEST_ATTEMPTS, 'create\\n');
-  console.log(process.env.TEST_RECEIPT ?? JSON.stringify({ agentId: 'fixture-agent', provider: 'omp',
-    cwd: args[args.indexOf('--cwd') + 1], status: 'running', title: 'Fixture successor' }));
-} else process.exit(6);
-`, { mode: 0o700 });
+  writeFileSync(file, document);
+  for (const [command, source] of Object.entries({ tern: fakeTern, direnv: fakeDirenv, omp: fakeOmp })) {
+    writeFileSync(join(bin, command), `#!${process.execPath}\n${source}`, { mode: 0o700 });
+  }
+  // PATH holds only the fakes, so a test can never reach the real tern daemon.
+  const env = { ...process.env, PATH: bin, TMPDIR: overlays, TERN_PANE: "41", TEST_ROOT: root };
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  return { root, file, attempts, env };
+  const splits = () => existsSync(join(root, "splits.jsonl"))
+    ? readFileSync(join(root, "splits.jsonl"), "utf8").trim().split("\n").map(line => JSON.parse(line))
+    : [];
+  return { root, bin, file, env, overlays, splits };
 }
 
 function launch(context, args = []) {
   return spawnSync(process.execPath, [launcher, "--file", context.file, "--cwd", context.root, ...args],
-    { env: context.env, cwd: context.root, encoding: "utf8", timeout: 10000 });
+    { env: context.env, cwd: context.root, encoding: "utf8", timeout: 20000 });
 }
 
-test("Paseo context takes precedence over inherited tmux context", t => {
-  const context = fixture(t);
-  Object.assign(context.env, { PASEO_AGENT_ID: "parent", TMUX: "inherited", TMUX_PANE: "%7" });
-  const result = launch(context, ["--check", "--model", "GPT 6.1 Sol High"]);
-  assert.equal(result.status, 0, result.stderr);
-  assert.equal(JSON.parse(result.stdout).transport, "paseo");
-  assert.equal(existsSync(context.attempts), false);
-});
-
-test("native Paseo ancestry launches a successor even when tool environment markers are missing", t => {
-  const context = fixture(t);
-  context.env.TEST_PARENT = "1 Paseo Daemon";
-  const result = launch(context);
+test("a launch starts omp once in a new tern pane with the document, model and fresh overlay", t => {
+  const context = fixture(t, "handoff ' $(touch unowned).md");
+  const result = launch(context, ["--model", "GPT 6.1 Sol High"]);
   assert.equal(result.status, 0, result.stderr);
   const receipt = JSON.parse(result.stdout);
   assert.equal(receipt.status, "launched");
-  assert.equal(receipt.transport, "paseo");
-  assert.equal(readFileSync(context.attempts, "utf8"), "create\n");
-});
-
-test("an ordinary terminal remains manual despite having Paseo installed", t => {
-  const context = fixture(t);
-  const result = launch(context);
-  assert.equal(result.status, 0, result.stderr);
-  assert.equal(JSON.parse(result.stdout).status, "manual");
-  assert.equal(existsSync(context.attempts), false);
-});
-
-test("forced tmux cannot launch into an unspecified pane", t => {
-  const context = fixture(t);
-  const result = launch(context, ["--transport", "tmux"]);
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /requires TMUX and a valid TMUX_PANE/);
-  assert.equal(existsSync(context.attempts), false);
-});
-
-test("Paseo's own thinking catalog prevents an incompatible launch even if omp supports it", t => {
-  const context = fixture(t);
-  context.env.TEST_NATIVE_MODELS = JSON.stringify([{ ...nativeModels[0], thinkingOptionIds: ["low"] }]);
-  const result = launch(context, ["--transport", "paseo", "--model", "GPT 6.1 Sol High"]);
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /does not support thinking high/);
-  assert.equal(existsSync(context.attempts), false);
-});
-
-test("Paseo cannot inherit omp-only implicit thinking levels", t => {
-  const context = fixture(t);
-  const result = launch(context, ["--transport", "paseo", "--model", selector, "--thinking", "auto"]);
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /does not support thinking auto/);
-  assert.equal(existsSync(context.attempts), false);
-});
-
-test("an ambiguous native model is rejected before creating a session", t => {
-  const context = fixture(t);
-  context.env.TEST_NATIVE_MODELS = JSON.stringify([...nativeModels, { ...nativeModels[0], id: "another/gpt-6.1-sol" }]);
-  const result = launch(context, ["--transport", "paseo", "--model", "GPT 6.1 Sol High"]);
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /Ambiguous model/);
-  assert.equal(existsSync(context.attempts), false);
-});
-
-test("an uncertain native creation receipt preserves the snapshot and never retries", t => {
-  const context = fixture(t);
-  context.env.TEST_RECEIPT = JSON.stringify({ status: "running" });
-  const result = launch(context, ["--transport", "paseo"]);
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /Creation may have succeeded/);
-  assert.equal(readFileSync(context.attempts, "utf8"), "create\n");
-  assert.equal(existsSync(context.file), true);
-});
-
-test("manual shell commands preserve quoted document paths without executing their contents", t => {
-  const context = fixture(t, "handoff ' $(touch unowned).md");
-  const result = launch(context, ["--transport", "manual"]);
-  assert.equal(result.status, 0, result.stderr);
-  const started = spawnSync("/bin/sh", ["-c", JSON.parse(result.stdout).command],
-    { env: context.env, cwd: context.root, encoding: "utf8" });
-  assert.equal(started.status, 0, started.stderr);
-  assert.equal(started.stdout.trim(), "fixture launched");
+  assert.equal(receipt.block, 3);
+  assert.equal(readFileSync(receipt.config, "utf8"), "autoResume: false\n");
+  const [split, ...retries] = context.splits();
+  assert.deepEqual(retries, []);
+  const separator = split.indexOf("--");
+  assert.deepEqual(split.slice(0, separator), ["41", "right", "--cwd", context.root, "--json"]);
+  // An interactive shell reads the rc files, where zsh sources secrets.env.
+  assert.deepEqual(split.slice(separator + 1, separator + 4), [userInfo().shell, "-i", "-c"]);
+  const started = JSON.parse(readFileSync(join(context.root, "started.json"), "utf8"));
+  assert.deepEqual(started.argv, [join(context.bin, "omp"), "--config", receipt.config, "--cwd", context.root,
+    "--model", selector, "--thinking", "high", `@${context.file}`]);
+  assert.equal(started.direnv, context.root);
   assert.equal(existsSync(join(context.root, "unowned")), false);
+});
+
+test("--check resolves the model without writing an overlay or opening a pane", t => {
+  const context = fixture(t);
+  const result = launch(context, ["--check", "--model", "GPT 6.1 Sol High"]);
+  assert.equal(result.status, 0, result.stderr);
+  const validated = JSON.parse(result.stdout);
+  assert.equal(validated.status, "validated");
+  assert.equal(validated.model, selector);
+  assert.equal(validated.thinking, "high");
+  assert.deepEqual(context.splits(), []);
+  assert.deepEqual(readdirSync(context.overlays), []);
+});
+
+test("outside a known tern pane the launcher refuses before writing anything", t => {
+  const context = fixture(t);
+  for (const pane of [undefined, "42"]) {
+    if (pane) context.env.TERN_PANE = pane;
+    else delete context.env.TERN_PANE;
+    const result = launch(context);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, pane ? /no block is called 42/ : /only inside a tern pane/);
+    assert.match(result.stderr, /No successor was started/);
+  }
+  assert.deepEqual(context.splits(), []);
+  assert.deepEqual(readdirSync(context.overlays), []);
+  assert.equal(readFileSync(context.file, "utf8"), document);
+});
+
+test("an .envrc that direnv has not allowed stops the launch before opening a pane", t => {
+  const context = fixture(t);
+  context.env.TEST_DIRENV = "blocked";
+  const result = launch(context);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /direnv allow/);
+  assert.deepEqual(context.splits(), []);
+  assert.deepEqual(readdirSync(context.overlays), []);
+});
+
+test("a successor that exits during startup is not reported as launched", t => {
+  const context = fixture(t);
+  context.env.TEST_OMP = "fail";
+  const result = launch(context);
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /omp exited during startup/);
+  assert.match(result.stderr, /tern capture 3 --surfaces/);
+  assert.equal(context.splits().length, 1);
+});
+
+test("a failed split is reported for inspection and never retried", t => {
+  const context = fixture(t);
+  context.env.TEST_SPLIT = "fail";
+  const result = launch(context);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /tern ls --json/);
+  assert.equal(context.splits().length, 1);
+});
+
+test("ambiguous models and unsupported thinking levels are rejected before opening a pane", t => {
+  const context = fixture(t);
+  context.env.TEST_MODELS = JSON.stringify({ models: [
+    { selector, id: "gpt-6.1-sol", name: "GPT-6.1-Sol", thinking: ["high"] },
+    { selector: "another/gpt-6.1-sol", id: "gpt-6.1-sol", name: "GPT-6.1-Sol", thinking: ["high"] },
+  ] });
+  const ambiguous = launch(context, ["--model", "GPT 6.1 Sol"]);
+  assert.equal(ambiguous.status, 1);
+  assert.match(ambiguous.stderr, /Ambiguous model/);
+  delete context.env.TEST_MODELS;
+  const unsupported = launch(context, ["--model", selector, "--thinking", "low"]);
+  assert.equal(unsupported.status, 1);
+  assert.match(unsupported.stderr, /does not support thinking low/);
+  assert.deepEqual(context.splits(), []);
+});
+
+test("--help succeeds and unknown options still fail", () => {
+  const help = spawnSync(process.execPath, [launcher, "--help"], { encoding: "utf8" });
+  assert.equal(help.status, 0, help.stderr);
+  assert.match(help.stdout, /--file <path>/);
+  const unknown = spawnSync(process.execPath, [launcher, "--transport", "tmux"], { encoding: "utf8" });
+  assert.equal(unknown.status, 1);
+  assert.match(unknown.stderr, /Unknown option '--transport'/);
 });

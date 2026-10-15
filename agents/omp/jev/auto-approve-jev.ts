@@ -34,13 +34,45 @@ export type AutoApproveJevDeps = { requestJev?: RequestJev; completeSimple?: Com
 
 // Subagent creation never executes by itself; children inherit the policy
 // extensions, so delegation runs without a parent review. Native read-only
-// and scheduling tools skip as well. Everything else, including `write` and
-// `eval`, is reviewed; a `write xd://<tool>` that omp re-dispatches to a
+// and scheduling tools skip as well, as do local file writes and edits (see
+// `isLocalFileMutation`). Everything else, including `eval` and any other
+// `write`, is reviewed; a `write xd://<tool>` that omp re-dispatches to a
 // registered tool is reviewed once, as that tool's own call (see
 // `reviewedAsInnerToolCall`).
 // Membership is checked with `=== true` so inherited keys never match.
 export const SKIPPED_TOOLS: Record<string, true> = {
   read: true, grep: true, glob: true, find: true, web_search: true, ask: true, todo: true, wait: true, task: true,
+}
+
+// `write` and `edit` that only touch local files never execute or reach a
+// remote system by themselves; commands that run the result still meet the
+// bash/eval review. Fail closed: anything that is not a plain path (xd://
+// devices in any spelling, ssh://, other URLs, `[path#TAG]` selectors,
+// archive/sqlite `file:member` forms) keeps review. Only `local://` is
+// accepted as a scheme.
+const NON_PLAIN_PATH = /[:\[\]]/
+
+// `edit` carries its target paths in `[PATH#TAG]` headers inside `input`, and
+// a rename destination in an `MV DEST` op line (DEST may be quoted). Body rows
+// start with `+`, so they never match either pattern.
+const EDIT_HEADER = /^\[([^\]\n]+)#[0-9A-Fa-f]{4}\][ \t]*$/gm
+const EDIT_MOVE = /^[ \t]*MV\b[ \t]*(.*?)[ \t]*$/gm
+
+export function isLocalFileMutation(event: ToolCallEvent): boolean {
+  const editInput = event.input?.input
+  let paths: unknown[]
+  if (event.toolName === "write") {
+    paths = [event.input?.path]
+  } else if (event.toolName === "edit" && typeof editInput === "string") {
+    paths = Array.from(editInput.matchAll(EDIT_HEADER), (match) => match[1])
+    for (const move of editInput.matchAll(EDIT_MOVE)) paths.push(move[1].replace(/^(["'])(.*)\1$/, "$2"))
+  } else {
+    return false
+  }
+  return (
+    paths.length > 0 &&
+    paths.every((path) => typeof path === "string" && path.length > 0 && (path.startsWith("local://") || !NON_PLAIN_PATH.test(path)))
+  )
 }
 
 // omp handles these xd:// names itself, before its tool registry, so their
@@ -149,7 +181,7 @@ export async function reviewToolCall(
   ctx: ToolCallContext,
   deps: AutoApproveJevDeps = {},
 ): Promise<ToolCallResult> {
-  if (SKIPPED_TOOLS[event.toolName] === true) return undefined
+  if (SKIPPED_TOOLS[event.toolName] === true || isLocalFileMutation(event)) return undefined
   const registry = ctx.modelRegistry
   const sessionId = sessionIdOf(ctx)
   const request = deps.requestJev ?? (sharedRequestJev as RequestJev)

@@ -69,9 +69,7 @@
   # Fuzzy find over all repos under ~/dev
   cdr = ''    cd "$(fd --search-path ~/dev -d 7 -t d --hidden --no-ignore-vcs "^\.git$" \
                     | xargs dirname \
-                    | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")" \
-            && [[ -n $TMUX ]] \
-            && tmux rename-window "''${PWD##*/}"'';
+                    | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")"'';
   # Fuzzy find tree and open folder in neovim
   nvd = ''nv $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
   cdt = ''    cd "$(git rev-parse --show-toplevel)" && cd "$(fd --type f --hidden --glob ".terraform.lock.hcl" \

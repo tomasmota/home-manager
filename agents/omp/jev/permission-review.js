@@ -19,6 +19,7 @@
 //   OMP_JEV_FALLBACK_TIMEOUT_MS=15000   timeout per fallback model
 //   OMP_JEV_ON_EXHAUSTION=allow         allow|manual|deny; guard-flagged infrastructure mutations always deny
 //   OMP_JEV_PROTECTED_TARGETS           comma-separated extra names the guard treats as production (e.g. mgmt)
+//   OMP_JEV_TRUSTED_TARGETS             comma-separated exact kube context/cluster names where any call, destructive included, skips review
 //   OMP_JEV_DEBUG=1                     opt in to 30-day private audit; unset/0 disables, or use an absolute .jsonl base path
 //   OMP_REVIEW_DIR                      overrides the project directory sent to reviewers
 
@@ -128,12 +129,13 @@ function isAutoAllowable(req) {
 }
 
 const TRUSTED_COMMANDS = new Set(["tern", "git", "nix", "cd", "ls", "strings", "grep", "pgrep"])
+const TRUSTED_TARGET_COMMANDS = new Set([
+  "kubectl", "helm", "helmfile", "cd", "grep", "jq", "yq", "head", "tail", "wc", "sort", "uniq", "cut", "tr",
+])
 
-function isTrustedCommand(req) {
-  if (req.action !== "bash") return false
-  const command = req.resources[0]
-  // The guard's parser leaves ${...} opaque. Reject shell expansions outside
-  // single quotes so nested substitutions cannot smuggle in another command.
+// The guard's parser leaves ${...} opaque. Reject shell expansions outside
+// single quotes so nested substitutions cannot smuggle in another command.
+function hasShellExpansion(command) {
   let quote = null
   for (let i = 0; i < command.length; i++) {
     const char = command[i]
@@ -147,18 +149,32 @@ function isTrustedCommand(req) {
     }
     if (char === "'" && quote !== '"') quote = "'"
     else if (char === '"') quote = quote === '"' ? null : '"'
-    else if (char === "$" || char === "`") return false
+    else if (char === "$" || char === "`") return true
   }
-  if (quote) return false
+  return quote !== null
+}
+
+function everySegment(req, accept) {
+  if (req.action !== "bash") return false
+  const command = req.resources[0]
+  if (hasShellExpansion(command)) return false
   const parsed = parseShell(command)
-  return parsed.substitutions.length === 0 && parsed.segments.length > 0 &&
-    parsed.segments.every((segment) => {
-      const executable = segment.words[0]?.value || ""
-      const name = executable.slice(executable.lastIndexOf("/") + 1)
-      return (executable === name || executable.startsWith("/") || executable.startsWith("~/")) &&
-        TRUSTED_COMMANDS.has(name) &&
-        segment.redirects.length === 0 && segment.stdin.length === 0
-    })
+  return parsed.substitutions.length === 0 && parsed.segments.length > 0 && parsed.segments.every((segment) => {
+    const executable = segment.words[0]?.value || ""
+    const name = executable.slice(executable.lastIndexOf("/") + 1)
+    return (executable === name || executable.startsWith("/") || executable.startsWith("~/")) && accept(name, segment)
+  })
+}
+
+function isTrustedCommand(req) {
+  return everySegment(req, (name, segment) =>
+    TRUSTED_COMMANDS.has(name) && segment.redirects.length === 0 && segment.stdin.length === 0)
+}
+
+function isTrustedTargetCommand(req) {
+  return everySegment(req, (name, segment) =>
+    TRUSTED_TARGET_COMMANDS.has(name) &&
+    !segment.redirects.some((item) => /^(?:>|>>|>\||&>|&>>|<>)$/.test(item.op) && !/^(?:\/dev\/(?:null|stdout|stderr)|\d|-)$/.test(item.target)))
 }
 
 function stringList(value) {
@@ -446,6 +462,15 @@ export function createPermissionEvaluator({ generate, directory, requestJev: req
         event.effect = "allow"
         event.message = undefined
         await audit("allow", "auto-allow", "trusted_command")
+        return
+      }
+
+      // Only when the guard saw nothing but trusted-target calls and the whole
+      // command is kube CLIs plus read filters; anything else keeps review.
+      if (guard?.decision === "trusted" && isTrustedTargetCommand(req)) {
+        event.effect = "allow"
+        event.message = undefined
+        await audit("allow", "auto-allow", "trusted_target")
         return
       }
 

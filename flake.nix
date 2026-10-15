@@ -3,6 +3,8 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    # Pin Atuin 18.21.0 until https://github.com/NixOS/nixpkgs/pull/574333 reaches nixos-unstable.
+    atuin-nixpkgs.url = "github:nixos/nixpkgs/151fa4e8ddfdd8dd25d945ad94ed54a13de9f6e4";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -17,6 +19,7 @@
 
   outputs = {
     nixpkgs,
+    atuin-nixpkgs,
     home-manager,
     nix-darwin,
     omp,
@@ -87,7 +90,17 @@
                 username = user;
                 homeDirectory = macHome;
                 # Local shared instructions/skills and omp are Mac-only.
-                extraModules = [./agents.nix ./agents/omp];
+                extraModules = [
+                  ./agents.nix
+                  ./agents/omp
+                  {
+                    nixpkgs.overlays = [
+                      (_final: _prev: {
+                        atuin = atuin-nixpkgs.legacyPackages.${macSystem}.atuin;
+                      })
+                    ];
+                  }
+                ];
               };
             };
           }

@@ -122,11 +122,40 @@ test("an unavailable active-tool list keeps the outer review", async () => {
   assert.equal(calls.jev, 1)
 })
 
-test("non-device writes are still reviewed", async () => {
-  for (const path of ["local://notes.md", "/repo/src/main.ts", "skill://x"]) {
+test("local file writes and edits skip review", async () => {
+  for (const path of ["local://notes.md", "/repo/src/main.ts", "iac/eso_trial.tf", "~/notes.md", "./a b.txt"]) {
+    const { calls, call } = load()
+    assert.equal(await call("write", { path, content: "text" }), undefined, path)
+    assert.equal(calls.jev, 0, path)
+  }
+  const { calls, call } = load()
+  assert.equal(await call("edit", { input: "[/repo/a.tf#A1B2]\nPUT 1.=1:\n+see https://example.com\n[b.tf#C3D4]\nPUT >$:\n+x" }), undefined)
+  assert.equal(calls.jev, 0)
+  for (const dest of ["/repo/b.tf", '"/repo/my file.tf"']) {
+    const moved = load()
+    assert.equal(await moved.call("edit", { input: `[/repo/a.tf#A1B2]\nPUT 1.=1:\n+MV x\nMV ${dest}` }), undefined, dest)
+    assert.equal(moved.calls.jev, 0, dest)
+  }
+})
+
+test("non-local or ambiguous write and edit targets are still reviewed", async () => {
+  for (const path of ["skill://x", "ssh://host/etc/passwd", "agent://all", "db.sqlite:table", "a.zip:member", "[/repo/a.ts#A1B2]", ""]) {
     const { calls, call } = load()
     assert.equal(await call("write", { path, content: "text" }), undefined, path)
     assert.equal(calls.jev, 1, path)
+  }
+  for (const input of [
+    "[ssh://host/etc/hosts#A1B2]\nPUT 1.=1:\n+x",
+    "[/repo/a.tf#A1B2]\nPUT 1.=1:\n+x\n[ssh://host/b#C3D4]\nPUT 1.=1:\n+x",
+    "[/repo/a.tf#A1B2]\nPUT 1.=1:\n+x\nMV ssh://host/b.tf",
+    '[/repo/a.tf#A1B2]\nPUT 1.=1:\n+x\nMV "ssh://host/b.tf"',
+    "[/repo/a.tf#A1B2]\nPUT 1.=1:\n+x\nMV",
+    "no headers here",
+    42,
+  ]) {
+    const { calls, call } = load()
+    assert.equal(await call("edit", { input }), undefined, String(input))
+    assert.equal(calls.jev, 1, String(input))
   }
 })
 

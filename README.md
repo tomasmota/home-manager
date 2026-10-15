@@ -104,3 +104,4 @@ EOF
 ## Notes
 
 - Aliases and git includes assume repos usually live under `~/dev/work` and `~/dev/personal`.
+- Atuin's macOS package is pinned separately in `flake.nix`; Linux and other packages follow the main nixpkgs input.

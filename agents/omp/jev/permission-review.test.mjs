@@ -136,6 +136,61 @@ test("protected targets from OMP_JEV_PROTECTED_TARGETS are production", async ()
   })
 })
 
+test("trusted targets from OMP_JEV_TRUSTED_TARGETS run any command without review", async () => {
+  const command = "kubectl --context lab-mvp delete ns payments"
+  assert.equal((await review("bash", [command])).effect, "deny")
+  await withEnv("OMP_JEV_TRUSTED_TARGETS", "other, Lab-MVP", async () => {
+    for (const command of [
+      "kubectl --context lab-mvp delete ns payments",
+      "kubectl --context=lab-mvp apply -f m.yaml",
+      "kubectl --context lab-mvp scale deploy api --replicas=0",
+      "kubectl --context lab-mvp exec -it api-0 -- sh -c 'rm -rf /srv/cache && systemctl restart app'",
+      "kubectl --context lab-mvp get pods -A | grep Crash | wc -l",
+      "kubectl --context lab-mvp get pods\nkubectl --context lab-mvp delete pod x",
+      "helm --kube-context lab-mvp uninstall api",
+      "kubectl --context lab-mvp apply -f - <<EOF\napiVersion: v1\nEOF",
+    ]) {
+      for (const jev of ["safe", "down"]) {
+        const result = await review("bash", [command], { jev, fallback: "down" })
+        assert.equal(result.effect, "allow", command)
+        assert.equal(result.audit.source, "auto-allow", command)
+        assert.equal(result.audit.reasonCode, "trusted_target", command)
+        assert.equal(result.calls.jev, 0, command)
+        assert.equal(result.calls.fallback, 0, command)
+      }
+    }
+  })
+})
+
+test("trusted targets never loosen production, implicit or mixed targets", async () => {
+  await withEnv("OMP_JEV_TRUSTED_TARGETS", "lab-mvp, lab-prod", async () => {
+    for (const command of [
+      "kubectl --context lab-prod delete ns x",
+      "kubectl --context lab-mvp --cluster prod delete ns x",
+      "kubectl --context lab-mvp delete ns x && kubectl --context prod delete ns y",
+      "kubectl --context lab-mvp exec api-0 -- kubectl --context prod delete ns x",
+      "kubectl --context lab-mvp delete ns x && kubectl delete ns y",
+      "kubectl --context lab-mvp-2 delete ns x",
+      "bash -c 'kubectl --context lab-mvp delete ns x; kubectl delete ns y'",
+    ]) {
+      const result = await review("bash", [command], { jev: "down", fallback: "down" })
+      assert.notEqual(result.audit.reasonCode, "trusted_target", command)
+      assert.equal(result.effect, "deny", command)
+    }
+    // Anything beyond kube CLIs and read filters, or redirects/expansions, keeps normal review.
+    for (const command of [
+      "kubectl --context lab-mvp get pods && rm -rf ./build",
+      "kubectl --context lab-mvp get pods > out.txt",
+      "kubectl --context lab-mvp delete pod $(cat pods.txt)",
+      "env FOO=1 kubectl --context lab-mvp delete pod x",
+    ]) {
+      const result = await review("bash", [command])
+      assert.notEqual(result.audit.reasonCode, "trusted_target", command)
+      assert.equal(result.calls.jev, 1, command)
+    }
+  })
+})
+
 const NOT_HARD_DENIED = [
   bash("kubectl --context prod get pods -A"),
   bash("kubectl --context prod describe deploy api"),

@@ -143,7 +143,9 @@ including `secrets.env`, into the Nix store. Running sessions and
 
 `jev/permission-review.js`, `infra-guard.js`, `jev-client.js` and
 `decision-audit.js` are locally owned reviewer modules; edit them here.
-Read-only tools and `task` spawns skip review. A `write xd://<tool>` that omp
+Read-only tools, `task` spawns and `write`/`edit` calls whose target is a plain
+local path (or `local://`) skip review; `ssh://`, other URLs, `file:member`
+forms and anything unparsable keep it. A `write xd://<tool>` that omp
 re-dispatches to a registered tool (MCP tools, `lsp`, `debug`, `ast_edit`, ...)
 is reviewed once, as that tool's own call; self-handled devices
 (`report_issue`, `resolve`, `reject`, `propose`) and unknown devices are
@@ -164,6 +166,15 @@ content or files passed to node/python. It hard-denies:
   staging, sandbox, kind, ...); implicit defaults count as unknown;
 - force-pushes or deletions of main/master/release/prod branches, and
   repository deletion.
+
+Exception: a call whose every `--context`/`--cluster`/`--kube-context` exactly
+matches an entry of `OMP_JEV_TRUSTED_TARGETS` (comma-separated, kept in
+`secrets.env`) is never denied or reviewed, destructive calls included. This
+applies only to explicit targets without a production word, and only when the
+whole command is kubectl/helm/helmfile plus read filters (`grep`, `jq`, ...)
+without redirects or shell expansions; it also covers commands run through
+`kubectl exec`. Otherwise normal review applies. Audit:
+`reasonCode: trusted_target`.
 
 Direct `tern`, `git`, `nix`, `cd`, `ls`, `strings`, `grep` and `pgrep` bash
 commands auto-allow after these hard denies, without Jev or fallback requests.
