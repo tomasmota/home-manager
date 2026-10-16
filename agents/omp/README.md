@@ -139,6 +139,18 @@ including `secrets.env`, into the Nix store. Running sessions and
 `/reload-plugins` do not load a new extension. Regression checks:
 `node --test agents/omp/jev/tmux-title.test.mjs agents/omp/jev/tmux-status-core.test.mjs agents/omp/jev/tmux-status.test.mjs`.
 
+## Briefs
+
+`brief/` gives a session fixed, user-written context: a linked Jira issue (the
+agent fetches it through the Jira MCP tool), free-form notes, or both.
+
+- `brief new KEY [-j ISSUE] [-m TEXT]` creates one in `$XDG_DATA_HOME/briefs/`;
+  the link is `jira: ISSUE` front matter. `brief --help` lists `edit`, `ls`,
+  `done`, `restore`, `rm` and `prune`. Agents never write briefs.
+- `/brief [KEY|off]` or `omp --brief KEY` loads one. The session records it
+  (resume restores it, `/new` keeps it), and every main-agent turn re-reads the
+  file into the end of the system prompt. Subagents never receive it.
+
 ## Permission review
 
 `jev/permission-review.js`, `infra-guard.js`, `jev-client.js` and

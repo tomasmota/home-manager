@@ -1,0 +1,40 @@
+#compdef brief
+
+# Keys of the briefs in the given store directories (active, archive).
+_brief_keys() {
+  local root=${XDG_DATA_HOME:-$HOME/.local/share}/briefs dir expl
+  local -a keys
+  for dir in "$@"; do
+    keys+=("$root/$dir"/*.md(N:t:r))
+  done
+  _wanted briefs expl brief compadd -a keys
+}
+
+_brief() {
+  local curcontext=$curcontext state line
+  local -a commands=(
+    'new:create a brief'
+    'edit:edit an active brief'
+    'ls:list briefs'
+    'done:archive an active brief'
+    'restore:restore an archived brief'
+    'rm:delete a brief permanently'
+    'prune:archive briefs that are no longer used'
+  )
+  _arguments -C '1:command:->command' '*::argument:->argument'
+  case $state in
+    command) _describe -t commands 'brief command' commands ;;
+    argument)
+      case $words[1] in
+        edit | done) _arguments '1:brief:{_brief_keys active}' ;;
+        restore) _arguments '1:brief:{_brief_keys archive}' ;;
+        rm) _arguments '1:brief:{_brief_keys active archive}' ;;
+        ls) _arguments '(-a --all)'{-a,--all}'[include archived briefs]' ;;
+        prune) _arguments '--days=[offer briefs unused for this many days]:days: ' ;;
+        new) _arguments '1:key: ' '(-j --jira)'{-j,--jira}'[link a Jira issue]:issue: ' '(-m --message)'{-m,--message}'[notes text]:text: ' ;;
+      esac
+      ;;
+  esac
+}
+
+_brief "$@"

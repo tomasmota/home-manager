@@ -117,6 +117,7 @@
       "${jevDir}/tmux-title.ts"
       "${jevDir}/tmux-status.ts"
       "${./status-line.ts}"
+      "${./brief/brief.ts}"
     ];
     # Max review budget: 30s Jev + 2 x 60s fallback, plus auth overhead.
     extensionHandlers.toolCallTimeoutMs = 180000;
@@ -166,7 +167,7 @@
     exec ${pkgs.bash}/bin/bash ${./merge-config.sh} "$@"
   '';
 in {
-  imports = [omp.homeManagerModules.default];
+  imports = [omp.homeManagerModules.default ./brief];
 
   programs.omp = {
     enable = true;
