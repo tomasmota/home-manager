@@ -52,6 +52,20 @@ in ''
     fi
   }
 
+  # fuzzy pick a tofu root (directory with a .terraform.lock.hcl) in the current repo into $REPLY;
+  # --init also prints it and runs tofu init there unless it already has a .terraform directory
+  _tofu_root() {
+    local repo dir
+    repo=$(git rev-parse --show-toplevel) || return
+    dir=$(cd -q "$repo" && fd --type f --hidden --glob ".terraform.lock.hcl" \
+      | xargs -n1 dirname \
+      | fzf --preview 'tree -I "node_modules|.terraform|.git|dist|coverage" -C {}') || return
+    REPLY=$repo/$dir
+    [[ $1 == --init ]] || return 0
+    print -r -- "''${(D)REPLY}"
+    [[ -d $REPLY/.terraform ]] || tofu -chdir="$REPLY" init
+  }
+
   # show remaining weekly quota for z.ai and chatgpt plus
   quotas() {
     {

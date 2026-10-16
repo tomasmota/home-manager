@@ -58,6 +58,9 @@
   tfi = "tofu init";
   tfp = "tofu plan --parallelism=30";
   tfa = "tofu apply --parallelism=30";
+  # plan/apply a root picked like cdt without leaving the current directory
+  tfpt = ''_tofu_root --init && tofu -chdir="$REPLY" plan --parallelism=30'';
+  tfat = ''_tofu_root --init && tofu -chdir="$REPLY" apply --parallelism=30'';
   tfd = "tofu destroy";
   tfs = "tofu show";
   tfv = "tofu validate";
@@ -72,8 +75,5 @@
                     | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")"'';
   # Fuzzy find tree and open folder in neovim
   nvd = ''nv $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
-  cdt = ''    cd "$(git rev-parse --show-toplevel)" && cd "$(fd --type f --hidden --glob ".terraform.lock.hcl" \
-                 | xargs -n1 dirname \
-                 | fzf --preview "tree -I \"node_modules|.terraform|.git|dist|coverage\" -C {}")"
-  '';
+  cdt = ''_tofu_root && cd "$REPLY"'';
 }
