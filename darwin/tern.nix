@@ -4,11 +4,12 @@
   pkgs,
   ...
 }: let
-  user = "tomas";
-  home = "/Users/tomas";
+  user = config.system.primaryUser;
+  home = config.users.users.${user}.home;
   stateDir = "${home}/.local/state/tern-pilot";
   configDir = "${home}/Library/Application Support/Tern";
   tokenFile = "${stateDir}/web-token";
+  daemonSocket = "${configDir}/daemon.sock";
   assetsRoot = "${home}/.local/share/tern-web";
   tailscale = "/run/current-system/sw/bin/tailscale";
   runtime = import ./tern/runtime {inherit pkgs;};
@@ -109,6 +110,14 @@
   '';
   daemonCommand = pkgs.writeShellScript "tern-pilot-daemon" ''
     set -eu
+    socket="${daemonSocket}"
+    # An app-spawned daemon may own the socket; the real daemon would exit 0
+    # at once and KeepAlive would respawn this job forever. Idle instead and
+    # leave the secrets untouched until ownership frees. A stale socket file
+    # without a listener has no owner, so it does not block startup.
+    while /usr/sbin/lsof -t -- "$socket" >/dev/null 2>&1; do
+      /bin/sleep 30
+    done
     if [ -f "${home}/.config/home-manager/secrets.env" ]; then
       set -a
       if ! . "${home}/.config/home-manager/secrets.env" >/dev/null 2>&1; then
@@ -117,7 +126,7 @@
       fi
       set +a
     fi
-    exec "${runtime.binary}" daemon
+    exec "${runtime.binary}" daemon --socket "$socket"
   '';
   tailnetIdentity = pkgs.writeShellScript "tern-pilot-tailnet-identity" ''
     set -euo pipefail
@@ -195,7 +204,7 @@
   };
   path = [
     "${pkgs.zsh}/bin"
-    "/etc/profiles/per-user/tomas/bin"
+    "/etc/profiles/per-user/${user}/bin"
     "/run/current-system/sw/bin"
     "/opt/homebrew/bin"
     "/usr/bin"
@@ -203,7 +212,8 @@
     "/usr/sbin"
     "/sbin"
   ];
-  plist = name: pkgs.writeText "org.nixos.${name}.plist"
+  plist = name:
+    pkgs.writeText "org.nixos.${name}.plist"
     config.environment.userLaunchAgents."org.nixos.${name}.plist".text;
   cliEnvironment = pkgs.writeText "tern-pilot-cli-env.zsh" ''
     case "$PATH" in
@@ -242,30 +252,31 @@
     ${applySettings}/bin/tern-settings-apply
     mkdir -p "${home}/Library/LaunchAgents" "${home}/.local/bin"
     ${lib.concatMapStringsSep "\n" (name: ''
-      target="${home}/Library/LaunchAgents/org.nixos.${name}.plist"
-      service="gui/$(id -u)/org.nixos.${name}"
-      if "$web_only" && [ "${name}" = "tern-pilot-daemon" ]; then
-        # A browser upgrade must not stop the user's pane-owning daemon.
-        launchctl print "$service" >/dev/null 2>&1 || {
-          echo "Web-only activation requires the managed daemon; activate the full pilot first" >&2
-          exit 1
-        }
-      elif launchctl print "$service" >/dev/null 2>&1; then
-        if ! cmp -s ${plist name} "$target"; then
-          if ! "$web_only"; then
-            echo "org.nixos.${name} is already loaded with different configuration; finish Tern turns before unloading it" >&2
+        target="${home}/Library/LaunchAgents/org.nixos.${name}.plist"
+        service="gui/$(id -u)/org.nixos.${name}"
+        if "$web_only" && [ "${name}" = "tern-pilot-daemon" ]; then
+          # A browser upgrade must not stop the user's pane-owning daemon.
+          launchctl print "$service" >/dev/null 2>&1 || {
+            echo "Web-only activation requires the managed daemon; activate the full pilot first" >&2
             exit 1
+          }
+        elif launchctl print "$service" >/dev/null 2>&1; then
+          if ! cmp -s ${plist name} "$target"; then
+            if ! "$web_only"; then
+              echo "org.nixos.${name} is already loaded with different configuration; finish Tern turns before unloading it" >&2
+              exit 1
+            fi
+            # Only disposable browser/route clients are replaced in this mode.
+            launchctl bootout "$service"
+            install -m 600 ${plist name} "$target"
+            launchctl bootstrap "gui/$(id -u)" "$target"
           fi
-          # Only disposable browser/route clients are replaced in this mode.
-          launchctl bootout "$service"
+        else
           install -m 600 ${plist name} "$target"
           launchctl bootstrap "gui/$(id -u)" "$target"
         fi
-      else
-        install -m 600 ${plist name} "$target"
-        launchctl bootstrap "gui/$(id -u)" "$target"
-      fi
-    '') labels}
+      '')
+      labels}
     # Without -k this starts a stopped job but preserves an already running PID.
     /bin/launchctl kickstart "gui/$(id -u)/org.nixos.tern-pilot-daemon"
     target="${home}/.local/bin/tern"
@@ -316,17 +327,19 @@
     fi
   '';
 in {
-  home-manager.users.tomas = {lib, ...}: {
-    home.packages = [runtime.tern activate applySettings];
-    home.file."Library/Application Support/Tern/plugins/terraform".source =
-      "${ternSdk}/plugins/examples/terraform";
-    home.file."Library/Application Support/Tern/plugins/jsonx".source =
-      "${ternSdk}/plugins/examples/jsonx";
-    home.file."Library/Application Support/Tern/plugins/tern-kube".source = ternKube;
-    # Keep settings writable for Tern's UI; only managed keyboard keys win.
-    home.activation.ternSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
-      run ${applySettings}/bin/tern-settings-apply
-    '';
+  home-manager.users.${user} = {lib, ...}: {
+    home = {
+      packages = [runtime.tern activate applySettings];
+      file = {
+        "Library/Application Support/Tern/plugins/terraform".source = "${ternSdk}/plugins/examples/terraform";
+        "Library/Application Support/Tern/plugins/jsonx".source = "${ternSdk}/plugins/examples/jsonx";
+        "Library/Application Support/Tern/plugins/tern-kube".source = ternKube;
+      };
+      # Keep settings writable for Tern's UI; only managed keyboard keys win.
+      activation.ternSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        run ${applySettings}/bin/tern-settings-apply
+      '';
+    };
   };
   system.build.ternPilot = pkgs.symlinkJoin {
     name = "tern-pilot";

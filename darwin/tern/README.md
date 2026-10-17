@@ -156,10 +156,20 @@ startup. Do not inspect or copy that file into reports.
 
 The app also registers `so.stencil.tern.daemon`. Full pilot activation disables
 and unloads that bundled service and configures the Nix daemon job. An
-already-running app-spawned daemon can still hold the default socket while
-the managed job has no running PID; inspect live process ownership rather
-than inferring it from the installed plist. Web-only activation leaves both
-daemon services alone.
+already-running app-spawned daemon can still hold the default socket
+(`~/Library/Application Support/Tern/daemon.sock`). The daemon wrapper then
+idles, polling `lsof -t` every 30 s without sourcing `secrets.env`, and
+`exec`s `tern daemon --socket …` once no process owns the socket. A stale
+socket file with no owner does not block it. `KeepAlive` still restarts the
+job after a crash. Inspect live process ownership rather than inferring it from
+the installed plist. Web-only activation leaves both daemon services alone.
+
+A changed wrapper makes the loaded daemon plist differ, so full activation
+refuses it by design. Between Tern turns, with no job-owned daemon running,
+run `launchctl bootout "gui/$(id -u)/org.nixos.tern-pilot-daemon"` and then
+full `tern-pilot-activate`. Booting out a job that owns the daemon may
+interrupt its panes; an app-owned daemon is not affected.
+
 Account and session data are shared with the native app, not placed in a
 second profile. Withdrawal re-enables the bundled service. Do not enable it
 independently while the pilot daemon owns the socket.
