@@ -42,7 +42,7 @@ pass 'unreviewed install script blocks install'
 
 dest=$scratch/rt/$revision
 bash "$installer" "$src" "$dest" "$revision" >"$scratch/install.log" 2>&1 || { tail -20 "$scratch/install.log" >&2; fail 'locked install'; }
-test "$("$dest/node_modules/.bin/paseo" --version)" = 0.10.3 || fail 'paseo version'
+test "$("$dest/node_modules/.bin/paseo" --version)" = 0.11.4 || fail 'paseo version'
 # Denied scripts did not run: esbuild keeps its JS launcher, node-pty has no build output.
 test "$(head -c 2 "$dest/node_modules/esbuild/bin/esbuild")" = '#!' || fail 'esbuild postinstall skipped'
 test ! -e "$dest/node_modules/node-pty/build" || fail 'node-pty install skipped'

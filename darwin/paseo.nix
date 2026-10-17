@@ -1,10 +1,11 @@
 {
+  config,
   lib,
   pkgs,
   ...
 }: let
-  user = "tomas";
-  home = "/Users/tomas";
+  user = config.system.primaryUser;
+  home = config.users.users.${user}.home;
   stateDir = "${home}/.paseo";
   configFile = "${stateDir}/config.json";
   secretsFile = "${home}/.config/home-manager/secrets.env";
@@ -58,68 +59,69 @@ in {
     launchctl asuser "$(id -u -- ${user})" sudo --user=${user} --set-home -- ${preflight}
   '';
 
-  home-manager.users.tomas.home.packages = [runtime.paseo];
+  home-manager.users.${user}.home.packages = [runtime.paseo];
 
-  launchd.user.agents.paseo = {
-    path = [
-      "${pkgs.nodejs_24}/bin"
-      "/etc/profiles/per-user/tomas/bin"
-      "/run/current-system/sw/bin"
-      "/opt/homebrew/bin"
-      "/usr/bin"
-      "/bin"
-      "/usr/sbin"
-      "/sbin"
-    ];
-    environment = {
-      HOME = home;
-      # Env overrides config.json and locks these settings in the UI. Loopback
-      # only; phones arrive through Tailscale Serve. The 0.10.3 relay admits
-      # unauthenticated relay clients, so it stays off.
-      PASEO_LISTEN = "127.0.0.1:6767";
-      PASEO_RELAY_ENABLED = "false";
-      XDG_CONFIG_HOME = "${home}/.config";
-      XDG_DATA_HOME = "${home}/.local/share";
+  launchd.user.agents = {
+    paseo = {
+      path = [
+        "${pkgs.nodejs_24}/bin"
+        "/etc/profiles/per-user/${user}/bin"
+        "/run/current-system/sw/bin"
+        "/opt/homebrew/bin"
+        "/usr/bin"
+        "/bin"
+        "/usr/sbin"
+        "/sbin"
+      ];
+      environment = {
+        HOME = home;
+        # Env overrides config.json and locks these settings in the UI. Loopback
+        # only; phones arrive through Tailscale Serve, so the relay stays off.
+        PASEO_LISTEN = "127.0.0.1:6767";
+        PASEO_RELAY_ENABLED = "false";
+        XDG_CONFIG_HOME = "${home}/.config";
+        XDG_DATA_HOME = "${home}/.local/share";
+      };
+      command = "${daemonCommand}";
+      serviceConfig = {
+        KeepAlive = true;
+        RunAtLoad = true;
+        # Not Background: omp sessions run under this job and must not be I/O throttled.
+        ProcessType = "Standard";
+        ThrottleInterval = 5;
+        Umask = 63;
+        WorkingDirectory = home;
+        StandardOutPath = "${home}/Library/Logs/Paseo.log";
+        StandardErrorPath = "${home}/Library/Logs/Paseo.error.log";
+      };
     };
-    command = "${daemonCommand}";
-    serviceConfig = {
-      KeepAlive = true;
-      RunAtLoad = true;
-      # Not Background: omp sessions run under this job and must not be I/O throttled.
-      ProcessType = "Standard";
-      ThrottleInterval = 5;
-      Umask = 63;
-      WorkingDirectory = home;
-      StandardOutPath = "${home}/Library/Logs/Paseo.log";
-      StandardErrorPath = "${home}/Library/Logs/Paseo.error.log";
-    };
-  };
 
-  # Tailnet-only HTTPS :6767 -> loopback :6767. Never Funnel.
-  # tailscaled persists the route; re-apply it at login and retry until accepted.
-  launchd.user.agents.paseo-tailnet = {
-    command = "${tailscale} serve --bg --yes --https=6767 http://127.0.0.1:6767";
-    serviceConfig = {
-      RunAtLoad = true;
-      KeepAlive.SuccessfulExit = false;
-      ThrottleInterval = 60;
-      Umask = 63;
-      StandardOutPath = "${home}/Library/Logs/PaseoTailnet.log";
-      StandardErrorPath = "${home}/Library/Logs/PaseoTailnet.error.log";
+    # Tailnet-only HTTPS :6767 -> loopback :6767. Never Funnel.
+    # tailscaled persists the route; re-apply it at login and retry until accepted.
+    paseo-tailnet = {
+      command = "${tailscale} serve --bg --yes --https=6767 http://127.0.0.1:6767";
+      serviceConfig = {
+        RunAtLoad = true;
+        KeepAlive.SuccessfulExit = false;
+        ThrottleInterval = 60;
+        Umask = 63;
+        StandardOutPath = "${home}/Library/Logs/PaseoTailnet.log";
+        StandardErrorPath = "${home}/Library/Logs/PaseoTailnet.error.log";
+      };
     };
-  };
 
-  # Holds a PreventUserIdleSystemSleep assertion (battery included). It does not
-  # keep the display on and cannot prevent lid-close or forced sleep.
-  launchd.user.agents.paseo-awake = {
-    command = "/usr/bin/caffeinate -i";
-    serviceConfig = {
-      KeepAlive = true;
-      RunAtLoad = true;
-      ProcessType = "Background";
-      ThrottleInterval = 5;
-      Umask = 63;
-      StandardErrorPath = "${home}/Library/Logs/PaseoAwake.error.log";
+    # Holds a PreventUserIdleSystemSleep assertion (battery included). It does not
+    # keep the display on and cannot prevent lid-close or forced sleep.
+    paseo-awake = {
+      command = "/usr/bin/caffeinate -i";
+      serviceConfig = {
+        KeepAlive = true;
+        RunAtLoad = true;
+        ProcessType = "Background";
+        ThrottleInterval = 5;
+        Umask = 63;
+        StandardErrorPath = "${home}/Library/Logs/PaseoAwake.error.log";
+      };
     };
   };
 }

@@ -94,9 +94,9 @@ than independent live controllers.
 
 Paseo uses the same omp profile, extensions, skill directories, MCP servers and
 auth database as the TUI. Full Access matches the `yolo` policy with Jev review
-before execution. For additional native tool approvals, choose Always Ask
-**when creating a session**; it still prompts after Jev allows. Changing the
-approval mode of an existing omp session requires a new session.
+before execution. For additional native tool approvals, choose Always Ask; it
+still prompts after Jev allows. Changing an existing session's approval mode
+restarts its omp process and is refused while a turn runs.
 
 ## Side questions with `/btw`
 

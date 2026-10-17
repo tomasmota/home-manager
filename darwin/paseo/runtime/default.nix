@@ -3,8 +3,10 @@
   home,
 }: let
   revision = builtins.hashString "sha256" (
-    builtins.readFile ./package.json + builtins.readFile ./package-lock.json
-    + builtins.readFile ./btw.patch + builtins.readFile ./btw.js
+    builtins.readFile ./package.json
+    + builtins.readFile ./package-lock.json
+    + builtins.readFile ./btw.patch
+    + builtins.readFile ./btw.js
   );
   directory = "${home}/.local/share/paseo-runtime/${revision}";
   binary = "${directory}/node_modules/.bin/paseo";
