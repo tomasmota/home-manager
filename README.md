@@ -107,3 +107,4 @@ EOF
 
 - Aliases and git includes assume repos usually live under `~/dev/work` and `~/dev/personal`.
 - Atuin's macOS package is pinned separately in `flake.nix`; Linux and other packages follow the main nixpkgs input.
+- On macOS only (nix-darwin manages the daemon), only root is trusted by the Nix daemon; normal user builds remain allowed, but restricted daemon settings require sudo.

@@ -3,20 +3,23 @@
   lib,
   pkgs,
   ...
-}: {
+}: let
+  user = config.system.primaryUser;
+  home = config.users.users.${user}.home;
+in {
   imports = [./paseo.nix ./tern.nix];
 
   nixpkgs.hostPlatform = "aarch64-darwin";
 
   programs.zsh.enable = true;
-  users.users.tomas.shell = pkgs.zsh;
+  users.users.${user}.shell = pkgs.zsh;
   security.pam.services.sudo_local.touchIdAuth = true;
 
   nix = {
     settings = {
       download-buffer-size = 97108864;
       experimental-features = ["nix-command" "flakes"];
-      trusted-users = ["root" "tomas"];
+      # Agent-run builds do not need root-equivalent daemon trust.
       auto-optimise-store = lib.mkForce false; # do this manually below
     };
 
@@ -58,21 +61,15 @@
 
   environment.shells = [pkgs.zsh];
 
-  home-manager.users.tomas = {lib, ...}: {
+  home-manager.users.${user} = {lib, ...}: {
     home.packages = [
       (pkgs.google-cloud-sdk.withExtraComponents [pkgs.google-cloud-sdk.components.gke-gcloud-auth-plugin])
     ];
 
-    # Codex Usage menu bar app: build with the system Swift toolchain and
-    # install to ~/Applications when sources in this repo change.
+    # nix-darwin loads user agents before HM runs as this user via launchctl asuser.
     home.activation.codexUsage = lib.hm.dag.entryAfter ["writeBoundary"] ''
-      APP_BIN="$HOME/Applications/CodexUsage.app/Contents/MacOS/CodexUsage"
-      SRC_DIR="/Users/tomas/.config/home-manager/darwin/codex-usage"
-      if [ ! -x "$APP_BIN" ] \
-        || [ -n "$(find "$SRC_DIR" -name '*.swift' -newer "$APP_BIN" -print -quit 2>/dev/null)" ] \
-        || [ "$SRC_DIR/Info.plist" -nt "$APP_BIN" ]; then
-        $DRY_RUN_CMD "$SRC_DIR/install.sh"
-      fi
+      run /usr/bin/env HOME=${lib.escapeShellArg home} ${./codex-usage}/install.sh \
+        || warnEcho "codex-usage: install failed; keeping the previous app"
     '';
   };
 
@@ -83,11 +80,11 @@
     # Restart on crash, but stay dead after an explicit Quit from the menu.
     codex-usage = {
       environment = {
-        HOME = "/Users/tomas";
-        PATH = "/Users/tomas/.local/bin:/usr/bin:/bin";
+        HOME = home;
+        PATH = "${home}/.local/bin:/usr/bin:/bin";
       };
       command = ''
-        /Users/tomas/Applications/CodexUsage.app/Contents/MacOS/CodexUsage
+        ${home}/Applications/CodexUsage.app/Contents/MacOS/CodexUsage
       '';
       serviceConfig = {
         KeepAlive = {
@@ -96,8 +93,8 @@
         };
         RunAtLoad = true;
         ProcessType = "Background";
-        StandardOutPath = "/Users/tomas/Library/Logs/CodexUsage.log";
-        StandardErrorPath = "/Users/tomas/Library/Logs/CodexUsage.error.log";
+        StandardOutPath = "${home}/Library/Logs/CodexUsage.log";
+        StandardErrorPath = "${home}/Library/Logs/CodexUsage.error.log";
       };
     };
   };
