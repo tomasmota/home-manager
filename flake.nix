@@ -18,6 +18,7 @@
   };
 
   outputs = {
+    self,
     nixpkgs,
     atuin-nixpkgs,
     home-manager,
@@ -57,6 +58,60 @@
         extraSpecialArgs = {inherit fontSize;};
         modules = [(mkHomeModule {inherit username homeDirectory;})];
       };
+
+    # Clean copy of the Git flake source for checks (self is the tracked-only
+    # store copy); the filter is defense in depth for secrets and local state.
+    inherit (nixpkgs) lib;
+    cleanSrc = lib.cleanSourceWith {
+      name = "home-manager-source";
+      src = lib.cleanSource self;
+      filter = path: _type: let
+        name = baseNameOf path;
+      in
+        !(builtins.elem name ["secrets.env" "local.zsh" "node_modules" ".direnv" "__pycache__"]
+          || lib.hasSuffix ".pyc" name);
+    };
+
+    # Discard string context to force host evaluation without building its closure.
+    mkEvalCheck = pkgs: name: drv:
+      pkgs.runCommand "eval-${name}" {} ''
+        echo ${builtins.unsafeDiscardStringContext drv.drvPath} > $out
+      '';
+
+    mkChecks = system: extra: let
+      pkgs = nixpkgs.legacyPackages.${system};
+    in
+      {
+        # btw.test.mjs needs the installed Paseo runtime, so it is excluded.
+        js-tests =
+          pkgs.runCommand "js-tests" {
+            nativeBuildInputs = [pkgs.nodejs_24 pkgs.findutils];
+            # gateway-test.mjs listens on loopback.
+            __darwinAllowLocalNetworking = true;
+          } ''
+            export HOME="$TMPDIR/home"
+            export TMPDIR="$TMPDIR/tmp"
+            mkdir -p "$HOME" "$TMPDIR"
+            cp -R ${cleanSrc} source
+            chmod -R u+w source
+            cd source
+            find . -type f \( -name '*.test.mjs' -o -path ./darwin/tern/gateway-test.mjs \) \
+              -not -path ./darwin/paseo/runtime/btw.test.mjs -print0 | sort -z > "$TMPDIR/tests"
+            test -s "$TMPDIR/tests"
+            xargs -0 node --test < "$TMPDIR/tests"
+            touch $out
+          '';
+        format = pkgs.runCommand "alejandra-check" {nativeBuildInputs = [pkgs.alejandra];} ''
+          alejandra --check ${cleanSrc}
+          touch $out
+        '';
+        lint = pkgs.runCommand "statix-check" {nativeBuildInputs = [pkgs.statix];} ''
+          cd ${cleanSrc}
+          statix check .
+          touch $out
+        '';
+      }
+      // extra pkgs;
   in {
     homeConfigurations = {
       linux = mkHome {
@@ -107,6 +162,21 @@
           ./darwin/macos.nix
         ];
       };
+    };
+
+    formatter = {
+      ${linuxSystem} = nixpkgs.legacyPackages.${linuxSystem}.alejandra;
+      ${macSystem} = nixpkgs.legacyPackages.${macSystem}.alejandra;
+    };
+
+    # Each system evaluates only its own host configuration (no closure build).
+    checks = {
+      ${linuxSystem} = mkChecks linuxSystem (pkgs: {
+        home-linux-eval = mkEvalCheck pkgs "home-linux" self.homeConfigurations.linux.activationPackage;
+      });
+      ${macSystem} = mkChecks macSystem (pkgs: {
+        darwin-macbook-eval = mkEvalCheck pkgs "darwin-macbook" self.darwinConfigurations.macbook.system;
+      });
     };
   };
 }

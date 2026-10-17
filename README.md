@@ -53,10 +53,12 @@ chsh -s $(which zsh)
 
 ```bash
 nix flake show
-nix flake check
+nix flake check -L
 home-manager build --flake .#linux
 darwin-rebuild build --flake .#macbook
 ```
+
+`nix flake check -L` evaluates the current host without building it and runs Node regression tests, formatting and lint; CI adds `--all-systems` to evaluate both hosts while building only Linux checks. Format with `nix fmt`.
 
 ## Update dependencies
 

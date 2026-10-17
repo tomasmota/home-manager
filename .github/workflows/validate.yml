@@ -12,16 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: install nix
         uses: cachix/install-nix-action@v31
 
+      # Evaluates every system's checks but builds only the runner's (x86_64-linux).
       - name: flake check
-        run: nix flake check
-
-      - name: alejandra format check
-        run: nix run --inputs-from . nixpkgs#alejandra -- --check .
-
-      - name: statix lint
-        run: nix run --inputs-from . nixpkgs#statix -- check .
+        run: nix flake check --all-systems -L

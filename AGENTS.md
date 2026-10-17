@@ -36,8 +36,7 @@
 
 ## Apply and Validate Workflows
 - Preferred validation before applying:
-  - `nix flake show`
-  - `nix flake check`
+  - `nix flake check -L` (host evaluation, Node regression tests, formatting and lint; CI adds `--all-systems`)
 - Linux:
   - Build only: `home-manager build --flake .#linux`
   - Apply: `home-manager switch --flake .#linux`
