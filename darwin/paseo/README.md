@@ -93,10 +93,9 @@ installed. Native task subagents display as read-only views in Paseo rather
 than independent live controllers.
 
 Paseo uses the same omp profile, extensions, skill directories, MCP servers and
-auth database as the TUI. Full Access matches the `yolo` policy with Jev review
-before execution. For additional native tool approvals, choose Always Ask; it
-still prompts after Jev allows. Changing an existing session's approval mode
-restarts its omp process and is refused while a turn runs.
+auth database as the TUI, including the [session guard](../../agents/omp/README.md#infrastructure-guard).
+Full Access uses `yolo`; Always Ask adds native approvals. Changing an existing
+session's approval mode restarts its omp process and is refused while a turn runs.
 
 ## Side questions with `/btw`
 

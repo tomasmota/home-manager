@@ -54,10 +54,10 @@ OAuth and TypeSafe credentials live in omp's own `~/.omp/agent/agent.db`:
 ```sh
 omp login anthropic      # or /login inside a session
 omp login openai-codex
-omp login typesafe       # Jev review; also the judge role if you set one
+omp login typesafe       # optional judge role
 ```
 
-Inco reads `INCO_API_KEY` from `secrets.env`. Jev review falls back to
+Inco reads `INCO_API_KEY` from `secrets.env`; the tmux integrations use
 `TYPESAFE_API_KEY` there.
 
 ## Inco models
@@ -151,70 +151,13 @@ agent fetches it through the Jira MCP tool), free-form notes, or both.
   (resume restores it, `/new` keeps it), and every main-agent turn re-reads the
   file into the end of the system prompt. Subagents never receive it.
 
-## Permission review
+## Infrastructure guard
 
-`jev/permission-review.js`, `infra-guard.js`, `jev-client.js` and
-`decision-audit.js` are locally owned reviewer modules; edit them here.
-Read-only tools, `task` spawns and `write`/`edit` calls whose target is a plain
-local path (or `local://`) skip review; `ssh://`, other URLs, `file:member`
-forms and anything unparsable keep it. A `write xd://<tool>` that omp
-re-dispatches to a registered tool (MCP tools, `lsp`, `debug`, `ast_edit`, ...)
-is reviewed once, as that tool's own call; self-handled devices
-(`report_issue`, `resolve`, `reject`, `propose`) and unknown devices are
-reviewed as the write. Every reviewed call first meets deterministic denies
-that no reviewer, threshold or outage can loosen: catastrophic commands, then
-`infra-guard.js`. The guard parses bash commands
-(and local shell scripts they run), eval code and executable xd:// device
-arguments, seeing through `bash -c`, wrappers such as `sudo`/`env`/`xargs`,
-`ssh`, `tmux send-keys` and subprocess calls. It does not inspect write/edit
-content or files passed to node/python. It hard-denies:
+- `default.nix` uses native `bash.patterns` denies for organization-wide GCP changes, project/repository deletion, credential loss and force-pushing main/master; other tools remain `yolo`, subject to the independent MCP allow-list below.
+- [`guard.ts`](guard.ts) denies mutations explicitly targeting prod (including IaC working directories); `/guard on` (default) asks before control changes, IaC applies/state edits and bulk cluster deletes, while `/guard off` allows those for this session. Resume/branch restore the recorded choice, new sessions default on, and subagents share the main session's switch but cannot approve prompts.
+- This is an accident guard, not containment: it does not resolve implicit kube/gcloud targets or inspect scripts, eval subprocesses, `bash -c` or terminal keys. Keep targets explicit; new processes load extension changes.
 
-- any non-read-only kubectl/helm/IaC/cloud/database/ssh call whose target, or
-  any token of the command, is `prod`, `production` or `prd`, or a name in
-  `OMP_JEV_PROTECTED_TARGETS` (comma-separated; keep internal names there,
-  not in this repo);
-- destructive calls (delete, destroy, uninstall, drain, `DROP TABLE`, ...)
-  unless an explicit target names a non-production environment (dev, test,
-  staging, sandbox, kind, ...); implicit defaults count as unknown;
-- force-pushes or deletions of main/master/release/prod branches, and
-  repository deletion.
-
-Exception: a call whose every `--context`/`--cluster`/`--kube-context` exactly
-matches an entry of `OMP_JEV_TRUSTED_TARGETS` (comma-separated, kept in
-`secrets.env`) is never denied or reviewed, destructive calls included. This
-applies only to explicit targets without a production word, and only when the
-whole command is kubectl/helm/helmfile plus read filters (`grep`, `jq`, ...)
-without redirects or shell expansions; it also covers commands run through
-`kubectl exec`. Otherwise normal review applies. Audit:
-`reasonCode: trusted_target`.
-
-Direct `tern`, `git`, `nix`, `cd`, `ls`, `strings`, `grep` and `pgrep` bash
-commands auto-allow after these hard denies, without Jev or fallback requests.
-All subcommands are trusted, including ordinary Git writes and command execution
-through `tern` and `nix run`; this is not a read-only rule. Bare names, absolute
-paths and `~/` paths are supported, as are compound commands and pipelines
-containing only these executables. Other executables, shell expansions,
-redirections and wrappers such as `env` still go through normal review.
-`node`, `glab`, `command`, `rm` and `ssh` are explicitly not in the trusted set,
-including when chained after `cd` or another trusted command.
-Guard-flagged infrastructure mutations never use this bypass. Audits label
-the bypass `source: auto-allow`, `reasonCode: trusted_command`,
-`jevOutcome: not_called`.
-
-Remaining infrastructure mutations go to Jev, which also asks a
-production-impact question, then to direct omp-provider fallback models
-(`DEFAULT_FALLBACK_MODELS` in `permission-review.js`, overridable with
-`OMP_JEV_FALLBACK_MODELS`). When reviewers are
-unavailable these mutations deny regardless of `OMP_JEV_ON_EXHAUSTION`; other
-actions follow it. Knobs are the `OMP_JEV_*` environment
-variables documented at the top of `permission-review.js`.
-`OMP_SECRETS_FILE` overrides the secret-file fallback; `OMP_REVIEW_DIR`
-overrides the reviewed project directory. Permission audits are opt-in
-(`OMP_JEV_DEBUG`); the default location is in `permission-review.js`.
-Regression checks: `node --test agents/omp/jev/permission-review.test.mjs agents/omp/jev/auto-approve-jev.test.mjs`.
-Subagents inherit the extensions but always run `yolo`; if an extension fails
-to load, its review is absent, so check startup warnings after changing
-extension code. Extension changes need a new omp process, not `/reload-plugins`.
+Regression checks: `node --test agents/omp/guard.test.mjs`.
 
 MCP policy (`mcp-policy.ts`) leaves denied tools mounted and visible in context,
 accepting that overhead to avoid repeated mount/unmount notices at prompt and

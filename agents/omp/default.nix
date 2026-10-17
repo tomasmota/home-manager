@@ -20,11 +20,7 @@
   # Fail during evaluation if Git's flake snapshot omits a new runtime file.
   jevDir = assert lib.assertMsg
   (builtins.all (name: builtins.pathExists (./jev + "/${name}")) [
-    "auto-approve-jev.ts"
-    "decision-audit.js"
-    "infra-guard.js"
     "jev-client.js"
-    "permission-review.js"
     "tmux-title.ts"
     "tmux-title-core.js"
     "tmux-status.ts"
@@ -91,36 +87,59 @@
 
   # Reapplied on every switch: wins over anything set at runtime.
   policy = {
-    # `yolo` relies on jev/auto-approve-jev.ts: hard guards, trusted commands,
-    # then review of other actions. Explicit bash denies stay authoritative.
+    # Native absolute denies plus the session-scoped infrastructure guard.
     tools.approvalMode = "yolo";
     todo.enabled = false;
     bash.patterns =
       map (match: {
         inherit match;
         approval = "deny";
-      }) [
-        "tofu apply*"
-        "tofu destroy*"
-        "tofu state rm*"
-        "glab auth revoke*"
-        "glab auth logout*"
-        "glab* delete*"
-        "glab* archive*"
-        "glab* revoke*"
-        "gcloud projects delete*"
-        "gcloud auth revoke*"
-      ];
+      }) ([
+          "glab auth revoke*"
+          "glab auth logout*"
+          "gh auth logout*"
+          "gh auth revoke*"
+          "glab repo delete*"
+          "glab repo archive*"
+          "glab repo transfer*"
+          "gh repo delete*"
+          "gh repo archive*"
+          "gh repo transfer*"
+          "gcloud* projects delete *"
+          "gcloud auth revoke*"
+          "git push*--force* main"
+          "git push*--force* master"
+          "git push*-f * main"
+          "git push*-f * master"
+          "git push* +main*"
+          "git push* +master*"
+        ]
+        ++ lib.concatMap (verb: [
+          "gcloud* organizations ${verb} *"
+          "gcloud* resource-manager folders ${verb} *"
+          "gcloud* org-policies ${verb} *"
+        ]) [
+          "create"
+          "delete"
+          "update"
+          "move"
+          "set-iam-policy"
+          "add-iam-policy-binding"
+          "remove-iam-policy-binding"
+          "set-policy"
+          "reset"
+          "enable-enforce"
+          "disable-enforce"
+          "undelete"
+        ]);
     extensions = [
       "${./mcp-policy.ts}"
-      "${jevDir}/auto-approve-jev.ts"
+      "${./guard.ts}"
       "${jevDir}/tmux-title.ts"
       "${jevDir}/tmux-status.ts"
       "${./status-line.ts}"
       "${./brief/brief.ts}"
     ];
-    # Max review budget: 30s Jev + 2 x 60s fallback, plus auth overhead.
-    extensionHandlers.toolCallTimeoutMs = 180000;
 
     # Public skills use standard ~/.agents discovery; private/team stay private.
     skills = {

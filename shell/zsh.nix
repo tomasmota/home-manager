@@ -42,8 +42,6 @@
         export MANPAGER='nvim +Man!'
         export DOCKER_BUILDKIT="1"
         export RCLONE_FAST_LIST="true"
-        # Keep the private Jev permission audit under ~/.local/state/omp/.
-        export OMP_JEV_DEBUG=1
       '';
 
       plugins = [
