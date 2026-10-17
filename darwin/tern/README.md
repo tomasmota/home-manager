@@ -8,12 +8,17 @@ See [PILOT.md](PILOT.md) for the pilot's purpose and adoption checks.
 
 ## Prerequisites
 
-Use the authenticated Apple Silicon release from Stencil and its matching
-browser client. The browser HTML, JavaScript and icons come from the app;
-its matching WASM is distributed separately. Cache the complete client at
-`~/.local/share/tern-web/<version>/`, with `index.html` at the root and the
-WASM at `pkg/stencil_tern_web_bg.wasm`. Serve the WASM locally while retaining
-the release's SHA-384 integrity check.
+Install Tern normally at `/Applications/Tern.app` (Apple Silicon release from
+Stencil). Nix never installs, pins or modifies it. The browser client's HTML,
+JavaScript and icons come from the app; its matching WASM is distributed
+separately. Cache the complete client privately at
+`~/.local/share/tern-web/<installed version>/`, with `index.html` at the root
+and the WASM at `pkg/stencil_tern_web_bg.wasm`. The web and gateway services
+read `CFBundleShortVersionString` from the app's `Info.plist` at each start and
+use only that directory; a missing directory stops them rather than falling back
+to older assets. Serve the WASM locally while retaining the release's SHA-384
+integrity check. Never cache app archives, browser archives or account data in
+this public repository.
 
 The phone entrypoint uses the plain HTTPS origin, without `?token=`.
 An owner-only Tailscale Serve gateway authenticates the requester and injects
@@ -28,28 +33,23 @@ separate from the web server's private bearer token.
 
 ## Runtime and activation
 
-[`runtime/default.nix`](runtime/default.nix) owns the pinned version, DMG
-digest and bundle identity. Cache the matching download at
-`~/.cache/tern/Tern-<version>-macos-arm64.dmg` after signing in at
-[the build portal](https://build.stencil.so/tern). Never cache the DMG,
-browser archive or account data in this public repository.
+[`runtime/default.nix`](runtime/default.nix) only points at the stable binary
+`/Applications/Tern.app/Contents/MacOS/tern` and provides an unversioned `tern`
+wrapper for it. The daemon, web server and `tern` CLI all use that binary, so
+updating the app normally updates them on the next service start.
 
-The runtime is an immutable release under `~/.local/share/tern-runtime/`,
-linked from `~/Applications/Tern.app`; a changed installation recipe publishes
-a fresh release rather than modifying a previously launched bundle. Activation
-keeps an app-installed `~/.local/bin/tern` link to this binary, or installs the
-package link when absent. It records ownership in
-`~/.local/state/tern-pilot/cli-target` and replaces only links it owns.
+Activation links `~/.local/bin/tern` to the binary when absent. It replaces an
+existing link only when the retired `~/.local/state/tern-pilot/cli-target`
+record names it, then deletes that record; any other file or link is left
+untouched.
 
 Activation also installs `~/.local/state/tern-pilot/cli-env.zsh` and one
-guarded source line in the gitignored `shell/local.zsh`, so only the pinned
-Tern package precedes the system profile. Existing shells need a new shell or
-to source that file.
+guarded source line in the gitignored `shell/local.zsh`, so the wrapper precedes
+any stale `tern` in the system profile. Existing shells need a new shell or to
+source that file.
 
-The installer verifies the app signature. If the candidate is quarantined,
-Gatekeeper must accept it before its quarantine attribute is removed, before
-publication. System Gatekeeper remains enabled. Do not enable Tern-managed omp
-installation or background updates; omp stays Nix-managed.
+Do not enable Tern-managed omp installation or background updates; omp stays
+Nix-managed.
 
 From the repository, build only the pilot:
 
@@ -62,31 +62,33 @@ Use the printed store path, as the owning user **without sudo**:
 ```sh
 <returned-store-path>/bin/tern-pilot-activate
 <returned-store-path>/bin/tern --version
-open "$HOME/Applications/Tern.app"
+open /Applications/Tern.app
 ```
 
-Full activation validates/installs the privately cached runtime and bootstraps
-four pilot LaunchAgents. It does not switch Darwin or restart Paseo. Repeating
-it accepts identical configuration; differing loaded configuration is refused
-so ongoing Tern turns can finish before the daemon owner changes.
+Full activation bootstraps four pilot LaunchAgents. It does not install or
+modify the app, switch Darwin or restart Paseo. Repeating it accepts identical
+configuration; differing loaded configuration is refused so ongoing Tern turns
+can finish before the daemon owner changes.
 
 A `sudo darwin-rebuild switch --flake .#macbook` also applies this module, but
 it is not the pilot activation path.
 
 ### Upgrades
 
-Use full activation for a normal upgrade. Replacing files does not update
+Update `/Applications/Tern.app` normally; replacing it does not update
 already-running app or daemon processes.
 
 1. Finish active Tern work first; restarting the daemon may interrupt programs
    and replace shell state.
-2. When changing releases, cache the reviewed release artifact and matching
-   browser client, then update the runtime and web-asset pins. Never substitute
-   a guessed URL, a login page or an unreviewed version. Build and activate the
-   pilot using the commands above.
-3. Quit the old native app and reopen `~/Applications/Tern.app`. If the daemon
+2. Cache the matching browser client at
+   `~/.local/share/tern-web/<new version>/`. Never substitute a guessed URL, a
+   login page or an unreviewed version.
+3. Quit the old native app and reopen `/Applications/Tern.app`. If the daemon
    still runs the old build, use Tern's **Restart session daemon** command.
-4. Check `tern --version` and the service status (see Inspect and withdraw).
+4. Restart the web and gateway jobs so they derive the new assets directory
+   (`launchctl kickstart -k "gui/$(id -u)/org.nixos.tern-pilot-web"`, likewise
+   `-gateway`), then check `tern --version` and the service status (see
+   Inspect and withdraw).
 
 ### Browser-only updates
 
@@ -98,11 +100,11 @@ For a browser-only update that deliberately leaves the native app and daemon run
 
 This requires the managed daemon before preflight, does not disable/unload
 either daemon service, and replaces only changed web/gateway/tailnet jobs.
-It updates the managed CLI and keyboard settings without stopping pane
-programs. It deliberately does not upgrade the running native app or daemon.
+It updates the CLI link and keyboard settings without stopping pane programs.
+It deliberately does not upgrade the running native app or daemon.
 
-Missing web assets still leave browser access blocked. A fresh installation
-uses full activation, not `--web-only`.
+Missing web assets for the installed version still leave browser access
+blocked. A fresh installation uses full activation, not `--web-only`.
 
 ## Keyboard settings
 
@@ -240,16 +242,6 @@ before sharing because terminal output and runtime errors may contain secrets.
 Do not automatically print `web-token`, `phone-connection.json`, account state
 or `secrets.env` during diagnosis.
 
-The offline installer regression uses a temporary signed fixture app and DMG;
-it does not require beta access or touch real Tern state:
-
-```sh
-bash darwin/tern/test-install.sh
-```
-
-It covers publication, idempotent retry, damaged-release refusal and
-preservation of an unrelated Applications entry.
-
 Gateway security regressions use fictional tokens and isolated loopback
 fixtures:
 
@@ -275,12 +267,12 @@ or touch Paseo's 6767 route. The separate bundled `so.stencil.tern.daemon` is
 re-enabled for normal native-app startup, not removed. AbandonProcessGroup
 means unloading the pilot daemon does not promise all pane processes terminate.
 
-Preserve configuration, tokens, logs, transcripts, the private cache, web assets
-and immutable releases for inspection or later reuse. Pilot withdrawal does
-not uninstall the app or remove state. A later full Darwin switch or explicit
-pilot activation can reintroduce these declared services.
+Preserve configuration, tokens, logs, transcripts, web assets and the app for
+inspection or later reuse. Pilot withdrawal does not uninstall the app or
+remove state. A later full Darwin switch or explicit pilot activation can
+reintroduce these declared services.
 
-The installed CLI and its private shell environment also remain available.
+The installed CLI link and its private shell environment also remain available.
 To withdraw that PATH preference, remove
 `~/.local/state/tern-pilot/cli-env.zsh` and its guarded source line from
 `shell/local.zsh`; preserve unrelated private shell customizations.

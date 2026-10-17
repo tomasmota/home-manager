@@ -9,9 +9,9 @@
   stateDir = "${home}/.local/state/tern-pilot";
   configDir = "${home}/Library/Application Support/Tern";
   tokenFile = "${stateDir}/web-token";
-  assetsDir = "${home}/.local/share/tern-web/${runtime.version}";
+  assetsRoot = "${home}/.local/share/tern-web";
   tailscale = "/run/current-system/sw/bin/tailscale";
-  runtime = import ./tern/runtime {inherit pkgs home;};
+  runtime = import ./tern/runtime {inherit pkgs;};
   ternSdk = pkgs.fetchFromGitHub {
     owner = "stencil-hq";
     repo = "tern-sdk";
@@ -80,7 +80,6 @@
   '';
   preflight = pkgs.writeShellScript "tern-pilot-preflight" ''
     set -euo pipefail
-    ${runtime.install}
     umask 077
     for directory in "${stateDir}" "${configDir}" "${stateDir}/logs"; do
       test ! -L "$directory"
@@ -134,18 +133,31 @@
       end
     '
   '';
-  webCommand = pkgs.writeShellScript "tern-pilot-web" ''
+  # Browser assets are private and versioned by the installed app. Derive the
+  # version at each service start and fail closed; never fall back to old assets.
+  ternAssets = pkgs.writeShellScript "tern-pilot-assets" ''
     set -euo pipefail
-    # Cache the genuine release client and its integrity-pinned WASM locally.
-    # Never listen with missing assets or substitute a replacement client.
-    if [ ! -f "${assetsDir}/index.html" ] || [ -L "${assetsDir}" ]; then
-      echo "tern: browser assets missing from ${assetsDir}; web access not started" >&2
+    test -x "${runtime.binary}" || { echo "tern: ${runtime.app} is not installed" >&2; exit 1; }
+    version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${runtime.app}/Contents/Info.plist") ||
+      { echo "tern: cannot read the installed app version" >&2; exit 1; }
+    [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]] ||
+      { echo "tern: unexpected installed app version" >&2; exit 1; }
+    assets="${assetsRoot}/$version"
+    if [ -L "$assets" ] || [ ! -f "$assets/index.html" ] || [ ! -f "$assets/pkg/stencil_tern_web_bg.wasm" ]; then
+      echo "tern: browser assets for installed version $version missing from $assets" >&2
       exit 1
     fi
+    printf '%s\n' "$assets"
+  '';
+  webCommand = pkgs.writeShellScript "tern-pilot-web" ''
+    set -euo pipefail
+    # Serve the browser client matching the installed app. Never listen with
+    # missing assets or substitute a replacement client.
+    assets=$(${ternAssets})
     identity=$(${tailnetIdentity})
     origin=$(printf '%s\n' "$identity" | ${pkgs.jq}/bin/jq -r .publicOrigin)
     exec "${runtime.binary}" web serve --listen 127.0.0.1:8377 \
-      --token "${tokenFile}" --assets "${assetsDir}" \
+      --token "${tokenFile}" --assets "$assets" \
       --allow-origin "http://127.0.0.1:8377" --allow-origin "$origin"
   '';
   gatewayCommand = pkgs.writeShellScript "tern-pilot-gateway" ''
@@ -155,7 +167,8 @@
     export TERN_PUBLIC_ORIGIN="$(printf '%s\n' "$identity" | ${pkgs.jq}/bin/jq -r .publicOrigin)"
     export TERN_OWNER_LOGIN="$(printf '%s\n' "$identity" | ${pkgs.jq}/bin/jq -r .ownerLogin)"
     export TERN_TOKEN_FILE="${tokenFile}"
-    export TERN_WASM_FILE="${assetsDir}/pkg/stencil_tern_web_bg.wasm"
+    assets=$(${ternAssets})
+    export TERN_WASM_FILE="$assets/pkg/stencil_tern_web_bg.wasm"
     ${pkgs.nodejs_24}/bin/node -e '
       const fs = require("fs");
       const [file, origin] = process.argv.slice(1);
@@ -257,50 +270,34 @@
     /bin/launchctl kickstart "gui/$(id -u)/org.nixos.tern-pilot-daemon"
     target="${home}/.local/bin/tern"
     receipt="${stateDir}/cli-target"
+    # Retired ownership record from the pinned runtime; it only authorizes
+    # replacing the link it recorded.
     if [ -L "$receipt" ]; then
       echo "Refusing a symlinked CLI ownership record: $receipt" >&2
       exit 1
     fi
     if [ -L "$target" ]; then
       old_link=$(readlink "$target")
-      # Preserve the current native link; migrate only links owned by this pilot.
-      case "$old_link" in
-        "${runtime.tern}/bin/tern"|"${runtime.binary}") ;;
-        *)
-          owned=false
-          if [ -f "$receipt" ] && [ "$(cat "$receipt")" = "$old_link" ]; then
-            owned=true
-          fi
-          prefix="${home}/.local/share/tern-runtime/"
-          case "$old_link" in
-            "$prefix"*/Tern.app/Contents/MacOS/tern)
-              old_release=''${old_link#"$prefix"}
-              old_release=''${old_release%"/Tern.app/Contents/MacOS/tern"}
-              if [[ "$old_release" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]{64}(-[0-9a-f]{64})?$ ]]; then
-                owned=true
-              fi
-              ;;
-          esac
-          if ! "$owned"; then
-            echo "Existing $target left untouched; use ${runtime.tern}/bin/tern" >&2
-            exit 1
-          fi
+      if [ "$old_link" != "${runtime.binary}" ]; then
+        if [ -f "$receipt" ] && [ "$(cat "$receipt")" = "$old_link" ]; then
           link_stage=$(mktemp -d "${stateDir}/.cli-link.XXXXXX")
-          ln -s "${runtime.tern}/bin/tern" "$link_stage/tern"
+          ln -s "${runtime.binary}" "$link_stage/tern"
           /bin/mv -fh "$link_stage/tern" "$target"
           rmdir "$link_stage"
-          ;;
-      esac
+        else
+          echo "Existing $target left untouched; use ${runtime.tern}/bin/tern" >&2
+        fi
+      fi
     elif [ -e "$target" ]; then
       echo "Existing $target left untouched; use ${runtime.tern}/bin/tern" >&2
-      exit 1
     else
-      ln -s "${runtime.tern}/bin/tern" "$target"
+      ln -s "${runtime.binary}" "$target"
     fi
-    printf '%s\n' "$(readlink "$target")" > "$receipt"
-    chmod 600 "$receipt"
-    # The system profile can still contain the preceding pilot release.
-    # Use the existing private shell hook to prefer only this Tern package.
+    if [ -L "$target" ] && [ "$(readlink "$target")" = "${runtime.binary}" ]; then
+      rm -f "$receipt"
+    fi
+    # Prefer the unversioned wrapper for the native app over any stale
+    # `tern` earlier in the system profile, through the existing private hook.
     hook="${home}/.config/home-manager/shell/local.zsh"
     test ! -L "$hook"
     if [ -e "$hook" ] && [ ! -f "$hook" ]; then
@@ -336,7 +333,7 @@ in {
     paths = [runtime.tern activate applySettings];
   };
   system.activationScripts.extraActivation.text = lib.mkAfter ''
-    echo "installing pinned Tern pilot for ${user}..." >&2
+    echo "preparing Tern integration for ${user}..." >&2
     launchctl asuser "$(id -u -- ${user})" sudo --user=${user} --set-home -- ${preflight}
   '';
   launchd.user.agents = {
