@@ -129,12 +129,34 @@ in ''
       darwin-rebuild switch --flake "${config.xdg.configHome}/home-manager#macbook" "$@"
   }
 
-  # sync dotfiles
-  hmsync() {
-    pushd "${config.xdg.configHome}/home-manager" >/dev/null || return 1
-    git pull
+  # Apply the checkout in the cwd: hms on Linux; on macOS the switch needs sudo,
+  # so only print the choice instead of invoking it.
+  _hm_apply() {
+    if [[ "$(uname)" == "Darwin" ]]; then
+      echo "Not applied. Run nds (Touch ID) or ndsh (terminal password) to switch."
+      return 0
+    fi
     hms
-    popd >/dev/null || return 1
+  }
+
+  # edit dotfiles, then apply; nothing is applied if the editor fails
+  hme() {
+    local rc
+    pushd "${config.xdg.configHome}/home-manager" >/dev/null || return 1
+    nvim . && _hm_apply
+    rc=$?
+    popd >/dev/null
+    return $rc
+  }
+
+  # sync dotfiles, then apply; nothing is applied if the pull fails
+  hmsync() {
+    local rc
+    pushd "${config.xdg.configHome}/home-manager" >/dev/null || return 1
+    git pull && _hm_apply
+    rc=$?
+    popd >/dev/null
+    return $rc
   }
 
   gacp() {

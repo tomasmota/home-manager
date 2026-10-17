@@ -166,6 +166,13 @@
     export PATH=${lib.makeBinPath [pkgs.yq-go pkgs.coreutils]}:$PATH
     exec ${pkgs.bash}/bin/bash ${./merge-config.sh} "$@"
   '';
+
+  # Autoload the pinned completion without starting omp in every shell.
+  ompZshCompletion = pkgs.runCommand "omp-zsh-completion" {} ''
+    mkdir -p "$out/share/zsh/site-functions"
+    export HOME="$(mktemp -d)"
+    ${config.programs.omp.package}/bin/omp completions zsh > "$out/share/zsh/site-functions/_omp"
+  '';
 in {
   imports = [omp.homeManagerModules.default ./brief];
 
@@ -175,6 +182,8 @@ in {
   };
 
   home = {
+    packages = [ompZshCompletion];
+
     # Replaces upstream's whole-file copy of `settings` with the merge above.
     activation.ompConfig = lib.mkForce (lib.hm.dag.entryAfter ["writeBoundary"] ''
       run ${mergeConfig} ${yaml.generate "omp-preferences.yml" preferences} \

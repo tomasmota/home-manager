@@ -18,7 +18,8 @@
         extended = true;
         ignoreDups = true;
         share = true;
-        ignorePatterns = ["l*"];
+        # Ignore only listing aliases, not other commands starting with l.
+        ignorePatterns = ["l" "l *" "la" "la *" "ls" "ls *"];
       };
 
       envExtra = ''
@@ -75,10 +76,6 @@
 
           if command -v wt >/dev/null 2>&1; then
             eval "$(command wt config shell init zsh)"
-          fi
-
-          if command -v omp >/dev/null 2>&1; then
-            eval "$(omp completions zsh)"
           fi
 
           if [[ -n $TMUX && -n $TMUX_PANE ]]; then
@@ -213,4 +210,9 @@
       nix-direnv.enable = true;
     };
   };
+
+  # Rebuild the completion cache once after each switch, even with compinit -C.
+  home.activation.zshCompdump = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    run rm -f $VERBOSE_ARG "${config.programs.zsh.dotDir}"/.zcompdump*
+  '';
 }

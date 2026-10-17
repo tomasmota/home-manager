@@ -4,7 +4,6 @@
   hmcd = ''    cd ${config.xdg.configHome}/home-manager \
                 && [[ -n $TMUX ]] \
                 && tmux rename-window "home-manager"'';
-  hme = "pushd ${config.xdg.configHome}/home-manager && nvim . && home-manager switch --impure && popd";
 
   # Misc
   ls = "eza -G --color auto -a -s type";
@@ -36,7 +35,7 @@
   gld = "git log -p --oneline --ext-diff";
   gD = "git diff HEAD~1";
   # interactively browse commits, opening them in Diffview on select
-  gdi = ''git log --oneline | fzf --preview 'git show --name-only {1}' --bind "enter:execute(nvim -c 'DiffviewOpen {1}^!' -- . ':(exclude)flake.lock' ':(exclude)nvim/lazy-lock.json' '(exclude)yarn.lock')"'';
+  gdi = ''git log --oneline | fzf --preview 'git show --name-only {1}' --bind "enter:execute(nvim -c 'DiffviewOpen {1}^!' -- . ':(exclude)flake.lock' ':(exclude)nvim/lazy-lock.json' ':(exclude)yarn.lock')"'';
   # pretty log
   gll = "git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit";
   # diff between HEAD and the main branch
