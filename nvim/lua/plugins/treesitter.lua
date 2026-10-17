@@ -26,6 +26,7 @@ return {
         "nix",
         "query",
         "terraform",
+        "tsx",
         "typescript",
         "vim",
         "vimdoc",

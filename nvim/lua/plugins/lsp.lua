@@ -69,13 +69,9 @@ return {
         --   on_attach = twospaces,
         -- },
         tofu_ls = {
+          cmd = { 'tofu-ls', 'serve', '-log-file=/dev/null' }, -- stderr otherwise floods lsp.log at ERROR
           root_dir = function(bufnr, on_dir)
-            local name = vim.api.nvim_buf_get_name(bufnr)
-            if name:match('^%a[%w+.-]*://') then
-              return
-            end
-
-            local root = vim.fs.root(name, { '.terraform', '.git' })
+            local root = vim.fs.root(bufnr, { '.terraform', '.git' })
             if root then
               on_dir(root)
             end
@@ -146,34 +142,83 @@ return {
 
       local capabilities = require('blink.cmp').get_lsp_capabilities()
 
+      local function is_file_buffer(bufnr)
+        local scheme = vim.api.nvim_buf_get_name(bufnr):match('^(%a[%w+.-]*)://')
+        return not scheme or scheme == 'file'
+      end
+
       for server_name, server in pairs(servers) do
         server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
         vim.lsp.config(server_name, server)
+
+        -- Central guard: only start servers for file buffers, not diffview://, oil://, ... URIs.
+        -- This must run before start, since didOpen is sent before LspAttach and crashes helm_ls.
+        -- on_dir(nil) still lets vim.lsp.start resolve root_markers/workspace_required itself.
+        local base_root_dir = vim.lsp.config[server_name].root_dir
+        vim.lsp.config(server_name, {
+          root_dir = function(bufnr, on_dir)
+            if not is_file_buffer(bufnr) then
+              return
+            end
+            if type(base_root_dir) == 'function' then
+              base_root_dir(bufnr, on_dir)
+            else
+              on_dir(base_root_dir)
+            end
+          end,
+        })
       end
 
       vim.lsp.enable(vim.tbl_keys(servers))
 
+      vim.api.nvim_create_autocmd({ 'LspAttach', 'BufFilePost' }, {
+        group = vim.api.nvim_create_augroup('lsp-file-buffers', { clear = true }),
+        callback = function(event)
+          if is_file_buffer(event.buf) then
+            return
+          end
+          -- LspAttach runs before the client finishes recording its attached buffer.
+          vim.schedule(function()
+            if not vim.api.nvim_buf_is_valid(event.buf) or is_file_buffer(event.buf) then
+              return
+            end
+            for _, client in ipairs(vim.lsp.get_clients({ bufnr = event.buf })) do
+              vim.lsp.buf_detach_client(event.buf, client.id)
+            end
+          end)
+        end,
+      })
+
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('lsp-attach', { clear = true }),
         callback = function(event)
+          if not is_file_buffer(event.buf) then
+            return
+          end
           local client = vim.lsp.get_client_by_id(event.data.client_id)
+          local bufnr = event.buf
 
           local telescope = require("telescope.builtin")
-          vim.keymap.set("n", "gt", telescope.lsp_type_definitions)
-          vim.keymap.set("n", "gr", function()
+          local function map(mode, lhs, rhs, desc, opts)
+            vim.keymap.set(mode, lhs, rhs, vim.tbl_extend('force', { buffer = bufnr, desc = desc }, opts or {}))
+          end
+
+          map("n", "gt", telescope.lsp_type_definitions, "Go to type definition")
+          -- nowait: the 0.12 default gr* maps (grn, grr, ...) would otherwise delay gr by 'timeoutlen'.
+          map("n", "gr", function()
             telescope.lsp_references({
               include_declaration = false,
               trim_text = true,
             })
-          end)
-          vim.keymap.set("n", "K", vim.lsp.buf.hover)
-          vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help)
-          vim.keymap.set("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>zz") -- TODO: change this to a function, using vim.api.nvim_win_set_cursor
-          vim.keymap.set('n', 'gs', ":vsplit<cr>gd")                           -- Go to definition in new split
-          vim.keymap.set("n", "gi", vim.lsp.buf.implementation)
-          vim.keymap.set("n", "ga", vim.lsp.buf.code_action)
-          vim.keymap.set("n", "<leader>r", vim.lsp.buf.rename)
-          vim.keymap.set("n", "<leader>e", function()
+          end, "References", { nowait = true })
+          map("n", "K", vim.lsp.buf.hover, "Hover")
+          map("i", "<C-k>", vim.lsp.buf.signature_help, "Signature help")
+          map("n", "gd", "<cmd>lua vim.lsp.buf.definition()<cr>zz", "Go to definition") -- TODO: change this to a function, using vim.api.nvim_win_set_cursor
+          map("n", "gs", ":vsplit<cr>gd", "Go to definition in split")
+          map("n", "gi", vim.lsp.buf.implementation, "Go to implementation")
+          map("n", "ga", vim.lsp.buf.code_action, "Code action")
+          map("n", "<leader>r", vim.lsp.buf.rename, "Rename symbol")
+          map("n", "<leader>e", function()
             vim.diagnostic.jump({ count = 1 })
             vim.schedule(function()
               vim.diagnostic.open_float(nil, {
@@ -181,24 +226,44 @@ return {
                 scope = "cursor",
               })
             end)
-          end, { desc = "Next diagnostic" })
+          end, "Next diagnostic")
 
           -- Enable inlay hints when available
           if client and client.server_capabilities.inlayHintProvider then
-            vim.lsp.inlay_hint.enable(true, { bufnr = event.buf })
+            vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
           end
 
-          -- Highlight references to symbol under cursor
-          if client and client.server_capabilities.documentHighlightProvider then
+          -- Highlight references to symbol under cursor. One group per buffer, cleared on each
+          -- attach, so several clients or re-attaches never stack autocmds.
+          if client and client:supports_method('textDocument/documentHighlight', bufnr) then
+            local group = vim.api.nvim_create_augroup('lsp-highlight-' .. bufnr, { clear = true })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
-              buffer = event.buf,
+              group = group,
+              buffer = bufnr,
               callback = vim.lsp.buf.document_highlight,
             })
 
             vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
-              buffer = event.buf,
+              group = group,
+              buffer = bufnr,
               callback = vim.lsp.buf.clear_references,
             })
+          end
+        end,
+      })
+
+      vim.api.nvim_create_autocmd('LspDetach', {
+        group = vim.api.nvim_create_augroup('lsp-detach', { clear = true }),
+        callback = function(event)
+          -- Drop highlight autocmds once no remaining client on the buffer can highlight.
+          for _, other in ipairs(vim.lsp.get_clients({ bufnr = event.buf })) do
+            if other.id ~= event.data.client_id and other:supports_method('textDocument/documentHighlight', event.buf) then
+              return
+            end
+          end
+          pcall(vim.api.nvim_del_augroup_by_name, 'lsp-highlight-' .. event.buf)
+          if vim.api.nvim_buf_is_valid(event.buf) then
+            vim.api.nvim_buf_call(event.buf, vim.lsp.buf.clear_references)
           end
         end,
       })
