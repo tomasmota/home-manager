@@ -47,6 +47,12 @@ No switch is needed for skill edits: fresh processes discover them, and existing
 sessions can use `/reload-plugins` (which also reconnects MCP servers). Check
 discovery without a model call with `omp read skill://<name>`.
 
+## Skill improvements
+
+- In omp inside Tern, `RULES.md` requires experience-based reflection: `--experience used` permits substantive feedback; `--experience read-only` permits only demonstrated frontmatter activation fixes. `--from-task` supplies the report's short parent-task attribution; `skill-feedback/submit.mjs --help` covers default-role dispatch and its startup timeout. These are live source files; fresh sessions need no rebuild.
+- The parent owns relevance/scope; the worker first presents its origin, proposals, canonical source and Git-tracked/untracked/local-only status, then asks for one approval covering selected edits, verification and Git commit/push (gitless skills stay local; untracked skills disclose whole-skill first publication). The helper resolves public/private/team symlinks and keeps private reports under `$XDG_STATE_HOME/omp/skill-feedback/` (default `~/.local/state/`); new scope or unsafe publication requires pausing rather than silently extending approval.
+- Completion returns `unseen-notes` rather than dropping late feedback; capture/propose those notes before completing. For stale/interrupted/locked requests, follow the receipt's `savedNote`/`recovery` only after verifying no actor can still edit; checks: `node --test agents/omp/skill-feedback/*.test.mjs`.
+
 ## Credentials
 
 OAuth and TypeSafe credentials live in omp's own `~/.omp/agent/agent.db`:

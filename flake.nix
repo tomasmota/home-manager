@@ -85,7 +85,9 @@
         # btw.test.mjs needs the installed Paseo runtime, so it is excluded.
         js-tests =
           pkgs.runCommand "js-tests" {
-            nativeBuildInputs = [pkgs.nodejs_24 pkgs.findutils];
+            nativeBuildInputs =
+              [pkgs.nodejs_24 pkgs.findutils pkgs.git]
+              ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [pkgs.darwin.ps];
             # gateway-test.mjs listens on loopback.
             __darwinAllowLocalNetworking = true;
           } ''
@@ -98,7 +100,8 @@
             find . -type f \( -name '*.test.mjs' -o -path ./darwin/tern/gateway-test.mjs \) \
               -not -path ./darwin/paseo/runtime/btw.test.mjs -print0 | sort -z > "$TMPDIR/tests"
             test -s "$TMPDIR/tests"
-            xargs -0 node --test < "$TMPDIR/tests"
+            # Integration suites create concurrent subprocesses; don't multiply that load per file.
+            xargs -0 node --test --test-concurrency=1 < "$TMPDIR/tests"
             touch $out
           '';
         format = pkgs.runCommand "alejandra-check" {nativeBuildInputs = [pkgs.alejandra];} ''
