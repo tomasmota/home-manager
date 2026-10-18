@@ -108,7 +108,6 @@
             zsh -f ${cleanSrc}/shell/helpers.test.zsh ${shellFunctions} ${shellAliases}
             touch $out
           '';
-        # btw.test.mjs needs the installed Paseo runtime, so it is excluded.
         js-tests =
           pkgs.runCommand "js-tests" {
             nativeBuildInputs =
@@ -124,7 +123,7 @@
             chmod -R u+w source
             cd source
             find . -type f \( -name '*.test.mjs' -o -path ./darwin/tern/gateway-test.mjs \) \
-              -not -path ./darwin/paseo/runtime/btw.test.mjs -print0 | sort -z > "$TMPDIR/tests"
+              -print0 | sort -z > "$TMPDIR/tests"
             test -s "$TMPDIR/tests"
             # Integration suites create concurrent subprocesses; don't multiply that load per file.
             xargs -0 node --test --test-concurrency=1 < "$TMPDIR/tests"

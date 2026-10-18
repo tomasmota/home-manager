@@ -25,7 +25,7 @@
     rev = "220aa65c78eeb6f3a92f55e67561da3c111410fd";
     hash = "sha256-hPwAUVqtIvqcgcGapoKzk0NRZya5/USEfZecK5v3kQI=";
   };
-  labels = ["tern-pilot-daemon" "tern-pilot-web" "tern-pilot-gateway" "tern-pilot-tailnet"];
+  labels = ["tern-pilot-daemon" "tern-pilot-web" "tern-pilot-gateway" "tern-pilot-tailnet" "tern-pilot-awake"];
   keyboardConfig = {
     keymap = "tmux";
     keymap_prefix = "ctrl+space";
@@ -220,7 +220,7 @@
     owner=$(printf '%s\n' "$identity" | ${pkgs.jq}/bin/jq -r .ownerLogin)
     ${pkgs.curl}/bin/curl --fail --silent --output /dev/null \
       --header "Tailscale-User-Login: $owner" http://127.0.0.1:18377/
-    # A new port only: do not change Paseo's 6767 route, and never enable Funnel.
+    # Change only Tern's route; never enable Funnel.
     exec ${tailscale} serve --bg --yes --https=8377 http://127.0.0.1:18377
   '';
   environment = {
@@ -352,7 +352,7 @@
     if "$web_only"; then
       echo "Tern web pilot activated; existing daemon and pane programs preserved."
     else
-      echo "Tern-only pilot activated; no Darwin switch or Paseo restart."
+      echo "Tern-only pilot activated; no Darwin switch."
     fi
   '';
 in {
@@ -432,6 +432,19 @@ in {
         Umask = 63;
         StandardOutPath = "${stateDir}/logs/tailnet.out";
         StandardErrorPath = "${stateDir}/logs/tailnet.err";
+      };
+    };
+    # Keep phone access reachable through idle sleep, including on battery.
+    # Display sleep and lid-close/forced sleep are unaffected.
+    tern-pilot-awake = {
+      command = "/usr/bin/caffeinate -i";
+      serviceConfig = {
+        KeepAlive = true;
+        RunAtLoad = true;
+        ProcessType = "Background";
+        ThrottleInterval = 5;
+        Umask = 63;
+        StandardErrorPath = "${stateDir}/logs/awake.err";
       };
     };
   };

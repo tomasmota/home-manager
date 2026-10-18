@@ -1,10 +1,10 @@
-# Stencil Tern parallel pilot
+# Stencil Tern
 
 This is [Stencil's Rust-native Tern](https://stencil.so/tern), not tern.build.
-It runs alongside Paseo, tmux and Ghostty without changing them or Paseo's
-port 6767. The pilot does not need a full Darwin switch.
+Tern is the omp interface on Mac and Android. Activation does not need a full
+Darwin switch; command and service names retain the `tern-pilot` prefix.
 
-See [PILOT.md](PILOT.md) for the pilot's purpose and adoption checks.
+See [PILOT.md](PILOT.md) for the workflow and physical-phone checks.
 
 ## Prerequisites
 
@@ -65,8 +65,8 @@ Use the printed store path, as the owning user **without sudo**:
 open /Applications/Tern.app
 ```
 
-Full activation bootstraps four pilot LaunchAgents. It does not install or
-modify the app, switch Darwin or restart Paseo. Repeating it accepts identical
+Full activation bootstraps five pilot LaunchAgents. It does not install or
+modify the app or switch Darwin. Repeating it accepts identical
 configuration; differing loaded configuration is refused so ongoing Tern turns
 can finish before the daemon owner changes.
 
@@ -151,6 +151,7 @@ owning user's GUI launchd domain:
 | `org.nixos.tern-pilot-web` | Genuine assets and token-protected loopback backend on 8377. |
 | `org.nixos.tern-pilot-gateway` | Loopback 18377: owner-only Tailscale identity, exact WebSocket Origin, private backend token injection. |
 | `org.nixos.tern-pilot-tailnet` | Adds the HTTPS route after an authenticated gateway root GET. |
+| `org.nixos.tern-pilot-awake` | `/usr/bin/caffeinate -i`; prevents idle system sleep for remote access. |
 
 Exact settings (throttles, umask 077, environment) are in
 [`tern.nix`](../tern.nix). The daemon silently sources the repository's
@@ -210,7 +211,7 @@ The backend bearer token stays private and is injected only server-side.
 No browser login or secret URL transfer is required. This pilot enables
 **no Funnel** and starts no QUIC/iroh server.
 
-## Sessions and gradual adoption
+## Sessions
 
 Tern's daemon owns panes and their authoritative screen; clients mirror the
 same live terminal, rather than resuming a separate agent from a transcript.
@@ -218,8 +219,8 @@ Closing a client window does not normally end daemon-owned panes. See the
 [architecture](https://docs.stencil.so/tern/concepts/architecture.md) and
 [sessions/blocks](https://docs.stencil.so/tern/scripts/sessions.md) docs.
 
-An omp already running in Ghostty is **not imported** into Tern. For a gradual
-bridge, open a Tern shell pane and run `tmux attach -t <existing-session>` to
+An omp already running in Ghostty is **not imported** into Tern. To reach an
+existing tmux session, open a Tern shell pane and run `tmux attach -t <existing-session>` to
 reach an existing tmux PTY. This is the ANSI fallback path, not native
 Tern Surface Protocol rendering. For native integration, start `omp` directly
 in a Tern pane (or a Tern agent block); its terminal probe must reach Tern
@@ -229,11 +230,10 @@ browser rendering requires the matching browser bundle. See the
 
 Do not resume the same transcript in a second omp while its original owner is
 still running: two writers can conflict. Mirroring one Tern-owned process is
-different from starting another process. Keep Ghostty/tmux/Paseo work intact
-until the pilot passes its adoption checks.
+different from starting another process.
 
-The Mac must remain powered, reachable and awake. Reuse Paseo's existing
-caffeinate service; no redundant awake service is added. Caffeinate does not
+The Mac must remain powered, reachable and awake. Tern owns keep-awake through
+`org.nixos.tern-pilot-awake`, running `/usr/bin/caffeinate -i`. Caffeinate does not
 guarantee closed-lid operation: use an open lid or a supported powered clamshell
 setup, and account for sleep, network changes and reboot before relying on
 remote access.
@@ -249,7 +249,7 @@ remote access.
 Inspect service status locally without dumping tokens or account files:
 
 ```sh
-for label in org.nixos.tern-pilot-daemon org.nixos.tern-pilot-web org.nixos.tern-pilot-gateway org.nixos.tern-pilot-tailnet; do
+for label in org.nixos.tern-pilot-daemon org.nixos.tern-pilot-web org.nixos.tern-pilot-gateway org.nixos.tern-pilot-tailnet org.nixos.tern-pilot-awake; do
   launchctl print "gui/$(id -u)/$label"
 done
 curl --fail --silent --output /dev/null http://127.0.0.1:8377/
@@ -272,7 +272,7 @@ Finish ongoing Tern work before withdrawal. Unload only the pilot labels and
 remove their plist files so they are not bootstrapped at the next login:
 
 ```sh
-for label in org.nixos.tern-pilot-tailnet org.nixos.tern-pilot-gateway org.nixos.tern-pilot-web org.nixos.tern-pilot-daemon; do
+for label in org.nixos.tern-pilot-tailnet org.nixos.tern-pilot-gateway org.nixos.tern-pilot-web org.nixos.tern-pilot-daemon org.nixos.tern-pilot-awake; do
   launchctl bootout "gui/$(id -u)/$label"
   rm -f "$HOME/Library/LaunchAgents/$label.plist"
 done
@@ -282,7 +282,7 @@ launchctl enable "gui/$(id -u)/so.stencil.tern.daemon"
 
 A missing/unloaded label can make `bootout` report an error; still explicitly
 remove the persisted **8377-only** Serve route. Do not use a global Serve reset
-or touch Paseo's 6767 route. The separate bundled `so.stencil.tern.daemon` is
+or touch unrelated routes. The separate bundled `so.stencil.tern.daemon` is
 re-enabled for normal native-app startup, not removed. AbandonProcessGroup
 means unloading the pilot daemon does not promise all pane processes terminate.
 

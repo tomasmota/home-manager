@@ -16,7 +16,6 @@
 - `flake.nix`, `flake.lock`: flake entrypoint and pinned inputs (`nixpkgs`, `home-manager`, `nix-darwin`, `omp`).
 - `home.nix`: shared Home Manager module; imports most local modules and declares common packages.
 - `darwin/macos.nix`: macOS-only nix-darwin config (system defaults, Homebrew casks, Tailscale).
-- `darwin/paseo.nix`, `darwin/paseo/`: locked Paseo runtime and user launchd services for native Android access to omp; private state stays in `~/.paseo`. See `darwin/paseo/README.md` for pairing and exclusive TUI/phone handoffs.
 - `darwin/tern.nix`, `darwin/tern/`: Stencil Tern integration (user-installed `/Applications/Tern.app`, launchd services, owner-only phone browser gateway). Nix never installs or pins the app. See `darwin/tern/README.md` for activation, upgrades and withdrawal.
 - `agents/omp/`: Oh My Pi (omp), Mac-only via the pinned `omp` flake input. `agents/omp/default.nix` manages its runtime configuration, MCP servers, extensions and native agent definitions. `agents/omp/brief/` is the `brief` CLI and extension for fixed per-session context. Shared user instructions and skills live alongside it under `agents/`; see `agents/omp/README.md`.
 - `darwin/codex-usage/`: Codex Usage menu bar app (Swift). Built into `~/Applications/CodexUsage.app` by `install.sh` via a home-manager activation script when sources change; kept running by the `codex-usage` launchd agent.

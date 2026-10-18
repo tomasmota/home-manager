@@ -174,15 +174,8 @@ Regression checks: `node --test agents/omp/guard.test.mjs`.
 `mcp.json` excludes Chrome performance and memory tools at discovery and uses [Atlassian v2's deferred tool catalog](https://support.atlassian.com/atlassian-ai-gateway/docs/supported-tools/).
 For deferred Atlassian operations, use `discover` and its indicated `executeRead`, `executeWrite` or `executeDestructive` tool; fetch `getContentFormatGuide` this way before authoring rich content.
 
-## Android access with Paseo
+## Android access with Tern
 
-The Mac-only service in `darwin/paseo.nix` uses Paseo's native omp `rpc-ui`
-provider with this same profile, extensions, credentials, skills and MCP config.
-See [`../../darwin/paseo/README.md`](../../darwin/paseo/README.md) for secure direct
-Android connection over Tailscale, service management and limitations.
-
-Paseo does **not** attach to a running omp TUI. Finish or interrupt the turn and
-exit omp before importing its transcript. Archive the Paseo agent before resuming
-that transcript in the TUI; Stop only interrupts a turn, it does not release the
-process. An overlapping writer silently forks a stale conversation rather than
-sharing the live agent. No global single-process restriction is installed.
+Tern is the omp interface on Mac and Android. See the
+[Tern guide](../../darwin/tern/README.md) for shared live sessions over Tailscale,
+service management and limitations.

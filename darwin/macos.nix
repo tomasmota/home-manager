@@ -7,7 +7,7 @@
   user = config.system.primaryUser;
   home = config.users.users.${user}.home;
 in {
-  imports = [./paseo.nix ./tern.nix];
+  imports = [./tern.nix];
 
   nixpkgs.hostPlatform = "aarch64-darwin";
 
