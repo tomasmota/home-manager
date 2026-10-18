@@ -78,10 +78,36 @@
         echo ${builtins.unsafeDiscardStringContext drv.drvPath} > $out
       '';
 
-    mkChecks = system: extra: let
+    mkChecks = system: config: extra: let
       pkgs = nixpkgs.legacyPackages.${system};
+      shellFiles =
+        lib.filterAttrs (
+          name: file:
+            file.enable
+            && builtins.elem (baseNameOf name) [".zshenv" ".zprofile" ".zshrc" ".zlogin" ".zlogout"]
+        )
+        config.home.file;
+      # Syntax checks need the generated text, not the programs referenced by it.
+      shellSyntaxChecks = lib.concatStringsSep "\n" (lib.mapAttrsToList (
+          name: file: "zsh -n ${pkgs.writeText (baseNameOf name) (builtins.unsafeDiscardStringContext file.text)}"
+        )
+        shellFiles);
+      shellFunctions = pkgs.writeText "shell-functions.zsh" (import ./shell/functions.nix {inherit config pkgs;});
+      shellAliases = pkgs.writeText "shell-aliases.zsh" (lib.concatStringsSep "\n" (lib.mapAttrsToList (
+        name: value: "alias ${lib.escapeShellArg name}=${lib.escapeShellArg value}"
+      ) (import ./shell/aliases.nix {inherit config;})));
     in
       {
+        shell-tests =
+          pkgs.runCommand "shell-tests" {
+            nativeBuildInputs = [pkgs.zsh pkgs.fd pkgs.fzf pkgs.git pkgs.ripgrep];
+          } ''
+            ${shellSyntaxChecks}
+            zsh -n ${shellFunctions}
+            zsh -n ${shellAliases}
+            zsh -f ${cleanSrc}/shell/helpers.test.zsh ${shellFunctions} ${shellAliases}
+            touch $out
+          '';
         # btw.test.mjs needs the installed Paseo runtime, so it is excluded.
         js-tests =
           pkgs.runCommand "js-tests" {
@@ -174,10 +200,10 @@
 
     # Each system evaluates only its own host configuration (no closure build).
     checks = {
-      ${linuxSystem} = mkChecks linuxSystem (pkgs: {
+      ${linuxSystem} = mkChecks linuxSystem self.homeConfigurations.linux.config (pkgs: {
         home-linux-eval = mkEvalCheck pkgs "home-linux" self.homeConfigurations.linux.activationPackage;
       });
-      ${macSystem} = mkChecks macSystem (pkgs: {
+      ${macSystem} = mkChecks macSystem self.darwinConfigurations.macbook.config.home-manager.users.${user} (pkgs: {
         darwin-macbook-eval = mkEvalCheck pkgs "darwin-macbook" self.darwinConfigurations.macbook.system;
       });
     };

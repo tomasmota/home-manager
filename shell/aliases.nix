@@ -66,13 +66,5 @@
   tfu = "tofu force-unlock $(tofu plan 2>&1 | grep ID | awk '{print $4}')";
 
   # Files
-  # Fuzzy find tree and cd into folder
-  cdf = ''cd $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
-  # Fuzzy find over all repos under ~/dev
-  cdr = ''    cd "$(fd --search-path ~/dev -d 7 -t d --hidden --no-ignore-vcs "^\.git$" \
-                    | xargs dirname \
-                    | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")"'';
-  # Fuzzy find tree and open folder in neovim
-  nvd = ''nv $(fd --type directory | fzf --preview "tree -I \"node_modules|dist|coverage\" -C {}")'';
   cdt = ''_tofu_root && cd "$REPLY"'';
 }

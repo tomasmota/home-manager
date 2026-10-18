@@ -13,6 +13,10 @@
       };
       init.defaultBranch = "main";
       push.autoSetupRemote = true;
+      rerere = {
+        enabled = true;
+        autoupdate = false;
+      };
 
       # Git branch UI
       branch.sort = "-committerdate";

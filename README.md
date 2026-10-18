@@ -58,7 +58,7 @@ home-manager build --flake .#linux
 darwin-rebuild build --flake .#macbook
 ```
 
-`nix flake check -L` evaluates the current host without building it and runs Node regression tests, formatting and lint; CI adds `--all-systems` to evaluate both hosts while building only Linux checks. Format with `nix fmt`.
+`nix flake check -L` evaluates the current host without building it and runs Node regression tests, generated Zsh syntax checks, shell helper regressions, formatting and lint; CI adds `--all-systems` to evaluate both hosts while building only Linux checks. Format with `nix fmt`.
 
 ## Update dependencies
 
@@ -106,5 +106,6 @@ EOF
 ## Notes
 
 - Aliases and git includes assume repos usually live under `~/dev/work` and `~/dev/personal`.
+- Git reuses recorded conflict resolutions (`rerere`) but leaves them unstaged for review.
 - Atuin's macOS package is pinned separately in `flake.nix`; Linux and other packages follow the main nixpkgs input.
 - On macOS only (nix-darwin manages the daemon), only root is trusted by the Nix daemon; normal user builds remain allowed, but restricted daemon settings require sudo.

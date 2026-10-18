@@ -28,38 +28,70 @@ in ''
     fi
 
     local file
-    file=$(rg -S -l -- "$query" | fzf --preview "bat --color=always {}")
-    if [[ -n "$file" ]]; then
-      nvim "$file" -c "/$query"
-    fi
+    file=$(rg -S -l --null -- "$query" | fzf --read0 --print0 --preview "bat --color=always -- {}") || return
+    file=''${file%$'\0'}
+    [[ -n "$file" ]] || return 1
+    nvim -c "/$query" -- "$file"
   }
 
   nvf() {
     local query="''${1:-}"
     local file
-    file=$(fd --type file "$query" | fzf --preview "bat --color=always {}")
-    if [[ -n "$file" ]]; then
-      nvim "$file"
-    fi
+    file=$(fd --type file --print0 -- "$query" | fzf --read0 --print0 --preview "bat --color=always -- {}") || return
+    file=''${file%$'\0'}
+    [[ -n "$file" ]] || return 1
+    nvim -- "$file"
   }
 
   nvfh() {
     local query="''${1:-}"
     local file
-    file=$(fd --hidden --type file "$query" | fzf --preview "bat --color=always {}")
-    if [[ -n "$file" ]]; then
-      nvim "$file"
-    fi
+    file=$(fd --hidden --type file --print0 -- "$query" | fzf --read0 --print0 --preview "bat --color=always -- {}") || return
+    file=''${file%$'\0'}
+    [[ -n "$file" ]] || return 1
+    nvim -- "$file"
+  }
+
+  cdf() {
+    local dir
+    dir=$(fd --type directory --print0 \
+      | fzf --read0 --print0 --preview 'tree -I "node_modules|dist|coverage" -C -- {}') || return
+    dir=''${dir%$'\0'}
+    [[ -n "$dir" ]] || return 1
+    cd -- "$dir"
+  }
+
+  cdr() {
+    local dir
+    dir=$(fd --search-path "$HOME/dev" -d 7 -t d --hidden --no-ignore-vcs \
+      --format '{//}' --print0 '^\.git$' \
+      | fzf --read0 --print0 --preview 'tree -I "node_modules|dist|coverage" -C -- {}') || return
+    dir=''${dir%$'\0'}
+    [[ -n "$dir" ]] || return 1
+    cd -- "$dir"
+  }
+
+  nvd() {
+    local dir
+    dir=$(fd --type directory --print0 \
+      | fzf --read0 --print0 --preview 'tree -I "node_modules|dist|coverage" -C -- {}') || return
+    dir=''${dir%$'\0'}
+    [[ -n "$dir" ]] || return 1
+    nvim -- "$dir"
   }
 
   # fuzzy pick a tofu root (directory with a .terraform.lock.hcl) in the current repo into $REPLY;
   # --init also prints it and runs tofu init there unless it already has a .terraform directory
   _tofu_root() {
     local repo dir
-    repo=$(git rev-parse --show-toplevel) || return
-    dir=$(cd -q "$repo" && fd --type f --hidden --glob ".terraform.lock.hcl" \
-      | xargs -n1 dirname \
-      | fzf --preview 'tree -I "node_modules|.terraform|.git|dist|coverage" -C {}') || return
+    # Keep trailing newlines in repository names through command substitution.
+    repo=$(git rev-parse --show-toplevel && printf '\0') || return
+    repo=''${repo%$'\n\0'}
+    dir=$(cd -q -- "$repo" && fd --type f --hidden --glob \
+      --format '{//}' --print0 ".terraform.lock.hcl" \
+      | fzf --read0 --print0 --preview 'tree -I "node_modules|.terraform|.git|dist|coverage" -C -- {}') || return
+    dir=''${dir%$'\0'}
+    [[ -n "$dir" ]] || return 1
     REPLY=$repo/$dir
     [[ $1 == --init ]] || return 0
     print -r -- "''${(D)REPLY}"
