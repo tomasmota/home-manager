@@ -166,7 +166,7 @@
   };
 
   mergeConfig = pkgs.writeShellScript "omp-merge-config" ''
-    export PATH=${lib.makeBinPath [pkgs.yq-go pkgs.coreutils]}:$PATH
+    export PATH=${lib.makeBinPath [pkgs.yq-go pkgs.coreutils pkgs.flock]}:$PATH
     exec ${pkgs.bash}/bin/bash ${./merge-config.sh} "$@"
   '';
 

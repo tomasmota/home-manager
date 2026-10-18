@@ -12,9 +12,9 @@ process. Installed `~/.omp/agent/` and shared `~/.agents/` paths stay unchanged.
 ## Ownership
 
 - `default.nix` `policy` is reapplied to `~/.omp/agent/config.yml` on every
-  switch. `preferences` only seed missing keys (`merge-config.sh`); the live
-  `config.yml` is authoritative, so change `preferences` only to alter
-  fresh-machine defaults.
+  switch. `preferences` only seed missing keys (`merge-config.sh`, which holds
+  omp's `config.yml.lock` while merging); the live `config.yml` is
+  authoritative, so change `preferences` only to alter fresh-machine defaults.
 - Model roles, fallback chains and per-agent model overrides are runtime-owned:
   set them with `/model`, `/agents` or `omp config set`; Nix never writes them.
 - `~/.omp/agent/mcp.json` is a writable 0600 copy, reset on every switch.

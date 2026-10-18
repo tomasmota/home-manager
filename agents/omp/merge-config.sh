@@ -14,6 +14,11 @@ target=$3
 dir=$(dirname "$target")
 mkdir -p "$dir"
 
+# Match omp's macOS lock; keep the sidecar inode across atomic config replacements.
+umask 077
+exec 9>>"$target.lock"
+flock -x -w 5 9
+
 live=$(mktemp)
 tmp=
 trap 'rm -f "$live" ${tmp:+"$tmp"}' EXIT

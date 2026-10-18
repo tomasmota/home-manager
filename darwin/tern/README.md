@@ -68,7 +68,8 @@ open /Applications/Tern.app
 Full activation bootstraps five pilot LaunchAgents. It does not install or
 modify the app or switch Darwin. Repeating it accepts identical
 configuration; differing loaded configuration is refused so ongoing Tern turns
-can finish before the daemon owner changes.
+can finish before the daemon owner changes. Settings and these conflicts are
+checked before the native daemon is disabled.
 
 A `sudo darwin-rebuild switch --flake .#macbook` also applies this module, but
 it is not the pilot activation path.
@@ -108,7 +109,7 @@ blocked. A fresh installation uses full activation, not `--web-only`.
 
 ## Keyboard settings
 
-Home Manager activation and `tern-pilot-activate` run `tern-settings-apply`,
+Darwin activation and `tern-pilot-activate` run `tern-settings-apply`,
 which merges the managed tmux-preset settings (Ctrl+Space prefix, bindings in
 [`tern.nix`](../tern.nix)) into Tern's writable `settings.json`. Unrelated UI
 preferences survive; managed preset, prefix and bindings are reapplied. To

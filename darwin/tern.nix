@@ -127,6 +127,8 @@
       touch "${stateDir}/logs/$log"
       chmod 600 "${stateDir}/logs/$log"
     done
+    # Reject invalid settings/plugin paths before giving up the native daemon.
+    ${applySettings}/bin/tern-settings-apply
     # Full activation establishes one socket owner. A browser-only upgrade
     # must not disable or unload either daemon service.
     if [ "''${1:-}" != "--web-only" ]; then
@@ -264,6 +266,16 @@
       echo "Web-only activation requires the managed daemon; activate the full pilot first" >&2
       exit 1
     fi
+    if ! "$web_only"; then
+      ${lib.concatMapStringsSep "\n" (name: ''
+        if launchctl print "gui/$(id -u)/org.nixos.${name}" >/dev/null 2>&1 \
+          && ! cmp -s ${plist name} "${home}/Library/LaunchAgents/org.nixos.${name}.plist"; then
+          echo "org.nixos.${name} is already loaded with different configuration; finish Tern turns before unloading it" >&2
+          exit 1
+        fi
+      '')
+      labels}
+    fi
     umask 077
     test ! -L "${stateDir}"
     mkdir -p "${stateDir}/gcroots"
@@ -278,7 +290,6 @@
     else
       ${preflight}
     fi
-    ${applySettings}/bin/tern-settings-apply
     mkdir -p "${home}/Library/LaunchAgents" "${home}/.local/bin"
     ${lib.concatMapStringsSep "\n" (name: ''
         target="${home}/Library/LaunchAgents/org.nixos.${name}.plist"
@@ -290,11 +301,7 @@
             exit 1
           }
         elif launchctl print "$service" >/dev/null 2>&1; then
-          if ! cmp -s ${plist name} "$target"; then
-            if ! "$web_only"; then
-              echo "org.nixos.${name} is already loaded with different configuration; finish Tern turns before unloading it" >&2
-              exit 1
-            fi
+          if "$web_only" && ! cmp -s ${plist name} "$target"; then
             # Only disposable browser/route clients are replaced in this mode.
             launchctl bootout "$service"
             install -m 600 ${plist name} "$target"
@@ -356,7 +363,7 @@
     fi
   '';
 in {
-  home-manager.users.${user} = {lib, ...}: {
+  home-manager.users.${user} = {
     home = {
       packages = [runtime.tern activate applySettings statusCommand];
       file = {
@@ -364,10 +371,6 @@ in {
         "Library/Application Support/Tern/plugins/jsonx".source = "${ternSdk}/plugins/examples/jsonx";
         "Library/Application Support/Tern/plugins/tern-kube".source = ternKube;
       };
-      # Keep settings writable for Tern's UI; only managed keyboard keys win.
-      activation.ternSettings = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        run ${applySettings}/bin/tern-settings-apply
-      '';
     };
   };
   system.build.ternPilot = pkgs.symlinkJoin {
