@@ -83,6 +83,7 @@ your starting state, not proof. Before acting:
 Working directory: <absolute launch directory>
 Repo: <root> | Branch: <branch or detached> | HEAD: <sha>
 Tree: <fingerprint> (recompute: `{ git rev-parse HEAD; git status --porcelain; git diff HEAD; } | shasum | cut -c1-12`)
+Brief: <KEY, only when launched with --brief; read-only, user-owned. Its contents are not copied here>
 
 ## Follow-up from the user
 <exact request and resolved meaning of references; takes priority over Next actions>
@@ -157,6 +158,24 @@ owned by the successor merely because it appears in the document.
   `--thinking high`. This is an example, not an alias table; resolve it at
   launch time.
 
+## Brief
+
+A brief is fixed, user-owned context for the main session (`brief` CLI; omp's
+`--brief KEY`). The launcher only selects an existing one; this skill never
+creates, edits, restores or logs progress in a brief, and never copies its
+contents into the document.
+
+- **Continue the work**: pass `--brief KEY` only when your own context shows a
+  `<brief key="KEY">` block. Take KEY from that block. Do not infer it from the
+  directory, branch, recent briefs or `brief ls`. No block means no `--brief`.
+- **Focused/unrelated investigation**: omit `--brief`, unless the user says it
+  belongs to the same task or asks for that brief.
+- **Explicit selection**: a brief named by the user overrides inheritance. For a
+  same-task continuation without an explicit selection, use the parent's key.
+- The launcher refuses a missing, archived, malformed or reserved key before
+  opening a pane (omp alone would start without it). Report the message; do not
+  repair it or retry without the brief unless the user agrees.
+
 ## Launch
 
 Find `scripts/start.mjs` beside this skill. Use its absolute path from the skill's
@@ -169,13 +188,15 @@ preserving the current checkout:
 ```sh
 node <skill-directory>/scripts/start.mjs --file <absolute-document-path> --cwd <absolute-working-directory>
 node <skill-directory>/scripts/start.mjs --file <absolute-document-path> --cwd <absolute-working-directory> --model 'GPT 6.1 Sol High'
+node <skill-directory>/scripts/start.mjs --file <absolute-document-path> --cwd <absolute-working-directory> --brief <KEY>
 ```
 
-These are alternatives, not two launches. `--thinking high` can be supplied
-separately; `--help` lists every option.
+These are alternative examples, not multiple launches. Combine `--model`,
+`--thinking` and `--brief` as needed; `--help` lists every option.
 
 - `--check` validates the document, the tern pane, the working directory's
-  direnv state and the model/thinking. It writes no files and opens no pane.
+  direnv state, the model/thinking and the brief (without reading it into
+  output). It writes no files and opens no pane; it reports the brief key.
 - A launch writes a private temporary overlay config containing only
   `autoResume: false`, so omp starts a fresh session. Normal safety extensions,
   rules, skills and model roles stay enabled; no persistent configuration
@@ -201,8 +222,8 @@ report it. Only the user runs `direnv allow`.
 `status: launched` means tern created the block and its program is this omp
 invocation with the document argument. It does not prove a completed model
 turn. Report the tern `block`, the resolved model/thinking (or configured
-default) and the document path. Do not invent a session ID or claim the
-successor completed its task.
+default), the brief key (or none) and the document path. Do not invent a session
+ID or claim the successor completed its task.
 
 A nonzero exit always leaves the document intact. Follow its message:
 

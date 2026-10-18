@@ -26,7 +26,7 @@
     hash = "sha256-hPwAUVqtIvqcgcGapoKzk0NRZya5/USEfZecK5v3kQI=";
   };
   labels = ["tern-pilot-daemon" "tern-pilot-web" "tern-pilot-gateway" "tern-pilot-tailnet"];
-  keyboardSettings = pkgs.writeText "tern-keyboard-settings.json" (builtins.toJSON {
+  keyboardConfig = {
     keymap = "tmux";
     keymap_prefix = "ctrl+space";
     keybinds = {
@@ -51,8 +51,37 @@
       "ctrl+space>s" = "split_down";
       "ctrl+space>q" = "close_pane";
       "ctrl+space>ctrl+q" = "close_tab";
+      "ctrl+space>i" = "inbox";
+      "ctrl+space>g" = "new_git_block";
+    };
+  };
+  keyboardSettings = pkgs.writeText "tern-keyboard-settings.json" (builtins.toJSON keyboardConfig);
+  omp = import ../agents/omp/managed.nix {inherit lib;};
+  # Declared state this command was built from. Checkout hashes let it say when
+  # later edits are not in the build yet; nothing here is persisted at runtime.
+  statusManifest = pkgs.writeText "tern-omp-status.json" (builtins.toJSON {
+    checkout = "${home}/.config/home-manager";
+    inherit home;
+    sources =
+      omp.inputs
+      // builtins.listToAttrs (map (e: lib.nameValuePair e.source e.sha256) omp.extensions)
+      // {"darwin/tern.nix" = builtins.hashFile "sha256" ./tern.nix;};
+    omp = {inherit (omp) extensions mcpServers;};
+    tern = {
+      inherit (runtime) app;
+      inherit assetsRoot labels configDir;
+      socket = daemonSocket;
+      settings = keyboardConfig;
     };
   });
+  statusCommand = pkgs.writeShellScriptBin "tern-omp-status" ''
+    if [ "$#" -ne 0 ]; then
+      echo "Usage: tern-omp-status (read-only; takes no arguments)" >&2
+      exit 2
+    fi
+    export TERN_STATUS_YQ=${pkgs.yq-go}/bin/yq
+    exec ${pkgs.nodejs_24}/bin/node ${./tern/status.mjs} ${statusManifest}
+  '';
   applySettings = pkgs.writeShellScriptBin "tern-settings-apply" ''
     set -euo pipefail
     umask 077
@@ -329,7 +358,7 @@
 in {
   home-manager.users.${user} = {lib, ...}: {
     home = {
-      packages = [runtime.tern activate applySettings];
+      packages = [runtime.tern activate applySettings statusCommand];
       file = {
         "Library/Application Support/Tern/plugins/terraform".source = "${ternSdk}/plugins/examples/terraform";
         "Library/Application Support/Tern/plugins/jsonx".source = "${ternSdk}/plugins/examples/jsonx";
@@ -343,7 +372,7 @@ in {
   };
   system.build.ternPilot = pkgs.symlinkJoin {
     name = "tern-pilot";
-    paths = [runtime.tern activate applySettings];
+    paths = [runtime.tern activate applySettings statusCommand];
   };
   system.activationScripts.extraActivation.text = lib.mkAfter ''
     echo "preparing Tern integration for ${user}..." >&2

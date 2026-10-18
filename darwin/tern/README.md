@@ -116,6 +116,9 @@ apply only these settings from a built pilot, run
 `<returned-store-path>/bin/tern-settings-apply`, then use Tern's **Reload
 settings** command; no service restart or Darwin switch is needed.
 
+Native bindings beyond tabs and panes: `Ctrl+Space i` opens the inbox and
+`Ctrl+Space g` opens a new Git block.
+
 Session cycling (`Ctrl+Space Tab` / `Shift+Tab`) is native-only: the
 [`session-navigation`](session-navigation) window plugin does not run in the
 browser client. `tern-settings-apply` links it into Tern's plugin directory,
@@ -236,6 +239,12 @@ setup, and account for sleep, network changes and reboot before relying on
 remote access.
 
 ## Inspect and withdraw
+
+`tern-omp-status` is available in the built pilot's `bin/` and Home Manager packages:
+
+- Compares build-time declarations with installed omp extensions/MCP, managed Tern settings, app/web assets, and the actual socket owner versus launchd's job.
+- Flags checkout changes since the build; rebuild before trusting a match. Exit 1 means detected drift; runtime model roles are excluded.
+- Reports unobservable runtime configuration and gateway assets as unknown. Read-only: no file contents, environment or credentials printed, and no repairs or restarts.
 
 Inspect service status locally without dumping tokens or account files:
 

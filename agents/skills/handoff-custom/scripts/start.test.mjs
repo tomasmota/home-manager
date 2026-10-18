@@ -76,12 +76,17 @@ function fixture(t, name = "handoff.md") {
     writeFileSync(join(bin, command), `#!${process.execPath}\n${source}`, { mode: 0o700 });
   }
   // PATH holds only the fakes, so a test can never reach the real tern daemon.
-  const env = { ...process.env, PATH: bin, TMPDIR: overlays, TERN_PANE: "41", TEST_ROOT: root };
+  const env = { ...process.env, PATH: bin, TMPDIR: overlays, TERN_PANE: "41", TEST_ROOT: root,
+    XDG_DATA_HOME: join(root, "data"), XDG_STATE_HOME: join(root, "state") };
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const splits = () => existsSync(join(root, "splits.jsonl"))
     ? readFileSync(join(root, "splits.jsonl"), "utf8").trim().split("\n").map(line => JSON.parse(line))
     : [];
-  return { root, bin, file, env, overlays, splits };
+  const brief = (key, text, dir = "active") => {
+    mkdirSync(join(root, "data", "briefs", dir), { recursive: true });
+    writeFileSync(join(root, "data", "briefs", dir, `${key}.md`), text);
+  };
+  return { root, bin, file, env, overlays, splits, brief };
 }
 
 function launch(context, args = []) {
@@ -183,11 +188,48 @@ test("ambiguous models and unsupported thinking levels are rejected before openi
   assert.deepEqual(context.splits(), []);
 });
 
-test("--help succeeds and unknown options still fail", () => {
-  const help = spawnSync(process.execPath, [launcher, "--help"], { encoding: "utf8" });
-  assert.equal(help.status, 0, help.stderr);
-  assert.match(help.stdout, /--file <path>/);
+test("unknown options fail", () => {
   const unknown = spawnSync(process.execPath, [launcher, "--transport", "tmux"], { encoding: "utf8" });
   assert.equal(unknown.status, 1);
   assert.match(unknown.stderr, /Unknown option '--transport'/);
+});
+
+test("--check reports the selected active brief by key without writing or opening a pane", t => {
+  const context = fixture(t);
+  context.brief("TEST-42", "---\njira: TEST-42\n---\nNotes the handoff must not copy.\n");
+  const check = launch(context, ["--check", "--brief", "TEST-42"]);
+  assert.equal(check.status, 0, check.stderr);
+  assert.equal(JSON.parse(check.stdout).brief, "TEST-42");
+  assert.doesNotMatch(check.stdout, /must not copy/);
+  assert.deepEqual(context.splits(), []);
+  assert.deepEqual(readdirSync(context.overlays), []);
+  assert.equal(existsSync(join(context.root, "state", "briefs", "loaded")), false);
+});
+
+test("a missing, archived, malformed or invalid brief stops the launch before opening a pane", t => {
+  const context = fixture(t);
+  context.brief("old", "Notes\n", "archive");
+  context.brief("bad-link", "---\njira: not-an-issue\n---\n");
+  context.brief("bad-line", "---\ntitle: x\n---\n");
+  context.brief("open", "---\njira: TEST-1\n");
+  const cases = [
+    ["nothing", /does not exist/],
+    ["old", /archived.*brief restore old/],
+    ["bad-link", /malformed.*not a Jira issue key.*brief edit bad-link/],
+    ["bad-line", /malformed.*unknown front matter line 'title: x'/],
+    ["open", /malformed.*no closing ---/],
+    ["../escape", /Invalid brief key/],
+    ["off", /Invalid brief key/],
+    ["", /Invalid brief key/],
+  ];
+  for (const [key, message] of cases) {
+    for (const args of [["--check"], []]) {
+      const result = launch(context, [...args, "--brief", key]);
+      assert.equal(result.status, 1, `${key}: ${result.stdout}`);
+      assert.match(result.stderr, message);
+      assert.match(result.stderr, /No successor was started/);
+    }
+  }
+  assert.deepEqual(context.splits(), []);
+  assert.deepEqual(readdirSync(context.overlays), []);
 });

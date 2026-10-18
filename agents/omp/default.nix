@@ -16,18 +16,9 @@
   ompDir = "${config.xdg.configHome}/home-manager/agents/omp";
   yaml = pkgs.formats.yaml {};
 
-  # Directory interpolation alone does not check that imported modules exist.
-  # Fail during evaluation if Git's flake snapshot omits a new runtime file.
-  jevDir = assert lib.assertMsg
-  (builtins.all (name: builtins.pathExists (./jev + "/${name}")) [
-    "jev-client.js"
-    "tmux-title.ts"
-    "tmux-title-core.js"
-    "tmux-status.ts"
-    "tmux-status-core.js"
-  ])
-  "omp: Jev extension modules are missing from the flake source; git add the new modules before rebuilding.";
-    ./jev;
+  # Extensions and MCP servers are declared in managed.nix so tern-omp-status
+  # can compare them with the installed files.
+  managed = import ./managed.nix {inherit lib;};
 
   # Inco is not an omp builtin. INCO_API_KEY comes from secrets.env (sourced
   # by zsh). Standard model metadata advertises reasoning_effort support.
@@ -132,13 +123,7 @@
           "disable-enforce"
           "undelete"
         ]);
-    extensions = [
-      "${./guard.ts}"
-      "${jevDir}/tmux-title.ts"
-      "${jevDir}/tmux-status.ts"
-      "${./status-line.ts}"
-      "${./brief/brief.ts}"
-    ];
+    extensions = map (e: e.store) managed.extensions;
 
     # Public skills use standard ~/.agents discovery; private/team stay private.
     skills = {
@@ -212,7 +197,7 @@ in {
     # copy; runtime server edits are reset on switch.
     activation.ompMcp = lib.hm.dag.entryAfter ["writeBoundary"] ''
       run mkdir -p "$HOME/.omp/agent"
-      run install -m 600 ${./mcp.json} "$HOME/.omp/agent/mcp.json"
+      run install -m 600 ${managed.mcpFile} "$HOME/.omp/agent/mcp.json"
     '';
 
     file = {

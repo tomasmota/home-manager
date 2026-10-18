@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-import { accessSync, constants, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { tmpdir, userInfo } from "node:os";
+import { accessSync, constants, existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { homedir, tmpdir, userInfo } from "node:os";
 import { delimiter, isAbsolute, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 import { parseArgs } from "node:util";
 
-const usage = `Usage: start.mjs --file <handoff.md> --cwd <directory> [--model <name>] [--thinking <level>] [--check]
+const usage = `Usage: start.mjs --file <handoff.md> --cwd <directory> [--model <name>] [--thinking <level>] [--brief <key>] [--check]
 
 Starts a fresh omp session in a new tern pane to the right of $TERN_PANE.
 Run it with omp's bash tool inside tern.
@@ -15,11 +15,15 @@ Run it with omp's bash tool inside tern.
   --cwd <path>        absolute working directory of the successor
   --model <name>      omp model phrase or exact selector; a trailing effort word sets --thinking
   --thinking <level>  off, minimal, low, medium, high, xhigh, max or auto
+  --brief <key>       active brief the successor loads; it must already exist and be usable
   --check             validate only; writes no files and opens no pane
   -h, --help          show this help`;
 const thinkingLevels = new Set(["off", "minimal", "low", "medium", "high", "xhigh", "max", "auto"]);
 const startupTimeoutMs = 15_000;
 const normalize = value => value.toLowerCase().replace(/[\s._-]+/g, "-");
+// Same rules as brief.sh and brief.ts; omp starts without a brief it cannot load, so refuse here.
+const briefKeyPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const jiraKeyPattern = /^[A-Z][A-Z0-9_]+-\d+$/;
 let splitAttempted = false;
 
 function executable(name, required = true) {
@@ -31,6 +35,37 @@ function executable(name, required = true) {
     } catch {}
   }
   if (required) throw new Error(`${name} is not on PATH.`);
+}
+
+// Read-only: fails unless active brief KEY exists and its front matter parses. Never reads notes into output.
+function checkBrief(key) {
+  if (!briefKeyPattern.test(key) || key === "off") {
+    throw new Error(`Invalid brief key ${JSON.stringify(key)}: use letters, digits, '.', '_' and '-' ('off' is reserved).`);
+  }
+  const store = join(process.env.XDG_DATA_HOME || join(homedir(), ".local", "share"), "briefs");
+  let text;
+  try {
+    text = readFileSync(join(store, "active", `${key}.md`), "utf8");
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    throw new Error(existsSync(join(store, "archive", `${key}.md`))
+      ? `Brief ${key} is archived; the user must run \`brief restore ${key}\` first.`
+      : `Brief ${key} does not exist.`);
+  }
+  const lines = text.split("\n");
+  if (lines[0].trim() !== "---") return;
+  let problem = "front matter has no closing ---";
+  for (const raw of lines.slice(1)) {
+    const line = raw.trim();
+    if (line === "---") return;
+    if (line === "") continue;
+    const value = line.startsWith("jira:") ? line.slice("jira:".length).trim() : undefined;
+    if (value === undefined) problem = `unknown front matter line '${line}'`;
+    else if (value && !jiraKeyPattern.test(value)) problem = `'${value}' is not a Jira issue key`;
+    else continue;
+    break;
+  }
+  throw new Error(`Brief ${key} is malformed: ${problem}; the user must run \`brief edit ${key}\`.`);
 }
 
 function run(command, args, cwd) {
@@ -74,6 +109,7 @@ async function main() {
     cwd: { type: "string" },
     model: { type: "string" },
     thinking: { type: "string" },
+    brief: { type: "string" },
     check: { type: "boolean", default: false },
     help: { type: "boolean", short: "h", default: false },
   } });
@@ -89,6 +125,7 @@ async function main() {
   if (!statSync(file).isFile() || !readFileSync(file, "utf8").trim()) throw new Error("The handoff document is empty or is not a file.");
   // omp's @file processor skips contents above this boundary.
   if (statSync(file).size > 5 * 1024 * 1024) throw new Error("The handoff exceeds omp's 5 MiB @file limit; shorten it before launching.");
+  if (values.brief !== undefined) checkBrief(values.brief);
 
   const pane = process.env.TERN_PANE ?? "";
   if (!/^\d+$/.test(pane)) {
@@ -140,7 +177,8 @@ async function main() {
     }
   }
 
-  const result = { document: file, cwd, model: model?.selector ?? "omp configured default", thinking: thinking ?? "omp configured default" };
+  const result = { document: file, cwd, model: model?.selector ?? "omp configured default", thinking: thinking ?? "omp configured default",
+    brief: values.brief ?? "none" };
   if (values.check) {
     console.log(JSON.stringify({ ...result, status: "validated" }, null, 2));
     return;
@@ -152,6 +190,7 @@ async function main() {
   const successor = [omp, "--config", config, "--cwd", cwd];
   if (model) successor.push("--model", model.selector);
   if (thinking) successor.push("--thinking", thinking);
+  if (values.brief !== undefined) successor.push("--brief", values.brief);
   successor.push(`@${file}`);
 
   // tern quotes this argv and runs it with `$SHELL -l -c`. The interactive shell adds the
