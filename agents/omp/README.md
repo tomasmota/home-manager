@@ -159,20 +159,16 @@ agent fetches it through the Jira MCP tool), free-form notes, or both.
 
 ## Infrastructure guard
 
-- `default.nix` uses native `bash.patterns` denies for organization-wide GCP changes, project/repository deletion, credential loss and force-pushing main/master; other tools remain `yolo`, subject to the independent MCP allow-list below.
+- `default.nix` uses native `bash.patterns` denies for organization-wide GCP changes, project/repository deletion, credential loss and force-pushing main/master; other tools remain `yolo`.
 - [`guard.ts`](guard.ts) denies mutations explicitly targeting prod (including IaC working directories); `/guard on` (default) asks before control changes, IaC applies/state edits and bulk cluster deletes, while `/guard off` allows those for this session. Resume/branch restore the recorded choice, new sessions default on, and subagents share the main session's switch but cannot approve prompts.
 - This is an accident guard, not containment: it does not resolve implicit kube/gcloud targets or inspect scripts, eval subprocesses, `bash -c` or terminal keys. Keep targets explicit; new processes load extension changes.
 
 Regression checks: `node --test agents/omp/guard.test.mjs`.
 
-MCP policy (`mcp-policy.ts`) leaves denied tools mounted and visible in context,
-accepting that overhead to avoid repeated mount/unmount notices at prompt and
-turn boundaries. Calls are still blocked at `tool_call`, including unknown
-Confluence tools. Initial MCP discovery can still emit a mount notice.
+## MCP context
 
-The Confluence allow-list includes `createConfluencePage` and
-`getContentFormatGuide`. For HTML/default page bodies, fetch the format guide
-before creating the page.
+`mcp.json` excludes Chrome performance and memory tools at discovery and uses [Atlassian v2's deferred tool catalog](https://support.atlassian.com/atlassian-ai-gateway/docs/supported-tools/).
+For deferred Atlassian operations, use `discover` and its indicated `executeRead`, `executeWrite` or `executeDestructive` tool; fetch `getContentFormatGuide` this way before authoring rich content.
 
 ## Android access with Paseo
 

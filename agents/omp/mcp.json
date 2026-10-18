@@ -10,13 +10,15 @@
         "--auto-connect",
         "--user-data-dir=/Users/tomas/Library/Application Support/Vivaldi",
         "--no-usage-statistics",
-        "--no-performance-crux"
+        "--no-performance-crux",
+        "--category-performance=false",
+        "--category-memory=false"
       ],
       "timeout": 120000
     },
     "confluence": {
       "type": "http",
-      "url": "https://mcp.atlassian.com/v1/mcp/authv2"
+      "url": "https://mcp.atlassian.com/v2/mcp"
     },
     "google-developer-knowledge": {
       "type": "stdio",

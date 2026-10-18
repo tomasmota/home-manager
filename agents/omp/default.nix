@@ -133,7 +133,6 @@
           "undelete"
         ]);
     extensions = [
-      "${./mcp-policy.ts}"
       "${./guard.ts}"
       "${jevDir}/tmux-title.ts"
       "${jevDir}/tmux-status.ts"
