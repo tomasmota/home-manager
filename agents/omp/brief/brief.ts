@@ -148,7 +148,7 @@ export default function brief(pi: ExtensionAPI): void {
 
   pi.registerFlag("brief", { type: "string", description: "Load a brief (fixed high-level context) by key" });
 
-  const showStatus = (ctx: ExtensionContext) => ctx.ui.setStatus("brief", current ? `brief ${current}` : undefined);
+  const showStatus = (ctx: ExtensionContext) => ctx.ui.setStatus("brief", current ? ` ${current}` : undefined);
 
   // Key recorded on the current branch: a key, null after `/brief off`, undefined when never set.
   const recorded = (ctx: ExtensionContext): string | null | undefined => {

@@ -156,6 +156,7 @@ agent fetches it through the Jira MCP tool), free-form notes, or both.
 - `/brief [KEY|off]` or `omp --brief KEY` loads one. The session records it
   (resume restores it, `/new` keeps it), and every main-agent turn re-reads the
   file into the end of the system prompt. Subagents never receive it.
+  The status line shows ` KEY` (Nerd Font bookmark) while loaded.
 - The `handoff-custom` launcher accepts `--brief KEY`, checks the active brief
   before opening a pane and passes the flag to the successor. A continuation
   carries the brief shown in the parent's prompt; other handoffs attach none
