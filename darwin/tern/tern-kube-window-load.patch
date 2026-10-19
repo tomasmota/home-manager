@@ -1,0 +1,55 @@
+--- a/plugin/window.luau
++++ b/plugin/window.luau
+@@ -1,11 +1,18 @@
+ --!strict
+ local Command = require("./lib/kubectl/command")
+-local ConfigHost = require("./config_host")
+-local Link = require("./lib/mutation/link")
+ local PaneEnv = require("./lib/actions/pane_env")
+ local Quick = require("./lib/actions/quick")
+ local Shellenv = require("./lib/env/shellenv")
+ 
++-- Module compilation shares the window's 50 ms hook budget. Warm the heavy
++-- branches in separate callbacks; handlers can still require them before then.
++tern.timer(0, function()
++	require("./config_host")
++end)
++tern.timer(0, function()
++	require("./lib/mutation/link")
++end)
++
+ local log = tern.log
+ 
+ local SCHEME = "tern-kube://"
+@@ -40,6 +47,7 @@
+ end
+ 
+ local function launch(link: LinkRequest, req: Quick.Request, cx: WindowCx)
++	local ConfigHost = require("./config_host")
+ 	local cfg = ConfigHost.load().config
+ 	local target =
+ 		{ context = req.target.context, kubeconfig = req.target.kubeconfig, program = quickProgram(cfg.kubectl) }
+@@ -71,6 +79,7 @@
+ -- Mutating ones go to the approve block first; it re-opens the link with a
+ -- single-use `confirm` token once the user confirmed the preview.
+ local function quickAction(link: LinkRequest, cx: WindowCx): RouteDecision?
++	local Link = require("./lib/mutation/link")
+ 	local req, err = Quick.decode(link.url)
+ 	if req == nil then
+ 		cx:toast("error", "Tern Kube: invalid quick action", err)
+@@ -109,6 +118,7 @@
+ 	if string.sub(link.url, 1, #SCHEME) ~= SCHEME then
+ 		return nil
+ 	end
++	local Link = require("./lib/mutation/link")
+ 	log.debug("tern-kube route.link", link.url)
+ 	if string.sub(link.url, 1, #Link.SCHEME) == Link.SCHEME then
+ 		return { block = APPROVE, args = { link.url } }
+@@ -173,6 +183,7 @@
+ 	title = "Tern Kube: Apply file or directory",
+ 	icon = "box",
+ 	run = function(cx: WindowCx)
++		local Link = require("./lib/mutation/link")
+ 		local focused = cx.session:focused()
+ 		local info = if focused then cx.session:pane(focused) else nil
+ 		local cwd = if info and info.cwd and string.sub(info.cwd, 1, 1) == "/" then info.cwd else tern.getenv("HOME")

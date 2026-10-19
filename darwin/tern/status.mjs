@@ -34,11 +34,6 @@ export function classifyDaemon(jobPid, ownerPids) {
   return jobPid != null && ownerPids.includes(jobPid) ? "managed" : "external";
 }
 
-export function webAssets(command) {
-  const m = / --assets (\S+)/.exec(command);
-  return m ? m[1] : null;
-}
-
 const canonical = (v) =>
   JSON.stringify(v, (_, x) =>
     x && typeof x === "object" && !Array.isArray(x)
@@ -146,27 +141,15 @@ function main(manifestFile) {
   if (ompDrift || changed.length > 0) steps.add("Apply omp changes: sudo darwin-rebuild switch --flake .#macbook (the full system switch, not the Tern-only activation).");
   steps.add("omp reads extensions at process start: use a fresh omp process; /reload-plugins reconnects MCP servers in an existing one.");
 
-  say("\nTern app and web client");
+  say("\nTern app");
   const app = m.tern.app;
-  let version = null;
   let appMtime = null;
   const pb = run("/usr/libexec/PlistBuddy", ["-c", "Print :CFBundleShortVersionString", path.join(app, "Contents/Info.plist")]);
   try {
     appMtime = fs.statSync(path.join(app, "Contents/MacOS/tern")).mtimeMs;
   } catch {}
   if (pb.ok && /^[0-9][0-9A-Za-z.+-]*$/.test(pb.out.trim()) && appMtime != null) {
-    version = pb.out.trim();
-    ok(`installed app ${version} (binary modified ${when(appMtime)})`);
-    const assets = path.join(m.tern.assetsRoot, version);
-    let ready = false;
-    try {
-      ready = !fs.lstatSync(assets).isSymbolicLink() && fs.existsSync(path.join(assets, "index.html")) && fs.existsSync(path.join(assets, "pkg/stencil_tern_web_bg.wasm"));
-    } catch {}
-    if (ready) ok(`web assets for ${version} are cached`);
-    else {
-      bad(`web assets for ${version} are missing from ${assets}`);
-      steps.add(`Cache the matching browser client at ${m.tern.assetsRoot}/<installed version>/ (see darwin/tern/README.md); never substitute another version.`);
-    }
+    ok(`installed app ${pb.out.trim()} (binary modified ${when(appMtime)})`);
   } else unknown(`${app} is not installed or its version is unreadable`);
 
   say("\nTern settings (installed ~/Library/Application Support/Tern/settings.json)");
@@ -196,7 +179,7 @@ function main(manifestFile) {
     jobs[label] = parseLaunchctl(r.out);
     const info = jobs[label].pid != null ? processInfo(jobs[label].pid) : null;
     const detail = `${label}: ${jobs[label].state ?? "unknown state"}${jobs[label].pid != null ? `, pid ${jobs[label].pid}` : ""}${info ? `, started ${when(info.started)}` : ""}`;
-    if (label !== "tern-pilot-tailnet" && jobs[label].state !== "running") bad(detail);
+    if (jobs[label].state !== "running") bad(detail);
     else say(`  state  ${detail}`);
   }
 
@@ -220,17 +203,6 @@ function main(manifestFile) {
       }
     }
   }
-
-  const web = jobs["tern-pilot-web"]?.pid != null ? processInfo(jobs["tern-pilot-web"].pid) : null;
-  const served = web && webAssets(web.command);
-  if (served) {
-    const servedVersion = path.basename(served);
-    if (version && servedVersion !== version) {
-      bad(`web job serves ${servedVersion} assets; installed app is ${version}`);
-      steps.add('Once matching assets exist, restart only the browser clients: launchctl kickstart -k "gui/$(id -u)/org.nixos.tern-pilot-web"; launchctl kickstart -k "gui/$(id -u)/org.nixos.tern-pilot-gateway". Phone connections will be interrupted.');
-    } else ok(`web job serves ${servedVersion} assets`);
-  } else unknown("web job assets: not observable (job not running)");
-  unknown("gateway assets: read from its environment at start; deliberately not inspected");
 
   say("\nNext steps");
   if (steps.size === 0) say("  none from observable state.");

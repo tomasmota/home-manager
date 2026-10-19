@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {classifyDaemon, diffMcp, parseLaunchctl, webAssets} from "./status.mjs";
+import {classifyDaemon, diffMcp, parseLaunchctl} from "./status.mjs";
 
 test("launchctl parsing ignores nested state lines and keeps the job arguments", () => {
   const job = parseLaunchctl(
@@ -31,11 +31,6 @@ test("a live managed job that does not hold the socket is not the daemon owner",
   assert.equal(classifyDaemon(12, [12]), "managed");
   assert.equal(classifyDaemon(null, [34]), "external");
   assert.equal(classifyDaemon(12, []), "none");
-});
-
-test("web asset directory comes from the --assets argument only", () => {
-  assert.equal(webAssets("tern web serve --token /t --assets /a/0.9.2 --allow-origin http://x"), "/a/0.9.2");
-  assert.equal(webAssets("tern web serve"), null);
 });
 
 test("MCP comparison ignores key order but reports changed servers by name", () => {

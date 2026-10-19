@@ -113,8 +113,6 @@
             nativeBuildInputs =
               [pkgs.nodejs_24 pkgs.findutils pkgs.git]
               ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [pkgs.darwin.ps];
-            # gateway-test.mjs listens on loopback.
-            __darwinAllowLocalNetworking = true;
           } ''
             export HOME="$TMPDIR/home"
             export TMPDIR="$TMPDIR/tmp"
@@ -122,8 +120,7 @@
             cp -R ${cleanSrc} source
             chmod -R u+w source
             cd source
-            find . -type f \( -name '*.test.mjs' -o -path ./darwin/tern/gateway-test.mjs \) \
-              -print0 | sort -z > "$TMPDIR/tests"
+            find . -type f -name '*.test.mjs' -print0 | sort -z > "$TMPDIR/tests"
             test -s "$TMPDIR/tests"
             # Integration suites create concurrent subprocesses; don't multiply that load per file.
             xargs -0 node --test --test-concurrency=1 < "$TMPDIR/tests"

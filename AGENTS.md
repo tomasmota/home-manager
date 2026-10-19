@@ -16,7 +16,7 @@
 - `flake.nix`, `flake.lock`: flake entrypoint and pinned inputs (`nixpkgs`, `home-manager`, `nix-darwin`, `omp`).
 - `home.nix`: shared Home Manager module; imports most local modules and declares common packages.
 - `darwin/macos.nix`: macOS-only nix-darwin config (system defaults, Homebrew casks, Tailscale).
-- `darwin/tern.nix`, `darwin/tern/`: Stencil Tern integration (user-installed `/Applications/Tern.app`, launchd services, owner-only phone browser gateway). Nix never installs or pins the app. See `darwin/tern/README.md` for activation, upgrades and withdrawal.
+- `darwin/tern.nix`, `darwin/tern/`: Native Stencil Tern integration (user-installed `/Applications/Tern.app`, managed session daemon and settings). Nix never installs or pins the app. See `darwin/tern/README.md` for activation, upgrades and withdrawal.
 - `agents/omp/`: Oh My Pi (omp), Mac-only via the pinned `omp` flake input. `agents/omp/default.nix` manages its runtime configuration, MCP servers, extensions and native agent definitions. `agents/omp/brief/` is the `brief` CLI and extension for fixed per-session context. Shared user instructions and skills live alongside it under `agents/`; see `agents/omp/README.md`.
 - `darwin/codex-usage/`: Codex Usage menu bar app (Swift). Built into `~/Applications/CodexUsage.app` by `install.sh` via a home-manager activation script when sources change; kept running by the `codex-usage` launchd agent.
 - `terminal/ghostty.nix`: Ghostty config; expects `fontSize` from flake `extraSpecialArgs`.
@@ -46,7 +46,7 @@
   - `nix flake update` (then commit `flake.lock` changes)
 
 ## Tern upgrades
-- The owner installs and updates `/Applications/Tern.app` normally; Nix manages only integration. Follow `darwin/tern/README.md` for matching browser assets and service restarts.
+- The owner installs and updates `/Applications/Tern.app` normally; Nix manages only integration. Follow `darwin/tern/README.md` for native-app upgrades and service restarts.
 - Warn that a daemon restart may interrupt active work or replace shell state. Do not promise process or session continuity.
 - Keep routine upgrades simple. Do not create isolated upgrade rehearsals, inventory every pane/process, automate the native UI or capture screenshots unless explicitly requested.
 - Basic version/service checks are sufficient for a routine upgrade. The owner verifies plans, applies, rendering and phone behavior.
