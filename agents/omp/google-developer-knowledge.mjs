@@ -5,8 +5,8 @@ import { join } from "node:path";
 import { createInterface } from "node:readline";
 
 const endpoint = "https://developerknowledge.googleapis.com/mcp";
-const credentialPath = process.env.GOOGLE_APPLICATION_CREDENTIALS
-  ?? join(process.env.CLOUDSDK_CONFIG ?? join(homedir(), ".config", "gcloud"), "application_default_credentials.json");
+// Documentation always uses Google ADC, not workspace-specific cloud credentials.
+const credentialPath = join(homedir(), ".config", "gcloud", "application_default_credentials.json");
 const credentials = JSON.parse(await readFile(credentialPath, "utf8"));
 if (credentials.type !== "authorized_user" || !credentials.refresh_token || !credentials.client_id || !credentials.client_secret) {
   throw new Error("Google Developer Knowledge requires user ADC. Run gcloud auth application-default login.");

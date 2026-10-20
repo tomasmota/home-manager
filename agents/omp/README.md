@@ -86,8 +86,10 @@ catalog without making a generation request.
 does not manage cloud resources.
 See [Google's setup documentation](https://developers.google.com/knowledge/mcp).
 
-The bridge uses existing **user ADC** (`authorized_user` only), not an API key or
-omp's model-provider credentials; credential lookup is in the bridge source.
+The bridge uses **user ADC** (`authorized_user` only) from
+`~/.config/gcloud/application_default_credentials.json`, not an API key or omp's
+model-provider credentials. It ignores workspace `GOOGLE_APPLICATION_CREDENTIALS`
+and `CLOUDSDK_CONFIG` overrides so other cloud environments cannot break it.
 The private file `~/.omp/agent/google-developer-knowledge-project` fixes the
 project for `X-Goog-User-Project`; the ADC quota project is not used. That project
 must have `developerknowledge.googleapis.com` enabled, and its name stays outside
