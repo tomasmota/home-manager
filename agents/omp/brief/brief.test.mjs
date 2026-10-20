@@ -107,7 +107,7 @@ async function injected(host, event = "before_agent_start") {
   return host.handlers[event]({ systemPrompt: ["base prompt"] }, host.context);
 }
 
-test("startup flag injects the brief and edits appear on the next turn", async t => {
+test("startup flag injects the brief with its file path and edits appear on the next turn", async t => {
   const h = await host(t, { flag: "geoip" });
   h.writeBrief("geoip", "initial allocation notes", "CLOUD-4028");
 
@@ -117,6 +117,7 @@ test("startup flag injects the brief and edits appear on the next turn", async t
   assert.match(first.systemPrompt.at(-1), /<brief key="geoip">/);
   assert.match(first.systemPrompt.at(-1), /Jira epic CLOUD-4028/);
   assert.match(first.systemPrompt.at(-1), /initial allocation notes/);
+  assert.ok(first.systemPrompt.at(-1).includes(join(h.activeDir, "geoip.md")));
   assert.deepEqual(h.appended.map(entry => entry.data), [{ keys: ["geoip"] }]);
   assert.equal(existsSync(join(h.loadedDir, "geoip")), true);
 
@@ -170,21 +171,50 @@ test("brief off records an explicit empty selection and stops injection", async 
   assert.equal(await injected(h), undefined);
 });
 
-test("a brief that becomes missing, archived or malformed unloads with a warning", async t => {
-  for (const state of ["missing", "archived", "malformed"]) {
+test("a brief that becomes missing or archived unloads with a warning", async t => {
+  for (const state of ["missing", "archived"]) {
     const h = await host(t, { flag: "alpha" });
     h.writeBrief("alpha", "alpha notes");
     await h.handlers.session_start({}, h.context);
 
     const active = join(h.activeDir, "alpha.md");
     if (state === "archived") renameSync(active, join(h.archiveDir, "alpha.md"));
-    else if (state === "malformed") writeFileSync(active, "---\njira: not-a-key\n---\nnotes\n");
     else rmSync(active);
 
     assert.equal(await injected(h), undefined, state);
     assert.equal(h.notifications.at(-1).level, "warning", state);
     assert.equal(h.statuses.at(-1).value, undefined, state);
   }
+});
+
+test("a malformed brief stays loaded, showing the agent its path and error until fixed", async t => {
+  const h = await host(t, { flag: "alpha" });
+  h.writeBrief("alpha", "alpha notes");
+  await h.handlers.session_start({}, h.context);
+  const file = join(h.activeDir, "alpha.md");
+  const warnings = () => h.notifications.filter(({ level }) => level === "warning").length;
+  const breakBrief = () => writeFileSync(file, "---\ntitle: alpha\n---\nalpha notes\n");
+  const assertBroken = async label => {
+    const prompt = (await injected(h)).systemPrompt.at(-1);
+    assert.ok(prompt.includes(file), label);
+    assert.match(prompt, /unknown front matter line 'title: alpha'/, label);
+    assert.doesNotMatch(prompt, /alpha notes/, label);
+  };
+
+  breakBrief();
+  await assertBroken("first turn");
+  await assertBroken("second turn");
+  await h.handlers.session_switch({ reason: "resume" }, h.context);
+  await assertBroken("after resume");
+  assert.equal(warnings(), 1);
+  assert.match(h.statuses.at(-1).value, /alpha/);
+
+  h.writeBrief("alpha", "repaired notes");
+  assert.match((await injected(h)).systemPrompt.at(-1), /repaired notes/);
+  breakBrief();
+  await assertBroken("broken again");
+  assert.equal(warnings(), 2);
+  assert.deepEqual(h.appended.map(entry => entry.data), [{ keys: ["alpha"] }]);
 });
 
 test("subagents neither restore nor inject briefs", async t => {

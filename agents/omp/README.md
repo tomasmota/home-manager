@@ -141,13 +141,16 @@ including `secrets.env`, into the Nix store. Running sessions and
 
 ## Briefs
 
-`brief/` gives a session fixed, user-written higher-level context: a linked Jira
+`brief/` gives a session fixed, user-owned higher-level context: a linked Jira
 epic fetched through the Jira MCP, free-form notes, or both. The epic is
 additional background, never implicitly the session's current work item.
 
 - `brief new KEY [-j EPIC] [-m TEXT]` creates one in `$XDG_DATA_HOME/briefs/`;
   the link is `jira: EPIC` front matter. `brief --help` lists `edit`, `ls`,
-  `done`, `restore`, `rm` and `prune`. Agents never write briefs.
+  `done`, `restore`, `rm` and `prune`. Each loaded brief shows the agent its
+  file: agents edit it only when asked and may suggest durable additions,
+  corrections or removals, never progress or current-task details. A brief whose
+  front matter breaks stays loaded; the agent sees the error instead of its notes.
 - `/brief KEY` replaces the selection; `/brief add KEY` attaches another,
   `/brief remove KEY` detaches one and `/brief off` unloads all. Omit KEY for a
   picker. `omp --brief KEY1,KEY2` loads several at startup; the session records

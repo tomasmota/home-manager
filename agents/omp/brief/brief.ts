@@ -111,8 +111,9 @@ function describe(brief: Brief | string): string | undefined {
   return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
-// The active brief KEY, or why it cannot be loaded.
-function loadBrief(key: string): Brief | string {
+// Selected brief KEY: why it cannot be selected (an invalid key, or no active file),
+// or its parsed file.
+function loadBrief(key: string): string | { brief: Brief | string } {
   if (!KEY.test(key)) return `"${key}" is not a brief key`;
   const text = readText(key);
   if (text === undefined) {
@@ -120,16 +121,31 @@ function loadBrief(key: string): Brief | string {
       ? `Brief ${key} is archived (brief restore ${key})`
       : `Brief ${key} does not exist (brief new ${key})`;
   }
-  const brief = parse(text);
-  return typeof brief === "string" ? `Brief ${key} is malformed: ${brief} (brief edit ${key})` : brief;
+  return { brief: parse(text) };
 }
 
+function malformed(key: string, problem: string): string {
+  return `Brief ${key} is malformed: ${problem} (brief edit ${key})`;
+}
+
+const FRONT_MATTER = "Its optional front matter holds only a `jira: EPIC` line between `---` lines.";
+
 // Deterministic for an unchanged file, so the system prompt stays byte-stable between turns.
-function render(key: string, { issue, notes }: Brief): string {
+// A malformed brief shows the agent its error instead of its notes, so it can be repaired in place.
+function render(key: string, brief: Brief | string): string {
+  const path = briefPath(activeDir, key);
+  if (typeof brief === "string") {
+    return [
+      `<brief key="${key}">`,
+      `The user attached this brief to the session, but its file, \`${path}\`, has malformed front matter (${brief}), so its notes are not shown until that is fixed. If you have not mentioned this yet, tell the user. Repair the front matter when they ask or when your own edit broke it. ${FRONT_MATTER}`,
+      "</brief>",
+    ].join("\n");
+  }
+  const { issue, notes } = brief;
   const lines = [
     `<brief key="${key}">`,
-    "The user attached this brief to the session. It is fixed, higher-level context: the larger piece of work this session belongs to and the purpose behind the user's requests. Use it to understand why they ask for things and to keep your choices consistent with that goal; it does not widen the scope of any request.",
-    "The brief is read-only and owned by the user: never edit or extend it, and never record progress in it.",
+    "The user attached this brief to the session. It is durable, higher-level context: the larger piece of work this session belongs to and the purpose behind the user's requests. Use it to understand why they ask for things and to keep your choices consistent with that goal; it does not widen the scope of any request.",
+    `The user owns this brief's file, \`${path}\`: edit it only when they ask. When you learn something that future sessions of this work will need and the brief lacks, such as a lasting decision, constraint, convention or key resource, suggest adding it; when part of the brief is wrong or outdated, suggest correcting or removing it. Keep the brief short and relevant across sessions: revise existing text rather than appending, and leave out progress, status and details of the current task. ${FRONT_MATTER}`,
   ];
   if (issue) {
     lines.push(
@@ -173,6 +189,17 @@ export default function brief(pi: ExtensionAPI): void {
     }
   };
 
+  // Problems already reported per malformed brief, so each breakage warns once.
+  const reported = new Map<string, string>();
+  const trackMalformed = (ctx: ExtensionContext, key: string, brief: Brief | string) => {
+    if (typeof brief !== "string") {
+      reported.delete(key);
+    } else if (reported.get(key) !== brief) {
+      reported.set(key, brief);
+      ctx.ui.notify(`${malformed(key, brief)}; the agent sees only this error until it is fixed.`, "warning");
+    }
+  };
+
   const load = (ctx: ExtensionContext, keys: string[] | undefined, persist = true) => {
     current = keys;
     for (const key of keys ?? []) markLoaded(key);
@@ -206,11 +233,15 @@ export default function brief(pi: ExtensionAPI): void {
     }
     const available: string[] = [];
     for (const key of keys) {
-      const brief = loadBrief(key);
-      if (typeof brief === "string") ctx.ui.notify(`${brief}; not loaded.`, "warning");
-      else available.push(key);
+      const loaded = loadBrief(key);
+      if (typeof loaded === "string") {
+        ctx.ui.notify(`${loaded}; not loaded.`, "warning");
+        continue;
+      }
+      trackMalformed(ctx, key, loaded.brief);
+      available.push(key);
     }
-    // Preserve unavailable saved selections so resume can restore them after the files are repaired.
+    // Keep the saved selection while a brief is missing or archived, so resume restores it once the file is back.
     load(ctx, available, available.length === keys.length);
   };
 
@@ -224,14 +255,15 @@ export default function brief(pi: ExtensionAPI): void {
     const available: string[] = [];
     const prompts: string[] = [];
     for (const key of current) {
-      const brief = loadBrief(key);
-      if (typeof brief === "string") {
-        ctx.ui.notify(`${brief}; unloaded.`, "warning");
+      const loaded = loadBrief(key);
+      if (typeof loaded === "string") {
+        ctx.ui.notify(`${loaded}; unloaded.`, "warning");
         continue;
       }
+      trackMalformed(ctx, key, loaded.brief);
       available.push(key);
       markLoaded(key);
-      prompts.push(render(key, brief));
+      prompts.push(render(key, loaded.brief));
     }
     if (available.length !== current.length) {
       current = available;
@@ -273,7 +305,10 @@ export default function brief(pi: ExtensionAPI): void {
       let key = match ? (match[2] ?? "").trim() : args.trim();
       if (!key) {
         const options = action === "remove"
-          ? (current ?? []).map(key => ({ label: key, description: describe(loadBrief(key)) }))
+          ? (current ?? []).map(key => {
+            const loaded = loadBrief(key);
+            return { label: key, description: typeof loaded === "string" ? loaded : describe(loaded.brief) };
+          })
           : activeBriefs()
             .filter(({ key }) => action !== "add" || !current?.includes(key))
             .map(item => ({ label: item.key, description: describe(item.brief) }));
@@ -306,9 +341,11 @@ export default function brief(pi: ExtensionAPI): void {
         ctx.ui.notify(`Brief ${key} is already loaded.`, "info");
         return;
       }
-      const brief = loadBrief(key);
-      if (typeof brief === "string") {
-        ctx.ui.notify(brief, "error");
+      const loaded = loadBrief(key);
+      const problem = typeof loaded === "string" ? loaded
+        : typeof loaded.brief === "string" ? malformed(key, loaded.brief) : undefined;
+      if (problem) {
+        ctx.ui.notify(problem, "error");
         return;
       }
       load(ctx, action === "add" ? [...(current ?? []), key] : [key]);

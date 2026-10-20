@@ -83,7 +83,7 @@ your starting state, not proof. Before acting:
 Working directory: <absolute launch directory>
 Repo: <root> | Branch: <branch or detached> | HEAD: <sha>
 Tree: <fingerprint> (recompute: `{ git rev-parse HEAD; git status --porcelain; git diff HEAD; } | shasum | cut -c1-12`)
-Briefs: <KEY1,KEY2, only when launched with --brief; read-only, user-owned. Their contents are not copied here>
+Briefs: <KEY1,KEY2, only when launched with --brief; user-owned. Their contents are not copied here>
 
 ## Follow-up from the user
 <exact request and resolved meaning of references; takes priority over Next actions>
