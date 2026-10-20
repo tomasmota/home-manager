@@ -105,6 +105,8 @@ cat <<'EOF' > ~/dev/work/.gitconfig
 EOF
 ```
 
+Work-only agent context lives in the unmanaged `~/dev/work/AGENTS.md`, kept out of this public repo; omp loads it in every session under `~/dev/work`, inside repos too.
+
 ## Notes
 
 - Aliases and git includes assume repos usually live under `~/dev/work` and `~/dev/personal`.
