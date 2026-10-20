@@ -20,7 +20,7 @@ Usage: brief COMMAND [ARGS]
                      (CLOUD-4675) as additional context, not as the work item.
                      A KEY that is a Jira key links itself as the epic.
                      Notes come from -m or stdin; without either, a brief with
-                     no link opens $EDITOR on a template.
+                     no link opens an empty file in $EDITOR.
   edit [KEY]         Edit an active brief in $EDITOR. The link is the
                      "jira: EPIC" line between the "---" lines at the top.
   ls [--all]         List active briefs, most recently used first; --all adds
@@ -241,7 +241,7 @@ archive_brief() {
 }
 
 cmd_new() {
-  local key='' link='' text='' template
+  local key='' link='' text=''
   local given=false
   while (($#)); do
     case $1 in
@@ -277,11 +277,8 @@ cmd_new() {
   if ! $given && [[ -z $link ]]; then
     tmp=$(mktemp --tmpdir --suffix=.md "brief-$key.XXXXXX")
     trap 'rm -f -- "$tmp"' EXIT
-    template=$(printf '# %s\n\n## Goal\n\n\n## Why\n\n\n## Notes\n' "$key")
-    printf '%s\n' "$template" >"$tmp"
     edit_file "$tmp"
     text=$(<"$tmp")
-    [[ $text != "$template" ]] || die "template left unchanged; nothing created"
   fi
 
   [[ -n $link || $text == *[![:space:]]* ]] || die "empty brief; nothing created"
