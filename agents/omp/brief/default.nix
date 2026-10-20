@@ -4,7 +4,7 @@
   home.packages = [
     (pkgs.writeShellApplication {
       name = "brief";
-      runtimeInputs = [pkgs.coreutils pkgs.fzf];
+      runtimeInputs = [pkgs.coreutils pkgs.fzf pkgs.git];
       text = builtins.readFile ./brief.sh;
     })
     (pkgs.writeTextDir "share/zsh/site-functions/_brief" (builtins.readFile ./_brief))

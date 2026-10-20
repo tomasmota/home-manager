@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 import { parseArgs } from "node:util";
 
-const usage = `Usage: start.mjs --file <handoff.md> --cwd <directory> [--model <name>] [--thinking <level>] [--brief <key>] [--check]
+const usage = `Usage: start.mjs --file <handoff.md> --cwd <directory> [--model <name>] [--thinking <level>] [--brief <key[,key...]>] [--check]
 
 Starts a fresh omp session in a new tern pane to the right of $TERN_PANE.
 Run it with omp's bash tool inside tern.
@@ -15,7 +15,7 @@ Run it with omp's bash tool inside tern.
   --cwd <path>        absolute working directory of the successor
   --model <name>      omp model phrase or exact selector; a trailing effort word sets --thinking
   --thinking <level>  off, minimal, low, medium, high, xhigh, max or auto
-  --brief <key>       active brief the successor loads; it must already exist and be usable
+  --brief <keys>      comma-separated active briefs; every brief must already exist and be usable
   --check             validate only; writes no files and opens no pane
   -h, --help          show this help`;
 const thinkingLevels = new Set(["off", "minimal", "low", "medium", "high", "xhigh", "max", "auto"]);
@@ -125,7 +125,8 @@ async function main() {
   if (!statSync(file).isFile() || !readFileSync(file, "utf8").trim()) throw new Error("The handoff document is empty or is not a file.");
   // omp's @file processor skips contents above this boundary.
   if (statSync(file).size > 5 * 1024 * 1024) throw new Error("The handoff exceeds omp's 5 MiB @file limit; shorten it before launching.");
-  if (values.brief !== undefined) checkBrief(values.brief);
+  const briefs = values.brief === undefined ? [] : [...new Set(values.brief.split(",").map(key => key.trim()))];
+  for (const key of briefs) checkBrief(key);
 
   const pane = process.env.TERN_PANE ?? "";
   if (!/^\d+$/.test(pane)) {
@@ -178,7 +179,7 @@ async function main() {
   }
 
   const result = { document: file, cwd, model: model?.selector ?? "omp configured default", thinking: thinking ?? "omp configured default",
-    brief: values.brief ?? "none" };
+    briefs };
   if (values.check) {
     console.log(JSON.stringify({ ...result, status: "validated" }, null, 2));
     return;
@@ -190,7 +191,7 @@ async function main() {
   const successor = [omp, "--config", config, "--cwd", cwd];
   if (model) successor.push("--model", model.selector);
   if (thinking) successor.push("--thinking", thinking);
-  if (values.brief !== undefined) successor.push("--brief", values.brief);
+  if (briefs.length > 0) successor.push("--brief", briefs.join(","));
   successor.push(`@${file}`);
 
   // tern quotes this argv and runs it with `$SHELL -l -c`. The interactive shell adds the

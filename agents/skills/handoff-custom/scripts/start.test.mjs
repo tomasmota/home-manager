@@ -194,13 +194,14 @@ test("unknown options fail", () => {
   assert.match(unknown.stderr, /Unknown option '--transport'/);
 });
 
-test("--check reports the selected active brief by key without writing or opening a pane", t => {
+test("--check validates every selected brief without exposing notes or writing state", t => {
   const context = fixture(t);
   context.brief("TEST-42", "---\njira: TEST-42\n---\nNotes the handoff must not copy.\n");
-  const check = launch(context, ["--check", "--brief", "TEST-42"]);
+  context.brief("background", "Other private background notes.\n");
+  const check = launch(context, ["--check", "--brief", "TEST-42,background,TEST-42"]);
   assert.equal(check.status, 0, check.stderr);
-  assert.equal(JSON.parse(check.stdout).brief, "TEST-42");
-  assert.doesNotMatch(check.stdout, /must not copy/);
+  assert.deepEqual(JSON.parse(check.stdout).briefs, ["TEST-42", "background"]);
+  assert.doesNotMatch(check.stdout, /must not copy|Other private background notes/);
   assert.deepEqual(context.splits(), []);
   assert.deepEqual(readdirSync(context.overlays), []);
   assert.equal(existsSync(join(context.root, "state", "briefs", "loaded")), false);
@@ -208,12 +209,15 @@ test("--check reports the selected active brief by key without writing or openin
 
 test("a missing, archived, malformed or invalid brief stops the launch before opening a pane", t => {
   const context = fixture(t);
+  context.brief("valid", "Usable background notes.\n");
   context.brief("old", "Notes\n", "archive");
   context.brief("bad-link", "---\njira: not-an-issue\n---\n");
   context.brief("bad-line", "---\ntitle: x\n---\n");
   context.brief("open", "---\njira: TEST-1\n");
   const cases = [
     ["nothing", /does not exist/],
+    ["valid,nothing", /does not exist/],
+    ["valid,,valid", /Invalid brief key/],
     ["old", /archived.*brief restore old/],
     ["bad-link", /malformed.*not a Jira issue key.*brief edit bad-link/],
     ["bad-line", /malformed.*unknown front matter line 'title: x'/],

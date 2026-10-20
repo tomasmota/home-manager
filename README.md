@@ -66,6 +66,8 @@ darwin-rebuild build --flake .#macbook
 nix flake update
 ```
 
+Package-specific compatibility pins for Azure CLI and Atuin live in `flake.nix`; remove each pin once its linked upstream blocker is resolved.
+
 ## Local secrets
 
 - Put local secrets in `secrets.env` at repo root.

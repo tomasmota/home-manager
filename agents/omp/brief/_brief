@@ -16,6 +16,8 @@ _brief() {
     'new:create a brief'
     'edit:edit an active brief'
     'ls:list briefs'
+    'bind:set or show the repo default brief'
+    'unbind:remove the repo default brief'
     'done:archive an active brief'
     'restore:restore an archived brief'
     'rm:delete a brief permanently'
@@ -26,7 +28,7 @@ _brief() {
     command) _describe -t commands 'brief command' commands ;;
     argument)
       case $words[1] in
-        edit | done) _arguments '1:brief:{_brief_keys active}' ;;
+        edit | done | bind) _arguments '1:brief:{_brief_keys active}' ;;
         restore) _arguments '1:brief:{_brief_keys archive}' ;;
         rm) _arguments '1:brief:{_brief_keys active archive}' ;;
         ls) _arguments '(-a --all)'{-a,--all}'[include archived briefs]' ;;

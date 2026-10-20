@@ -146,14 +146,20 @@ additional background, never implicitly the session's current work item.
 - `brief new KEY [-j EPIC] [-m TEXT]` creates one in `$XDG_DATA_HOME/briefs/`;
   the link is `jira: EPIC` front matter. `brief --help` lists `edit`, `ls`,
   `done`, `restore`, `rm` and `prune`. Agents never write briefs.
-- `/brief [KEY|off]` or `omp --brief KEY` loads one. The session records it
-  (resume restores it, `/new` keeps it), and every main-agent turn re-reads the
-  file into the end of the system prompt. Subagents never receive it.
-  The status line shows ` KEY` (Nerd Font bookmark) while loaded.
-- The `handoff-custom` launcher accepts `--brief KEY`, checks the active brief
-  before opening a pane and passes the flag to the successor. A continuation
-  carries the brief shown in the parent's prompt; other handoffs attach none
-  unless asked.
+- `/brief KEY` replaces the selection; `/brief add KEY` attaches another,
+  `/brief remove KEY` detaches one and `/brief off` unloads all. Omit KEY for a
+  picker. `omp --brief KEY1,KEY2` loads several at startup; the session records
+  their order (resume restores them, `/new` keeps them). Every main-agent turn
+  re-reads their files into the end of the system prompt; subagents receive none.
+  The status line shows all loaded keys after `` (Nerd Font bookmark).
+- `brief bind KEY` sets this repo's default (stored in local Git config,
+  including subdirectories); `brief bind` shows it and `brief unbind` removes it.
+  Nothing is committed. An explicit `--brief` or saved session choice takes
+  precedence; `/brief off` stays off across resume and `/new`.
+- The `handoff-custom` launcher accepts `--brief KEY1,KEY2`, validates every
+  brief before opening a pane and passes the selection to the successor.
+  Continuations carry the briefs shown in the parent's prompt; otherwise the
+  successor uses its repo default unless the user selects briefs explicitly.
 
 ## Infrastructure guard
 

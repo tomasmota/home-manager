@@ -2,11 +2,12 @@
 //
 // The `brief` CLI (brief.sh) writes $XDG_DATA_HOME/briefs/{active,archive}/<KEY>.md;
 // this extension only reads them. Their front matter may link a high-level Jira
-// epic for the agent to fetch. The loaded key is recorded in the session, so resume restores it.
-// Each prompt re-reads the file and appends it after the base system prompt: edits
+// epic for the agent to fetch. Selected keys are recorded in the session, so resume restores them.
+// Git's local `omp.brief` setting supplies a default when the session has no selection.
+// Each prompt re-reads the files and appends them after the base system prompt: edits
 // apply on the next message, compaction cannot summarize it away and the cached
 // prefix is untouched. Loads touch $XDG_STATE_HOME/briefs/loaded/<KEY>, which
-// `brief ls` and `brief prune` read. Subagents never receive the brief.
+// `brief ls` and `brief prune` read. Subagents never receive briefs.
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -143,22 +144,24 @@ function render(key: string, { issue, notes }: Brief): string {
 
 export default function brief(pi: ExtensionAPI): void {
   // Per-session state stays in this closure: child sessions rebind the factory with their own API.
-  let current: string | undefined;
+  let current: string[] | undefined;
   let flagPending = true;
 
-  pi.registerFlag("brief", { type: "string", description: "Load a brief (fixed high-level context) by key" });
+  pi.registerFlag("brief", { type: "string", description: "Load briefs by key (comma-separated for multiple)" });
 
-  const showStatus = (ctx: ExtensionContext) => ctx.ui.setStatus("brief", current ? ` ${current}` : undefined);
+  const showStatus = (ctx: ExtensionContext) =>
+    ctx.ui.setStatus("brief", current?.length ? ` ${current.join(", ")}` : undefined);
 
-  // Key recorded on the current branch: a key, null after `/brief off`, undefined when never set.
-  const recorded = (ctx: ExtensionContext): string | null | undefined => {
-    let key: string | null | undefined;
+  // [] records off; undefined means no selection. Decode historical single-key session entries.
+  const recorded = (ctx: ExtensionContext): string[] | undefined => {
+    let keys: string[] | undefined;
     for (const entry of ctx.sessionManager.getBranch()) {
       if (entry.type === "custom" && entry.customType === ENTRY_TYPE) {
-        key = (entry.data as { key?: string | null } | undefined)?.key ?? null;
+        const data = entry.data as { keys?: string[]; key?: string | null } | undefined;
+        keys = data?.keys ?? (data?.key ? [data.key] : []);
       }
     }
-    return key;
+    return keys;
   };
 
   const markLoaded = (key: string) => {
@@ -170,29 +173,45 @@ export default function brief(pi: ExtensionAPI): void {
     }
   };
 
-  const load = (ctx: ExtensionContext, key: string | undefined) => {
-    current = key;
-    if (key) markLoaded(key);
-    if ((recorded(ctx) ?? undefined) !== key) pi.appendEntry(ENTRY_TYPE, { key: key ?? null });
+  const load = (ctx: ExtensionContext, keys: string[] | undefined, persist = true) => {
+    current = keys;
+    for (const key of keys ?? []) markLoaded(key);
+    if (persist && keys !== undefined) {
+      const saved = recorded(ctx);
+      if (saved?.length !== keys.length || keys.some((key, i) => saved?.[i] !== key)) {
+        pi.appendEntry(ENTRY_TYPE, { keys });
+      }
+    }
     showStatus(ctx);
   };
 
-  // The --brief flag applies once, to the startup session. `/new` keeps the loaded brief;
-  // every other transition uses what the target session recorded.
-  const restore = (ctx: ExtensionContext, keepCurrent: boolean) => {
+  // The --brief flag applies once, to the startup session. `/new` keeps the selection;
+  // otherwise restore the saved choice (including off) before consulting the repo default.
+  const restore = async (ctx: ExtensionContext, keepCurrent: boolean) => {
     if (ctx.agent.kind !== "main") return;
     const flag = flagPending ? pi.getFlag("brief") : undefined;
     flagPending = false;
-    const key = typeof flag === "string" && flag ? flag : keepCurrent ? current : (recorded(ctx) ?? undefined);
-    const brief = key ? loadBrief(key) : undefined;
-    if (typeof brief === "string") {
-      // Keep the session record: the brief loads again on resume once it is usable.
-      current = undefined;
-      showStatus(ctx);
-      ctx.ui.notify(`${brief}; not loaded.`, "warning");
+    let keys = typeof flag === "string" && flag
+      ? [...new Set(flag.split(",").map(key => key.trim()))]
+      : keepCurrent ? current : recorded(ctx);
+    if (keys === undefined) {
+      const result = await pi.exec("git", ["config", "--local", "--get", "omp.brief"], { cwd: ctx.cwd });
+      if (result.code === 0 && result.stdout.trim()) {
+        keys = [...new Set(result.stdout.trim().split(",").map(key => key.trim()))];
+      }
+    }
+    if (keys === undefined) {
+      load(ctx, undefined);
       return;
     }
-    load(ctx, key);
+    const available: string[] = [];
+    for (const key of keys) {
+      const brief = loadBrief(key);
+      if (typeof brief === "string") ctx.ui.notify(`${brief}; not loaded.`, "warning");
+      else available.push(key);
+    }
+    // Preserve unavailable saved selections so resume can restore them after the files are repaired.
+    load(ctx, available, available.length === keys.length);
   };
 
   pi.on("session_start", (_event, ctx) => restore(ctx, false));
@@ -201,53 +220,90 @@ export default function brief(pi: ExtensionAPI): void {
   pi.on("session_tree", (_event, ctx) => restore(ctx, false));
 
   pi.on("before_agent_start", (event, ctx) => {
-    if (ctx.agent.kind !== "main" || !current) return;
-    const brief = loadBrief(current);
-    if (typeof brief === "string") {
-      current = undefined;
-      showStatus(ctx);
-      ctx.ui.notify(`${brief}; unloaded.`, "warning");
-      return;
+    if (ctx.agent.kind !== "main" || !current?.length) return;
+    const available: string[] = [];
+    const prompts: string[] = [];
+    for (const key of current) {
+      const brief = loadBrief(key);
+      if (typeof brief === "string") {
+        ctx.ui.notify(`${brief}; unloaded.`, "warning");
+        continue;
+      }
+      available.push(key);
+      markLoaded(key);
+      prompts.push(render(key, brief));
     }
-    markLoaded(current);
-    return { systemPrompt: [...event.systemPrompt, render(current, brief)] };
+    if (available.length !== current.length) {
+      current = available;
+      showStatus(ctx);
+    }
+    if (prompts.length > 0) return { systemPrompt: [...event.systemPrompt, ...prompts] };
   });
 
   pi.registerCommand("brief", {
-    description: "Load a brief (fixed high-level context) into this session: /brief [KEY|off]",
+    description: "Manage session briefs: /brief [KEY|add KEY|remove KEY|off]",
     getArgumentCompletions: prefix => {
-      if (/\s/.test(prefix)) return null;
-      const query = prefix.toLowerCase();
-      const items: AutocompleteItem[] = activeBriefs()
-        .filter(({ key }) => key.toLowerCase().includes(query))
-        .map(item => ({ value: item.key, label: item.key, description: describe(item.brief) }));
-      if (current && "off".startsWith(query)) {
-        items.push({ value: "off", label: "off", description: `Unload ${current}` });
+      const match = /^(add|remove)\s+(.*)$/.exec(prefix);
+      const action = match?.[1];
+      const query = (match?.[2] ?? prefix).toLowerCase();
+      if (/\s/.test(query)) return null;
+      const items: AutocompleteItem[] = action === "remove"
+        ? (current ?? [])
+          .filter(key => key.toLowerCase().includes(query))
+          .map(key => ({ value: `remove ${key}`, label: key, description: `Unload ${key}` }))
+        : activeBriefs()
+          .filter(({ key }) => key.toLowerCase().includes(query) && (action !== "add" || !current?.includes(key)))
+          .map(item => ({
+            value: action ? `${action} ${item.key}` : item.key,
+            label: item.key,
+            description: describe(item.brief),
+          }));
+      if (!action) {
+        if ("add".startsWith(query)) items.push({ value: "add ", label: "add", description: "Attach another brief" });
+        if (current?.length) {
+          if ("remove".startsWith(query)) items.push({ value: "remove ", label: "remove", description: "Detach one brief" });
+          if ("off".startsWith(query)) items.push({ value: "off", label: "off", description: "Unload all briefs" });
+        }
       }
       return items.length > 0 ? items : null;
     },
     handler: async (args, ctx) => {
-      let key = args.trim();
+      const match = /^(add|remove)(?:\s+(.*))?$/.exec(args.trim());
+      const action = match?.[1] ?? "replace";
+      let key = match ? (match[2] ?? "").trim() : args.trim();
       if (!key) {
-        const briefs = activeBriefs();
-        if (briefs.length === 0) {
-          ctx.ui.notify("No active briefs; create one with: brief new KEY", "info");
+        const options = action === "remove"
+          ? (current ?? []).map(key => ({ label: key, description: describe(loadBrief(key)) }))
+          : activeBriefs()
+            .filter(({ key }) => action !== "add" || !current?.includes(key))
+            .map(item => ({ label: item.key, description: describe(item.brief) }));
+        if (action === "replace" && current?.length) options.push({ label: "off", description: "Unload all briefs" });
+        if (options.length === 0) {
+          ctx.ui.notify(action === "remove" ? "No briefs are loaded." : "No matching active briefs; create one with: brief new KEY", "info");
           return;
         }
-        const options = briefs.map(item => ({ label: item.key, description: describe(item.brief) }));
-        if (current) options.push({ label: "off", description: `Unload ${current}` });
-        const choice = await ctx.ui.select(current ? `Brief (loaded: ${current})` : "Load brief", options);
+        const title = action === "add" ? "Add brief" : action === "remove" ? "Remove brief"
+          : current?.length ? `Briefs (loaded: ${current.join(", ")})` : "Load brief";
+        const choice = await ctx.ui.select(title, options);
         if (!choice) return;
         key = choice;
       }
-      if (key === "off") {
-        if (!current) {
-          ctx.ui.notify("No brief is loaded.", "info");
+      if (action === "replace" && key === "off") {
+        load(ctx, []);
+        ctx.ui.notify("Unloaded all briefs.", "info");
+        return;
+      }
+      if (action === "remove") {
+        if (!current?.includes(key)) {
+          ctx.ui.notify(`Brief ${key} is not loaded.`, "info");
           return;
         }
-        const previous = current;
-        load(ctx, undefined);
-        ctx.ui.notify(`Unloaded brief ${previous}.`, "info");
+        load(ctx, current.filter(item => item !== key));
+        ctx.ui.notify(`Unloaded brief ${key}.`, "info");
+        return;
+      }
+      if (action === "add" && current?.includes(key)) {
+        ctx.ui.notify(`Brief ${key} is already loaded.`, "info");
         return;
       }
       const brief = loadBrief(key);
@@ -255,7 +311,7 @@ export default function brief(pi: ExtensionAPI): void {
         ctx.ui.notify(brief, "error");
         return;
       }
-      load(ctx, key);
+      load(ctx, action === "add" ? [...(current ?? []), key] : [key]);
       ctx.ui.notify(`Loaded brief ${key}; it applies from your next message.`, "info");
     },
   });

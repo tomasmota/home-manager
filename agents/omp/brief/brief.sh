@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # brief: fixed, user-owned context for omp sessions. Packaged by default.nix with
-# writeShellApplication (errexit, nounset, pipefail; GNU coreutils and fzf on PATH).
+# writeShellApplication (errexit, nounset, pipefail; GNU coreutils, fzf and Git on PATH).
 # brief.ts reads the same store and touches $loaded/KEY whenever omp loads a brief.
 
 shopt -s nullglob
@@ -25,13 +25,21 @@ Usage: brief COMMAND [ARGS]
                      "jira: EPIC" line between the "---" lines at the top.
   ls [--all]         List active briefs, most recently used first; --all adds
                      archived ones.
+  bind [KEY]         Bind an active brief to this repo; no KEY shows the binding.
+  unbind             Remove this repo's default without deleting its brief.
   done [KEY]         Archive an active brief.
   restore [KEY]      Restore an archived brief.
   rm [KEY]           Delete a brief permanently, after confirmation.
   prune [--days N]   Pick briefs not loaded or edited in N days (default 14) and
                      archive them.
 
-A missing KEY opens an fzf picker. In omp: /brief [KEY|off] or omp --brief KEY.
+A missing KEY opens an fzf picker, except bind (which shows the binding). In omp:
+  /brief KEY         Replace the loaded briefs (omit KEY for a picker).
+  /brief add KEY     Attach another brief.
+  /brief remove KEY  Detach one brief.
+  /brief off         Unload all briefs.
+Start with several: omp --brief KEY1,KEY2
+Repo default: brief bind KEY (stored in local Git config, not committed).
 EOF
 }
 
@@ -86,7 +94,7 @@ split_brief() {
 check_brief() {
   local key=${1##*/}
   key=${key%.md}
-  split_brief <"$1" || die "saved $key, but omp will not load it: $problem (fix it with: brief edit $key)"
+  split_brief <"$1" || die "$key is malformed: $problem (fix it with: brief edit $key)"
 }
 
 mtime() {
@@ -178,6 +186,42 @@ active_brief() {
     die "$key is archived; restore it with: brief restore $key"
   else
     die "no brief $key; create it with: brief new $key"
+  fi
+}
+
+cmd_bind() {
+  (($# <= 1)) || die "usage: brief bind [KEY]"
+  git rev-parse --git-dir >/dev/null 2>&1 || die "not inside a Git repository"
+  local key file status
+  if (($# == 0)); then
+    if key=$(git config --local --get omp.brief); then
+      printf '%s\n' "$key"
+    else
+      status=$?
+      ((status == 1)) || exit "$status"
+      printf 'No brief is bound to this repo.\n'
+    fi
+    return
+  fi
+  [[ -n $1 ]] || die "usage: brief bind [KEY]"
+  file=$(active_brief "$1" bind)
+  check_brief "$file"
+  key=${file##*/}
+  key=${key%.md}
+  git config --local omp.brief "$key"
+  printf 'Bound %s to this repo. New omp sessions will load it automatically.\n' "$key"
+}
+
+cmd_unbind() {
+  (($# == 0)) || die "usage: brief unbind"
+  git rev-parse --git-dir >/dev/null 2>&1 || die "not inside a Git repository"
+  local status
+  if git config --local --unset-all omp.brief; then
+    printf 'Removed the repo brief binding.\n'
+  else
+    status=$?
+    ((status == 5)) || exit "$status"
+    printf 'No brief is bound to this repo.\n'
   fi
 }
 
@@ -366,6 +410,8 @@ case $cmd in
   new) cmd_new "$@" ;;
   edit) cmd_edit "$@" ;;
   ls) cmd_ls "$@" ;;
+  bind) cmd_bind "$@" ;;
+  unbind) cmd_unbind "$@" ;;
   done) cmd_done "$@" ;;
   restore) cmd_restore "$@" ;;
   rm) cmd_rm "$@" ;;
