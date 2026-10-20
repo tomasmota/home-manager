@@ -1,6 +1,6 @@
 schema = 1
 id = "session-navigation"
 name = "Session navigation"
-version = "0.1.0"
-description = "Cycle between sessions without traversing their tabs."
+version = "0.2.0"
+description = "Toggle between the current and last-used sessions."
 window = "window.luau"

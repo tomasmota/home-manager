@@ -42,8 +42,7 @@
       "ctrl+space>9" = "goto_tab:9";
       "ctrl+space>0" = "goto_tab:10";
       "ctrl+space>space" = "show_previous_tab";
-      "ctrl+space>tab" = "plugin.session-navigation.next";
-      "ctrl+space>shift+tab" = "plugin.session-navigation.previous";
+      "ctrl+space>tab" = "plugin.session-navigation.last";
       "ctrl+space>h" = "focus_pane:left";
       "ctrl+space>j" = "focus_pane:down";
       "ctrl+space>k" = "focus_pane:up";

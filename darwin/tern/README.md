@@ -76,9 +76,12 @@ settings** command; no service restart or Darwin switch is needed.
 Native bindings beyond tabs and panes: `Ctrl+Space i` opens the inbox and
 `Ctrl+Space g` opens a new Git block.
 
-Session cycling (`Ctrl+Space Tab` / `Shift+Tab`) uses the
-[`session-navigation`](session-navigation) window plugin. `tern-settings-apply`
-links it into Tern's plugin directory, and Tern reloads plugins without a daemon restart.
+`Ctrl+Space Tab` toggles between the current and last-used
+session via the [`session-navigation`](session-navigation) window plugin; picker
+switches update the pair too. History starts fresh after a plugin reload.
+It switches by exact name to avoid Tern's numeric-ID truncation; keep session names unique.
+`tern-settings-apply` links it into Tern's plugin directory; reload with
+`tern plugin reload`, without restarting the daemon.
 
 ## SDK example plugins
 

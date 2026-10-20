@@ -1,32 +1,45 @@
 --!strict
 
-local function cycle(cx: WindowCx, direction: number)
-	local sessions = cx.sessions:list()
-	if #sessions < 2 then
-		return
-	end
+local currentSession: number? = nil
+local previousSession: number? = nil
 
-	for index, session in sessions do
-		if session.current then
-			local target = (index - 1 + direction) % #sessions + 1
-			cx.sessions:switch(sessions[target].id)
-			return
-		end
+local function remember(cx: WindowCx)
+	local session = cx.sessions:current()
+	if session.id ~= currentSession then
+		previousSession = currentSession
+		currentSession = session.id
 	end
 end
 
-tern.command({
-	id = "next",
-	title = "Next session",
-	run = function(cx)
-		cycle(cx, 1)
-	end,
-})
+tern.on("focus", function(_ev, cx)
+	remember(cx)
+end)
+
+-- Empty sessions emit no focus event. Also initialize after plugin reloads.
+local function poll(cx: WindowCx?)
+	if cx then
+		remember(cx)
+	end
+	tern.timer(50, poll)
+end
+tern.timer(0, poll)
 
 tern.command({
-	id = "previous",
-	title = "Previous session",
+	id = "last",
+	title = "Last session",
 	run = function(cx)
-		cycle(cx, -1)
+		remember(cx)
+		if previousSession then
+			for _, session in cx.sessions:list() do
+				if session.id == previousSession then
+					-- Tern's Lua ID encoding truncates large persisted session IDs.
+					cx.sessions:switch(session.name)
+					remember(cx)
+					return
+				end
+			end
+		end
+		previousSession = nil
+		cx:toast("info", "No previous session")
 	end,
 })
