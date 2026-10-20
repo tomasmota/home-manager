@@ -202,11 +202,11 @@ in {
 
     file = {
       ".omp/agent/models.yml".source = yaml.generate "omp-models.yml" models;
+      ".omp/agent/RULES.md".source = config.lib.file.mkOutOfStoreSymlink "${ompDir}/RULES.md";
       ".omp/agent/google-developer-knowledge.mjs".source =
         config.lib.file.mkOutOfStoreSymlink "${ompDir}/google-developer-knowledge.mjs";
-      # Sticky rules use omp's native standard rules mechanism, not user-context
-      # shadowing. Shared instructions come from ~/.agents/AGENTS.md.
-      ".omp/agent/RULES.md".source = config.lib.file.mkOutOfStoreSymlink "${ompDir}/RULES.md";
+      ".omp/agent/commands/skill-review.md".source =
+        config.lib.file.mkOutOfStoreSymlink "${ompDir}/commands/skill-review.md";
       ".omp/agent/agents".source = config.lib.file.mkOutOfStoreSymlink "${ompDir}/agents";
     };
   };

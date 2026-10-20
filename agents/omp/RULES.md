@@ -1,13 +1,7 @@
-# Skill improvements
+# Tool use
 
-- In omp inside Tern, before final, silently consider useful improvements
-  grounded in applying skills. Reading alone permits only demonstrated
-  frontmatter activation feedback. No audits or invented work; none means no action.
-- Parent owns relevance/scope; pass concise reasons/context, no secrets.
-  Only main agents submit; subagents report to parent. Workers
-  (`OMP_SKILL_FEEDBACK_WORKER`) never submit.
-- For selected feedback, run `node ~/.config/home-manager/agents/omp/skill-feedback/submit.mjs --help`,
-  then batch one submission per skill; use bash timeout **120 seconds**. Report failures in one line.
-- Continue your task; do not edit the skill, wait/poll, retry launches or
-  troubleshoot Tern. The default-role worker in `skill-improvements` must ask
-  for approval covering edits, verification and Git commit/push; local-only stays local.
+- For interactive terminal tests, use the Tern CLI in task-owned blocks.
+- Before running kubectl commands, check my contexts with `kubectl config get-contexts`; pass `--context` per command, never `kubectl config use-context`.
+- For read-only GitLab API requests, always use `glab api --method GET <endpoint>`. Do not rely on the implicit method, add request-body flags, or specify another method later in the command.
+- Prefer the Atlassian MCP for Jira and Confluence; make any fallback to browser automation or direct HTTP explicit.
+- For Google Cloud architecture, IAM, APIs, SDKs, or product behaviour, MUST use the Google Developer Knowledge MCP before generic web search.

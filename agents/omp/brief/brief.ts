@@ -1,8 +1,8 @@
 // Briefs: fixed, user-owned context for the main omp session (see ../README.md).
 //
 // The `brief` CLI (brief.sh) writes $XDG_DATA_HOME/briefs/{active,archive}/<KEY>.md;
-// this extension only reads them. Their front matter may link a Jira issue for the
-// agent to fetch. The loaded key is recorded in the session, so resume restores it.
+// this extension only reads them. Their front matter may link a high-level Jira
+// epic for the agent to fetch. The loaded key is recorded in the session, so resume restores it.
 // Each prompt re-reads the file and appends it after the base system prompt: edits
 // apply on the next message, compaction cannot summarize it away and the cached
 // prefix is untouched. Loads touch $XDG_STATE_HOME/briefs/loaded/<KEY>, which
@@ -24,7 +24,7 @@ const archiveDir = join(store, "archive");
 const loadedDir = join(process.env.XDG_STATE_HOME || join(homedir(), ".local", "state"), "briefs", "loaded");
 
 interface Brief {
-  // Jira issue linked by the front matter.
+  // High-level Jira epic linked by the front matter.
   issue?: string;
   notes: string;
 }
@@ -50,9 +50,9 @@ function readText(key: string): string | undefined {
   }
 }
 
-// Splits a brief file into its notes and the Jira issue its front matter links, or
+// Splits a brief file into its notes and the Jira epic its front matter links, or
 // returns why the front matter is malformed. Front matter is optional: a first line
-// "---", blank or "jira: ISSUE" lines, then a closing "---". split_brief in brief.sh
+// "---", blank or "jira: EPIC" lines, then a closing "---". split_brief in brief.sh
 // applies the same rules.
 function parse(text: string): Brief | string {
   const lines = text.split("\n");
@@ -64,7 +64,7 @@ function parse(text: string): Brief | string {
     if (line === "") continue;
     if (!line.startsWith("jira:")) return `unknown front matter line '${line}'`;
     const value = line.slice("jira:".length).trim();
-    if (value && !JIRA_KEY.test(value)) return `'${value}' is not a Jira issue key`;
+    if (value && !JIRA_KEY.test(value)) return `'${value}' is not a Jira key`;
     issue = value || undefined;
   }
   return "front matter has no closing ---";
@@ -99,7 +99,7 @@ function activeBriefs(): ActiveBrief[] {
   return briefs.sort((a, b) => b.lastUsed - a.lastUsed);
 }
 
-// Picker and completion text: the linked issue and the first line of the notes.
+// Picker and completion text: the linked epic and the first line of the notes.
 function describe(brief: Brief | string): string | undefined {
   if (typeof brief === "string") return `malformed: ${brief}`;
   const summary = brief.notes
@@ -132,7 +132,7 @@ function render(key: string, { issue, notes }: Brief): string {
   ];
   if (issue) {
     lines.push(
-      `This brief links Jira issue ${issue}, where the user keeps the details. Fetch it with the Jira MCP tool (getJiraIssue) before acting on the first request in this session, and fetch it again whenever its details are no longer in your context, for example after compaction.`,
+      `This brief links Jira epic ${issue} as additional high-level context only; the epic is not the work item for this session. The user will identify any current Jira work item separately, so never derive task scope or delivery metadata (branches, commits, merge requests, issue updates, or workflow transitions) from this epic. Fetch the epic with the Jira MCP tool (getJiraIssue) before acting on the first relevant request after this brief is attached or restored, and fetch it again after compaction when its details are relevant and no longer in your context.`,
     );
   }
   const text = notes.trim();

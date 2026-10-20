@@ -27,31 +27,23 @@ process. Installed `~/.omp/agent/` and shared `~/.agents/` paths stay unchanged.
 The `agents` discovery provider loads `~/.agents/AGENTS.md` at user scope.
 Native `~/.omp/agent/AGENTS.md` has higher priority and would shadow it, so the
 module deliberately installs no native user context file.
-`RULES.md` stays at `~/.omp/agent/RULES.md`: native top-level rules are
-always-apply sticky content, unlike ordinary opening context, and a shared
-`~/.agents/RULES.md` would not supply that behavior. Named profiles relocate
-native user state, so they need their own native safety configuration if used.
+Native `~/.omp/agent/RULES.md` supplies always-apply sticky tool-use rules; shared `AGENTS.md` holds machine context and skill ownership guidance.
 Discovery semantics: `docs/context-files.md` in the [upstream omp repository](https://github.com/can1357/oh-my-pi).
 
 ## Skills
 
-Skill behavior is documented in each `SKILL.md`, not here:
 [`handoff-custom`](../skills/handoff-custom/SKILL.md) starts fresh native omp
-sessions, separate from omp's built-in same-session handoff;
-[`tmux-control`](../skills/tmux-control/SKILL.md) drives interactive CLIs/TUIs
-in tmux. `tmux-control` is vendored from the owner's `tomasmota/agents` repo
-(MIT, declared in its frontmatter); edit the local copy directly and record
-provenance in its commit when importing upstream again.
+sessions, separate from omp's built-in same-session handoff. Interactive terminal
+testing follows the [native rules](RULES.md).
 
 No switch is needed for skill edits: fresh processes discover them, and existing
 sessions can use `/reload-plugins` (which also reconnects MCP servers). Check
 discovery without a model call with `omp read skill://<name>`.
 
-## Skill improvements
+## Skill review
 
-- In omp inside Tern, `RULES.md` requires experience-based reflection: `--experience used` permits substantive feedback; `--experience read-only` permits only demonstrated frontmatter activation fixes. `--from-task` supplies the report's short parent-task attribution; `skill-feedback/submit.mjs --help` covers default-role dispatch and its startup timeout. These are live source files; fresh sessions need no rebuild.
-- The parent owns relevance/scope; the worker first presents its origin, proposals, canonical source and Git-tracked/untracked/local-only status, then asks for one approval covering selected edits, verification and Git commit/push (gitless skills stay local; untracked skills disclose whole-skill first publication). The helper resolves public/private/team symlinks and keeps private reports under `$XDG_STATE_HOME/omp/skill-feedback/` (default `~/.local/state/`); new scope or unsafe publication requires pausing rather than silently extending approval.
-- Completion returns `unseen-notes` rather than dropping late feedback; capture/propose those notes before completing. For stale/interrupted/locked requests, follow the receipt's `savedNote`/`recovery` only after verifying no actor can still edit; checks: `node --test agents/omp/skill-feedback/*.test.mjs`.
+`/skill-review [time range, project, session or skill]` runs a proposals-only retrospective in the current session; use a fresh session, with the last seven days across projects as the default.
+[`commands/skill-review.md`](commands/skill-review.md) is linked at `~/.omp/agent/commands/skill-review.md`; selected changes stay in that session and require approval, with commit/push separately authorized.
 
 ## Credentials
 
@@ -147,11 +139,12 @@ including `secrets.env`, into the Nix store. Running sessions and
 
 ## Briefs
 
-`brief/` gives a session fixed, user-written context: a linked Jira issue (the
-agent fetches it through the Jira MCP tool), free-form notes, or both.
+`brief/` gives a session fixed, user-written higher-level context: a linked Jira
+epic fetched through the Jira MCP, free-form notes, or both. The epic is
+additional background, never implicitly the session's current work item.
 
-- `brief new KEY [-j ISSUE] [-m TEXT]` creates one in `$XDG_DATA_HOME/briefs/`;
-  the link is `jira: ISSUE` front matter. `brief --help` lists `edit`, `ls`,
+- `brief new KEY [-j EPIC] [-m TEXT]` creates one in `$XDG_DATA_HOME/briefs/`;
+  the link is `jira: EPIC` front matter. `brief --help` lists `edit`, `ls`,
   `done`, `restore`, `rm` and `prune`. Agents never write briefs.
 - `/brief [KEY|off]` or `omp --brief KEY` loads one. The session records it
   (resume restores it, `/new` keeps it), and every main-agent turn re-reads the

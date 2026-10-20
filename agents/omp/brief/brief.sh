@@ -15,13 +15,14 @@ usage() {
   cat <<'EOF'
 Usage: brief COMMAND [ARGS]
 
-  new KEY [-j ISSUE] [-m TEXT]
-                     Create a brief. -j links a Jira issue (CLOUD-4675) for the
-                     agent to fetch; a KEY that is an issue key links itself.
+  new KEY [-j EPIC] [-m TEXT]
+                     Create a brief. -j links a high-level Jira epic
+                     (CLOUD-4675) as additional context, not as the work item.
+                     A KEY that is a Jira key links itself as the epic.
                      Notes come from -m or stdin; without either, a brief with
                      no link opens $EDITOR on a template.
   edit [KEY]         Edit an active brief in $EDITOR. The link is the
-                     "jira: ISSUE" line between the "---" lines at the top.
+                     "jira: EPIC" line between the "---" lines at the top.
   ls [--all]         List active briefs, most recently used first; --all adds
                      archived ones.
   done [KEY]         Archive an active brief.
@@ -49,10 +50,10 @@ check_key() {
   fi
 }
 
-# Splits the brief on stdin into its Jira link and notes: sets $issue ('' when
-# unlinked) and $notes. The link lives in optional front matter: a first line
-# "---", then blank or "jira: ISSUE" lines, then a closing "---". Malformed front
-# matter sets $problem and fails. parse() in brief.ts applies the same rules.
+# Splits the brief on stdin into its Jira epic link and notes: sets $issue (''
+# when unlinked) and $notes. The link lives in optional front matter: a first
+# line "---", then blank or "jira: EPIC" lines, then a closing "---". Malformed
+# front matter sets $problem and fails. parse() in brief.ts applies the same rules.
 split_brief() {
   local -a lines
   local -i i
@@ -69,7 +70,7 @@ split_brief() {
     elif [[ ${lines[i]} =~ ^[[:space:]]*jira:[[:space:]]*(.*[^[:space:]])?[[:space:]]*$ ]]; then
       issue=${BASH_REMATCH[1]}
       if [[ -n $issue ]] && ! is_jira "$issue"; then
-        problem="'$issue' is not a Jira issue key"
+        problem="'$issue' is not a Jira key"
         return 1
       fi
     elif [[ ${lines[i]} =~ ^[[:space:]]*(.*[^[:space:]]) ]]; then
@@ -201,7 +202,7 @@ cmd_new() {
   while (($#)); do
     case $1 in
       -j | --jira)
-        (($# >= 2)) || die "$1 needs a Jira issue key"
+        (($# >= 2)) || die "$1 needs a Jira epic key"
         link=$2
         shift 2
         ;;
@@ -210,18 +211,18 @@ cmd_new() {
         text=$2 given=true
         shift 2
         ;;
-      -*) die "unknown option $1 (usage: brief new KEY [-j ISSUE] [-m TEXT])" ;;
+      -*) die "unknown option $1 (usage: brief new KEY [-j EPIC] [-m TEXT])" ;;
       *)
-        [[ -z $key ]] || die "usage: brief new KEY [-j ISSUE] [-m TEXT]"
+        [[ -z $key ]] || die "usage: brief new KEY [-j EPIC] [-m TEXT]"
         key=$1
         shift
         ;;
     esac
   done
-  [[ -n $key ]] || die "usage: brief new KEY [-j ISSUE] [-m TEXT]"
+  [[ -n $key ]] || die "usage: brief new KEY [-j EPIC] [-m TEXT]"
   check_key "$key"
   if [[ -z $link ]] && is_jira "$key"; then link=$key; fi
-  [[ -z $link ]] || is_jira "$link" || die "'$link' is not a Jira issue key (like CLOUD-4675)"
+  [[ -z $link ]] || is_jira "$link" || die "'$link' is not a Jira key (like CLOUD-4675)"
   [[ ! -e $active/$key.md ]] || die "$key already exists; edit it with: brief edit $key"
   [[ ! -e $archive/$key.md ]] || die "$key is archived; restore it with: brief restore $key"
   if ! $given && [[ ! -t 0 ]]; then

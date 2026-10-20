@@ -31,7 +31,7 @@ _brief() {
         rm) _arguments '1:brief:{_brief_keys active archive}' ;;
         ls) _arguments '(-a --all)'{-a,--all}'[include archived briefs]' ;;
         prune) _arguments '--days=[offer briefs unused for this many days]:days: ' ;;
-        new) _arguments '1:key: ' '(-j --jira)'{-j,--jira}'[link a Jira issue]:issue: ' '(-m --message)'{-m,--message}'[notes text]:text: ' ;;
+        new) _arguments '1:key: ' '(-j --jira)'{-j,--jira}'[link a high-level Jira epic as context]:epic: ' '(-m --message)'{-m,--message}'[notes text]:text: ' ;;
       esac
       ;;
   esac
