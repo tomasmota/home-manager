@@ -26,6 +26,12 @@
     };
     patches = [./tern/tern-kube-window-load.patch];
   };
+  ternSchedules = pkgs.fetchFromGitHub {
+    owner = "bmanturner";
+    repo = "tern-agent-scheduler";
+    rev = "539796596798047a889aefbbca871a38d50588f0";
+    hash = "sha256-bDV1rYULsMTh1joxQKkParIRcwMUcnSBU4L5+H5X5Jo=";
+  };
   labels = ["tern-pilot-daemon"];
   keyboardConfig = {
     keymap = "tmux";
@@ -267,6 +273,7 @@ in {
         "Library/Application Support/Tern/plugins/terraform".source = "${ternSdk}/plugins/examples/terraform";
         "Library/Application Support/Tern/plugins/jsonx".source = "${ternSdk}/plugins/examples/jsonx";
         "Library/Application Support/Tern/plugins/tern-kube".source = ternKube;
+        "Library/Application Support/Tern/plugins/tern-agent-scheduler".source = ternSchedules;
       };
     };
   };
