@@ -205,8 +205,8 @@ in {
       ".omp/agent/RULES.md".source = config.lib.file.mkOutOfStoreSymlink "${ompDir}/RULES.md";
       ".omp/agent/google-developer-knowledge.mjs".source =
         config.lib.file.mkOutOfStoreSymlink "${ompDir}/google-developer-knowledge.mjs";
-      ".omp/agent/commands/skill-review.md".source =
-        config.lib.file.mkOutOfStoreSymlink "${ompDir}/commands/skill-review.md";
+      ".omp/agent/commands/harness-review.md".source =
+        config.lib.file.mkOutOfStoreSymlink "${ompDir}/commands/harness-review.md";
       ".omp/agent/agents".source = config.lib.file.mkOutOfStoreSymlink "${ompDir}/agents";
     };
   };

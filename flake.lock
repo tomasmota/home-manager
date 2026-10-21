@@ -1,21 +1,5 @@
 {
   "nodes": {
-    "atuin-nixpkgs": {
-      "locked": {
-        "lastModified": 1791260994,
-        "narHash": "sha256-Miqqk/ammqnTUxaoCyvtwoPeLbI1ksFyLxi/CazZpWY=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "151fa4e8ddfdd8dd25d945ad94ed54a13de9f6e4",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "151fa4e8ddfdd8dd25d945ad94ed54a13de9f6e4",
-        "type": "github"
-      }
-    },
     "azure-cli-nixpkgs": {
       "locked": {
         "lastModified": 1792094642,
@@ -258,7 +242,6 @@
     },
     "root": {
       "inputs": {
-        "atuin-nixpkgs": "atuin-nixpkgs",
         "azure-cli-nixpkgs": "azure-cli-nixpkgs",
         "home-manager": "home-manager",
         "nix-darwin": "nix-darwin",

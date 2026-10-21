@@ -66,7 +66,9 @@ darwin-rebuild build --flake .#macbook
 nix flake update
 ```
 
-Package-specific compatibility pins for Azure CLI and Atuin live in `flake.nix`; remove each pin once its linked upstream blocker is resolved.
+Azure CLI's compatibility pin lives in `flake.nix`; remove it once its linked upstream blocker is resolved.
+
+For a complete maintenance pass, follow [UPDATES.md](UPDATES.md), including non-flake dependencies and owner-installed applications.
 
 ## Local secrets
 
@@ -111,5 +113,4 @@ Work-only agent context lives in the unmanaged `~/dev/work/AGENTS.md`, kept out 
 
 - Aliases and git includes assume repos usually live under `~/dev/work` and `~/dev/personal`.
 - Git reuses recorded conflict resolutions (`rerere`) but leaves them unstaged for review.
-- Atuin's macOS package is pinned separately in `flake.nix`; Linux and other packages follow the main nixpkgs input.
 - On macOS only (nix-darwin manages the daemon), only root is trusted by the Nix daemon; normal user builds remain allowed, but restricted daemon settings require sudo.

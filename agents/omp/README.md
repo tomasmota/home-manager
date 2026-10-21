@@ -40,10 +40,12 @@ No switch is needed for skill edits: fresh processes discover them, and existing
 sessions can use `/reload-plugins` (which also reconnects MCP servers). Check
 discovery without a model call with `omp read skill://<name>`.
 
-## Skill review
+## Harness review
 
-`/skill-review [time range, project, session or skill]` runs a proposals-only retrospective in the current session; use a fresh session, with the last seven days across projects as the default.
-[`commands/skill-review.md`](commands/skill-review.md) is linked at `~/.omp/agent/commands/skill-review.md`; selected changes stay in that session and require approval, with commit/push separately authorized.
+`/harness-review [time range, project, session or harness area]` reviews configuration coherence and observed use of instructions, roles/agents, skills and capabilities; use a fresh session, with the last seven days across projects as the default.
+[`commands/harness-review.md`](commands/harness-review.md) is linked at `~/.omp/agent/commands/harness-review.md`; scheduling is external, unattended runs stop at the assessment, and implementation or publication requires explicit approval.
+
+Session selection screens every eligible case before combining an outcome-independent coverage baseline with targeted deep dives.
 
 ## Credentials
 
