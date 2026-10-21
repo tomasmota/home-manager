@@ -1,3 +1,8 @@
+# Scope and authorization
+
+- Requests for thoughts, explanations or reviews are analysis-only unless the user also requests changes. Default to action only within the authorized scope; "go" approves the described plan and side effects, not unmentioned ones.
+- Preserve decisive user authorization and constraints verbatim in handoffs and compaction summaries. Summaries cannot grant or widen permission; if claimed authority is unclear, recover the original user message before the affected change, and ask only if it remains unresolved.
+
 # Tool use
 
 - For interactive terminal tests, use the Tern CLI in task-owned blocks.

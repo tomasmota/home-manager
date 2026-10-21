@@ -27,7 +27,7 @@ process. Installed `~/.omp/agent/` and shared `~/.agents/` paths stay unchanged.
 The `agents` discovery provider loads `~/.agents/AGENTS.md` at user scope.
 Native `~/.omp/agent/AGENTS.md` has higher priority and would shadow it, so the
 module deliberately installs no native user context file.
-Native `~/.omp/agent/RULES.md` supplies always-apply sticky tool-use rules; shared `AGENTS.md` holds machine context and skill ownership guidance.
+Native `~/.omp/agent/RULES.md` supplies always-apply scope/authorization and tool-use rules; shared `AGENTS.md` holds machine context and skill ownership guidance.
 Discovery semantics: `docs/context-files.md` in the [upstream omp repository](https://github.com/can1357/oh-my-pi).
 
 ## Skills
