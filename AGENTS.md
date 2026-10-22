@@ -34,8 +34,9 @@
 - `agents/omp/` owns local agent runtime behavior; `agents/global/` and `agents/skills/` own shared user instructions and skills.
 
 ## Apply and Validate Workflows
-- Preferred validation before applying:
-  - `nix flake check -L` (host evaluation, Node regression tests, formatting and lint; CI adds `--all-systems`)
+- Match validation to risk. Small declarative edits (removing a setting, changing a flag, comments) do not warrant `darwin-rebuild` or `nix flake check`; use a targeted check when it answers a concrete correctness question.
+- Run builds for changes whose correctness depends on Nix evaluation or building: module wiring, package/derivation changes, activation scripts, or explicit user requests. Reserve `nix flake check -L` for cross-cutting changes (CI adds `--all-systems`).
+- Editing config does not imply applying it. Run `switch` only when the user requests activation, using an interactive terminal so they can authenticate with Touch ID or a password; `sudo -n` failure alone is not a blocker. Out-of-store symlinked files generally need no rebuild.
 - Linux:
   - Build only: `home-manager build --flake .#linux`
   - Apply: `home-manager switch --flake .#linux`

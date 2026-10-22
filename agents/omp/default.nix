@@ -80,7 +80,6 @@
   policy = {
     # Native absolute denies plus the session-scoped infrastructure guard.
     tools.approvalMode = "yolo";
-    todo.enabled = false;
     bash.patterns =
       map (match: {
         inherit match;
