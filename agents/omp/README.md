@@ -60,6 +60,10 @@ omp login typesafe       # optional judge role
 Inco reads `INCO_API_KEY` from `secrets.env`; the tmux integrations use
 `TYPESAFE_API_KEY` there.
 
+DeepSeek is built in: set `DEEPSEEK_API_KEY` in `secrets.env` and select
+`deepseek/deepseek-flash:high`. Keep its catalog pricing rather than adding flat
+costs in `models.yml`, so peak/off-peak estimates remain automatic.
+
 ## Inco models
 
 `default.nix` declares the Inco provider and its model metadata. The provider's
