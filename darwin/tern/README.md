@@ -66,11 +66,11 @@ already-running app or daemon processes.
 ## Keyboard settings
 
 Darwin activation and `tern-pilot-activate` run `tern-settings-apply`,
-which merges the native `tern` preset and explicit Ctrl+Space sequences from
-[`tern.nix`](../tern.nix) into Tern's writable `settings.json`. These
-[user bindings](https://docs.stencil.so/tern/guides/commands.md#keymap-layering)
-override native defaults without a preset-specific prefix setting; unrelated
-UI preferences survive. To apply only these settings from a built pilot, run
+which merges Tern's `tmux` keymap preset (Ctrl+Space prefix; supplies tmux-style
+keys such as `c`, `n`, `p`, `w`, `z`) and the explicit Ctrl+Space sequences from
+[`tern.nix`](../tern.nix) into Tern's writable `settings.json`. The preset is a
+Tern keyboard layout, unrelated to the tmux program; unrelated UI preferences
+survive. To apply only these settings from a built pilot, run
 `<returned-store-path>/bin/tern-settings-apply`, then use Tern's **Reload
 settings** command; no service restart or Darwin switch is needed.
 

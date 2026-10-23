@@ -34,7 +34,8 @@
   };
   labels = ["tern-pilot-daemon"];
   keyboardConfig = {
-    keymap = "tern";
+    keymap = "tmux";
+    keymap_prefix = "ctrl+space";
     keybinds = {
       "ctrl+space>1" = "goto_tab:1";
       "ctrl+space>2" = "goto_tab:2";
