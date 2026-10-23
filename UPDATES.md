@@ -21,7 +21,7 @@ Runbook for an agent asked to update this repository. This is an update procedur
 | Neovim language tools | Mason-managed tools are separate from both Nix packages and the Lazy lock. Refresh Mason's registry, wait for it to finish, then use [`:MasonToolsUpdateSync`](https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim#commands) for the tools declared in [lsp.lua](nvim/lua/plugins/lsp.lua). Startup installation is intentionally disabled; do not enable it as an update workaround. |
 | CI actions | Review action references in [.github/workflows/validate.yml](.github/workflows/validate.yml) against supported upstream releases and their runner/runtime requirements. These are not updated by the flake lock. |
 | Homebrew casks | [darwin/macos.nix](darwin/macos.nix) declares unversioned casks and enables Homebrew update/upgrade on Darwin activation. There is no per-cask revision to bump here. Without activation, report these as pending rather than claiming the apps were upgraded. |
-| Locally owned code, configuration and skills | These are maintained here, not refreshed by copying upstream templates. Make necessary compatibility fixes and run the relevant existing checks. Codex Usage is built from [local sources](darwin/codex-usage/install.sh) during activation when its source/Swift stamp changes; it has no external app release to bump. |
+| Locally owned code, configuration and skills | These are maintained here, not refreshed by copying upstream templates. Make necessary compatibility fixes and run the relevant existing checks. Agent Usage is built from [local sources](darwin/agent-usage/install.sh) during activation when its source/Swift stamp changes; it has no external app release to bump. |
 
 ## Validation
 

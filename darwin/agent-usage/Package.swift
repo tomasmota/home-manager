@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "CodexUsage",
+    name: "AgentUsage",
     platforms: [.macOS(.v13)],
     targets: [
         .executableTarget(
-            name: "CodexUsage",
-            path: "Sources/CodexUsage"
+            name: "AgentUsage",
+            path: "Sources/AgentUsage"
         )
     ]
 )

@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>Codex Usage</string>
+	<string>Agent Usage</string>
 	<key>CFBundleDisplayName</key>
-	<string>Codex Usage</string>
+	<string>Agent Usage</string>
 	<key>CFBundleIdentifier</key>
-	<string>dev.tomas.codex-usage</string>
+	<string>dev.tomas.agent-usage</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0.0</string>
 	<key>CFBundleExecutable</key>
-	<string>CodexUsage</string>
+	<string>AgentUsage</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>LSUIElement</key>

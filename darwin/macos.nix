@@ -72,24 +72,24 @@ in {
     ];
 
     # nix-darwin loads user agents before HM runs as this user via launchctl asuser.
-    home.activation.codexUsage = lib.hm.dag.entryAfter ["writeBoundary"] ''
-      run /usr/bin/env HOME=${lib.escapeShellArg home} ${./codex-usage}/install.sh \
-        || warnEcho "codex-usage: install failed; keeping the previous app"
+    home.activation.agentUsage = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      run /usr/bin/env HOME=${lib.escapeShellArg home} ${./agent-usage}/install.sh \
+        || warnEcho "agent-usage: install failed; keeping the previous app"
     '';
   };
 
   services.tailscale.enable = true;
 
   launchd.user.agents = {
-    # Codex Usage menu bar app (built from darwin/codex-usage in this repo).
+    # Agent Usage menu bar app (built from darwin/agent-usage in this repo; reads `omp usage`).
     # Restart on crash, but stay dead after an explicit Quit from the menu.
-    codex-usage = {
+    agent-usage = {
       environment = {
         HOME = home;
-        PATH = "${home}/.local/bin:/usr/bin:/bin";
+        PATH = "/etc/profiles/per-user/${user}/bin:/run/current-system/sw/bin:/usr/bin:/bin";
       };
       command = ''
-        ${home}/Applications/CodexUsage.app/Contents/MacOS/CodexUsage
+        ${home}/Applications/AgentUsage.app/Contents/MacOS/AgentUsage
       '';
       serviceConfig = {
         KeepAlive = {
@@ -98,8 +98,8 @@ in {
         };
         RunAtLoad = true;
         ProcessType = "Background";
-        StandardOutPath = "${home}/Library/Logs/CodexUsage.log";
-        StandardErrorPath = "${home}/Library/Logs/CodexUsage.error.log";
+        StandardOutPath = "${home}/Library/Logs/AgentUsage.log";
+        StandardErrorPath = "${home}/Library/Logs/AgentUsage.error.log";
       };
     };
   };

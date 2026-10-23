@@ -18,7 +18,7 @@
 - `darwin/macos.nix`: macOS-only nix-darwin config (system defaults, Homebrew casks, Tailscale).
 - `darwin/tern.nix`, `darwin/tern/`: Native Stencil Tern integration (user-installed `/Applications/Tern.app`, managed session daemon and settings). Nix never installs or pins the app. See `darwin/tern/README.md` for activation, upgrades and withdrawal.
 - `agents/omp/`: Oh My Pi (omp), Mac-only via the pinned `omp` flake input. `agents/omp/default.nix` manages its runtime configuration, MCP servers, extensions and native agent definitions. `agents/omp/brief/` is the `brief` CLI and extension for fixed per-session context. Shared user instructions and skills live alongside it under `agents/`; see `agents/omp/README.md`.
-- `darwin/codex-usage/`: Codex Usage menu bar app (Swift). Built into `~/Applications/CodexUsage.app` by `install.sh` via a home-manager activation script when sources change; kept running by the `codex-usage` launchd agent.
+- `darwin/agent-usage/`: Agent Usage menu bar app (Swift) showing every account from `omp usage --json` plus 7-day stats read from `~/.omp/stats.db`; the title tracks the work Codex account. Built into `~/Applications/AgentUsage.app` by `install.sh` via a home-manager activation script when sources change; kept running by the `agent-usage` launchd agent. New source files must be git-tracked (`git add -N`) or the flake build won't see them.
 - `shell/zsh.nix`, `shell/aliases.nix`, `shell/functions.nix`: shell behavior, aliases, helper functions.
 - `git.nix`: git identity/signing, difftastic, activation hook for `allowed_signers` files.
 - `nvim/`: Neovim config (lazy.nvim, plugin specs under `nvim/lua/plugins`, core config under `nvim/lua/config`).
