@@ -66,10 +66,11 @@ already-running app or daemon processes.
 ## Keyboard settings
 
 Darwin activation and `tern-pilot-activate` run `tern-settings-apply`,
-which merges the managed tmux-preset settings (Ctrl+Space prefix, bindings in
-[`tern.nix`](../tern.nix)) into Tern's writable `settings.json`. Unrelated UI
-preferences survive; managed preset, prefix and bindings are reapplied. To
-apply only these settings from a built pilot, run
+which merges the native `tern` preset and explicit Ctrl+Space sequences from
+[`tern.nix`](../tern.nix) into Tern's writable `settings.json`. These
+[user bindings](https://docs.stencil.so/tern/guides/commands.md#keymap-layering)
+override native defaults without a preset-specific prefix setting; unrelated
+UI preferences survive. To apply only these settings from a built pilot, run
 `<returned-store-path>/bin/tern-settings-apply`, then use Tern's **Reload
 settings** command; no service restart or Darwin switch is needed.
 
@@ -156,12 +157,8 @@ Closing a client window does not normally end daemon-owned panes. See the
 [architecture](https://docs.stencil.so/tern/concepts/architecture.md) and
 [sessions/blocks](https://docs.stencil.so/tern/scripts/sessions.md) docs.
 
-An omp already running in Ghostty is **not imported** into Tern. To reach an
-existing tmux session, open a Tern shell pane and run `tmux attach -t <existing-session>` to
-reach an existing tmux PTY. This is the ANSI fallback path, not native
-Tern Surface Protocol rendering. For native integration, start `omp` directly
-in a Tern pane (or a Tern agent block); its terminal probe must reach Tern
-without tmux in between. Native rendering requires Stencil-account sign-in. See the
+Start `omp` directly in a Tern pane or agent block for native Surface Protocol
+rendering. Native rendering requires Stencil-account sign-in; see the
 [protocol reference](https://docs.stencil.so/tern/protocol/index.md).
 
 Do not resume the same transcript in a second omp while its original owner is

@@ -56,11 +56,9 @@
       system,
       username,
       homeDirectory,
-      fontSize,
     }:
       home-manager.lib.homeManagerConfiguration {
         pkgs = import nixpkgs {inherit system;};
-        extraSpecialArgs = {inherit fontSize;};
         modules = [(mkHomeModule {inherit username homeDirectory;})];
       };
 
@@ -148,7 +146,6 @@
         system = linuxSystem;
         username = user;
         homeDirectory = linuxHome;
-        fontSize = 11;
       };
     };
 
@@ -167,10 +164,7 @@
               useUserPackages = true;
               # omp is a Mac-only addition; the Linux target must keep
               # building without it, so it is only passed to this host.
-              extraSpecialArgs = {
-                fontSize = 14;
-                inherit omp;
-              };
+              extraSpecialArgs = {inherit omp;};
               users."${user}" = mkHomeModule {
                 username = user;
                 homeDirectory = macHome;

@@ -1,9 +1,7 @@
 {config}: {
   # home-manager
   hm = "home-manager";
-  hmcd = ''    cd ${config.xdg.configHome}/home-manager \
-                && [[ -n $TMUX ]] \
-                && tmux rename-window "home-manager"'';
+  hmcd = "cd ${config.xdg.configHome}/home-manager";
 
   # Misc
   ls = "eza -G --color auto -a -s type";

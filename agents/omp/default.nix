@@ -18,7 +18,7 @@
 
   # Extensions and MCP servers are declared in managed.nix so tern-omp-status
   # can compare them with the installed files.
-  managed = import ./managed.nix {inherit lib;};
+  managed = import ./managed.nix;
 
   # Inco is not an omp builtin. INCO_API_KEY comes from secrets.env (sourced
   # by zsh). Standard model metadata advertises reasoning_effort support.

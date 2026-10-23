@@ -34,8 +34,7 @@
   };
   labels = ["tern-pilot-daemon"];
   keyboardConfig = {
-    keymap = "tmux";
-    keymap_prefix = "ctrl+space";
+    keymap = "tern";
     keybinds = {
       "ctrl+space>1" = "goto_tab:1";
       "ctrl+space>2" = "goto_tab:2";
@@ -62,7 +61,7 @@
     };
   };
   keyboardSettings = pkgs.writeText "tern-keyboard-settings.json" (builtins.toJSON keyboardConfig);
-  omp = import ../agents/omp/managed.nix {inherit lib;};
+  omp = import ../agents/omp/managed.nix;
   # Declared state this command was built from. Checkout hashes let it say when
   # later edits are not in the build yet; nothing here is persisted at runtime.
   statusManifest = pkgs.writeText "tern-omp-status.json" (builtins.toJSON {

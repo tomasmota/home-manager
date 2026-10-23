@@ -57,8 +57,7 @@ omp login openai-codex
 omp login typesafe       # optional judge role
 ```
 
-Inco reads `INCO_API_KEY` from `secrets.env`; the tmux integrations use
-`TYPESAFE_API_KEY` there.
+Inco reads `INCO_API_KEY` from `secrets.env`.
 
 DeepSeek is built in: set `DEEPSEEK_API_KEY` in `secrets.env` and select
 `deepseek/deepseek-flash:high`. Keep its catalog pricing rather than adding flat
@@ -113,37 +112,6 @@ Tokens stay in memory; no credentials are copied into the repository, Nix store,
 or omp credential database. After editing the config, use `/mcp reload`, then
 `/mcp test google-developer-knowledge`. After a change to ADC or the fixed
 project, use `/mcp reconnect google-developer-knowledge` to read the files again.
-
-## tmux integration
-
-Two extensions drive tmux for the main omp TUI only; subagents, print/RPC modes
-and processes outside tmux do nothing:
-
-- `jev/tmux-title.ts` names the containing window `<repo>:<task>` through Jev.
-  Logic: `jev/tmux-title-core.js`.
-- `jev/tmux-status.ts` publishes tab state (`working`, `waiting`, `done`,
-  `error`, `idle`), timers and bells, including Jev classification of completed
-  turns. Logic: `jev/tmux-status-core.js`. Its `@omp_*` window and pane options
-  are the wire contract consumed by `../../tmux.nix`.
-
-Both use `TYPESAFE_API_KEY`, otherwise the workstation `secrets.env`. Their
-`OMP_TMUX_TITLE_*` and `OMP_JEV_ATTENTION_*` settings are omp-specific, with
-defaults and ranges in the core modules. Attention classification is on by
-default; `OMP_JEV_ATTENTION_MODE=dry-run` records verdicts without applying them
-and `off` makes no requests. Unavailable credentials or Jev never block normal
-completion behavior. Attention decision records contain scores and transcript
-sizes, not transcript text or credentials.
-
-New extension modules must be Git-tracked before rebuilding (`git add` is
-sufficient; a commit is not required). `default.nix` checks that every required
-Jev module exists in the flake snapshot, rejecting incomplete bundles during
-evaluation.
-
-Apply with `sudo darwin-rebuild switch --flake .#macbook`, then start a fresh
-omp process. NEVER use `--flake path:.` here: it can copy gitignored files,
-including `secrets.env`, into the Nix store. Running sessions and
-`/reload-plugins` do not load a new extension. Regression checks:
-`node --test agents/omp/jev/tmux-title.test.mjs agents/omp/jev/tmux-status-core.test.mjs agents/omp/jev/tmux-status.test.mjs`.
 
 ## Briefs
 

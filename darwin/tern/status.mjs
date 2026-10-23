@@ -155,7 +155,7 @@ function main(manifestFile) {
   say("\nTern settings (installed ~/Library/Application Support/Tern/settings.json)");
   try {
     const s = readJson(path.join(m.tern.configDir, "settings.json"));
-    const wrong = ["keymap", "keymap_prefix"].filter((k) => s[k] !== m.tern.settings[k]);
+    const wrong = ["keymap"].filter((k) => s[k] !== m.tern.settings[k]);
     const binds = Object.entries(m.tern.settings.keybinds).filter(([k, v]) => s.keybinds?.[k] !== v).map(([k]) => k);
     for (const k of wrong) bad(`${k} differs from the build`);
     if (binds.length) bad(`${binds.length} managed keybindings differ or are missing: ${binds.join(", ")}`);

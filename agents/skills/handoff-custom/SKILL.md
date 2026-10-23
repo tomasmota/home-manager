@@ -113,7 +113,7 @@ Briefs: <KEY1,KEY2, only when launched with --brief; user-owned. Their contents 
 - <expensive warning or failed approach> — <safe alternative>
 
 ## State outside the repo
-- <running process/service, tmux pane, temp artifact or remote context> — <how to inspect it>
+- <running process/service, Tern pane, temp artifact or remote context> — <how to inspect it>
 - <credential location or variable name only; never its value>
 
 ## Open questions

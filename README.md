@@ -1,6 +1,6 @@
 # home-manager
 
-Nix flake repo for my local developer environment (shell, terminal, editor, git, tmux, and agent tooling).
+Nix flake repo for my local developer environment (shell, Tern terminal, editor, git, and agent tooling).
 
 ## Flake outputs
 
@@ -114,3 +114,4 @@ Work-only agent context lives in the unmanaged `~/dev/work/AGENTS.md`, kept out 
 - Aliases and git includes assume repos usually live under `~/dev/work` and `~/dev/personal`.
 - Git reuses recorded conflict resolutions (`rerere`) but leaves them unstaged for review.
 - On macOS only (nix-darwin manages the daemon), only root is trusted by the Nix daemon; normal user builds remain allowed, but restricted daemon settings require sudo.
+- Tern is the only managed macOS terminal; Home Manager initializes Zsh completion once with a cache per interpreter version.

@@ -13,10 +13,8 @@
   };
 
   imports = [
-    ./terminal/ghostty.nix
     ./shell/zsh.nix
     (import ./git.nix {inherit pkgs config;})
-    (import ./tmux.nix {inherit pkgs xdg;})
   ];
 
   fonts.fontconfig.enable = true;

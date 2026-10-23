@@ -2,7 +2,7 @@
 
 ## Purpose
 - This repo manages Tomás' local developer environment with Nix, using Home Manager on Linux and nix-darwin + Home Manager on macOS.
-- Treat this repo as the source of truth for shell, terminal, editor, git, tmux, and AI-agent config.
+- Treat this repo as the source of truth for shell, Tern terminal, editor, git, and AI-agent config.
 
 ## Public Repository
 - This repository is public. Never add sensitive personal or company information, including credentials, tokens, private URLs, customer data, internal infrastructure details, or confidential business information.
@@ -19,10 +19,8 @@
 - `darwin/tern.nix`, `darwin/tern/`: Native Stencil Tern integration (user-installed `/Applications/Tern.app`, managed session daemon and settings). Nix never installs or pins the app. See `darwin/tern/README.md` for activation, upgrades and withdrawal.
 - `agents/omp/`: Oh My Pi (omp), Mac-only via the pinned `omp` flake input. `agents/omp/default.nix` manages its runtime configuration, MCP servers, extensions and native agent definitions. `agents/omp/brief/` is the `brief` CLI and extension for fixed per-session context. Shared user instructions and skills live alongside it under `agents/`; see `agents/omp/README.md`.
 - `darwin/codex-usage/`: Codex Usage menu bar app (Swift). Built into `~/Applications/CodexUsage.app` by `install.sh` via a home-manager activation script when sources change; kept running by the `codex-usage` launchd agent.
-- `terminal/ghostty.nix`: Ghostty config; expects `fontSize` from flake `extraSpecialArgs`.
 - `shell/zsh.nix`, `shell/aliases.nix`, `shell/functions.nix`: shell behavior, aliases, helper functions.
 - `git.nix`: git identity/signing, difftastic, activation hook for `allowed_signers` files.
-- `tmux.nix`: tmux settings/plugins/keybindings.
 - `nvim/`: Neovim config (lazy.nvim, plugin specs under `nvim/lua/plugins`, core config under `nvim/lua/config`).
 - `agents.nix`, `agents/**`: locally owned shared instructions, public skills and native omp configuration, installed into `~/.agents/` and `~/.omp/agent/` on the Mac. Edit these files directly.
 - OpenChamber is used through the homelab web UI. Do not install local OpenCode, OpenChamber servers, the desktop bundle or subscription gateways.

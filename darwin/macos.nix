@@ -11,7 +11,12 @@ in {
 
   nixpkgs.hostPlatform = "aarch64-darwin";
 
-  programs.zsh.enable = true;
+  programs.zsh = {
+    enable = true;
+    # Home Manager owns completion and prompt initialization.
+    enableGlobalCompInit = false;
+    promptInit = "";
+  };
   users.users.${user}.shell = pkgs.zsh;
   security.pam.services.sudo_local.touchIdAuth = true;
 
@@ -102,7 +107,6 @@ in {
   homebrew = {
     enable = true;
     casks = [
-      "ghostty"
       "middleclick"
       "obsidian"
       "raycast"

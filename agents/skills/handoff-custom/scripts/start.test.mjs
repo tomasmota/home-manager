@@ -189,7 +189,7 @@ test("ambiguous models and unsupported thinking levels are rejected before openi
 });
 
 test("unknown options fail", () => {
-  const unknown = spawnSync(process.execPath, [launcher, "--transport", "tmux"], { encoding: "utf8" });
+  const unknown = spawnSync(process.execPath, [launcher, "--transport"], { encoding: "utf8" });
   assert.equal(unknown.status, 1);
   assert.match(unknown.stderr, /Unknown option '--transport'/);
 });
