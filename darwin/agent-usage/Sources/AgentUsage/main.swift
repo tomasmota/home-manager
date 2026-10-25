@@ -1,6 +1,6 @@
 import AppKit
 
-private let panelWidth: CGFloat = 370
+private let panelWidth: CGFloat = 310
 
 private func relativeReset(_ date: Date?, now: Date = Date()) -> String {
     guard let date else { return "Reset unknown" }
@@ -127,6 +127,15 @@ private final class ActionButton: NSButton {
     @objc private func invoke() { actionHandler?() }
 }
 
+/// Empty-track grey tuned per appearance (~3:1 against the dark popover background,
+/// lighter on light); the old quaternary-label grey measured 1.3:1 in dark mode.
+private let usageTrackColor = NSColor(name: nil) { appearance in
+    appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        ? NSColor(white: 1, alpha: 0.34)
+        : NSColor(white: 0, alpha: 0.26)
+}
+
+/// Remaining-share bar: a visible track for the full window, filled with the health color.
 private final class UsageBar: NSView {
     let percent: Int
     let tint: NSColor
@@ -135,19 +144,22 @@ private final class UsageBar: NSView {
         self.tint = tint
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([widthAnchor.constraint(equalToConstant: 68), heightAnchor.constraint(equalToConstant: 4)])
+        NSLayoutConstraint.activate([widthAnchor.constraint(greaterThanOrEqualToConstant: 48), heightAnchor.constraint(equalToConstant: 6)])
+        // Lowest hugging in its row: the bar absorbs the row's spare width.
+        setContentHuggingPriority(NSLayoutConstraint.Priority(1), for: .horizontal)
         setAccessibilityElement(true)
         setAccessibilityRole(.progressIndicator)
         setAccessibilityValue("\(percent)% left")
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override func draw(_ dirtyRect: NSRect) {
-        NSColor.quaternaryLabelColor.setFill()
-        NSBezierPath(roundedRect: bounds, xRadius: 2, yRadius: 2).fill()
-        if percent > 0 {
-            (percent < 20 ? ink(percent) : tint).setFill()
-            NSBezierPath(roundedRect: NSRect(x: 0, y: 0, width: max(4, bounds.width * CGFloat(percent) / 100), height: bounds.height), xRadius: 2, yRadius: 2).fill()
-        }
+        let radius = bounds.height / 2
+        usageTrackColor.setFill()
+        NSBezierPath(roundedRect: bounds, xRadius: radius, yRadius: radius).fill()
+        guard percent > 0 else { return }
+        (percent < 20 ? ink(percent) : tint).setFill()
+        let width = max(bounds.height, bounds.width * CGFloat(percent) / 100)
+        NSBezierPath(roundedRect: NSRect(x: 0, y: 0, width: width, height: bounds.height), xRadius: radius, yRadius: radius).fill()
     }
 }
 
@@ -306,8 +318,10 @@ private func accountSection(_ account: Account, store: UsageStore) -> NSView {
         let resetLabel = label(reset, size: 10, color: .secondaryLabelColor)
         resetLabel.alignment = .right
         if let date { hover(resetLabel, "Resets \(date.formatted(shortDateTime))") }
-        resetLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let usage = row([window, remaining, UsageBar(percent: percent, tint: tint), spacer(), resetLabel], spacing: 7)
+        // Fixed column so every bar in the panel has the same length and edges line up.
+        resetLabel.widthAnchor.constraint(equalToConstant: 76).isActive = true
+        let usage = row([window, remaining, UsageBar(percent: percent, tint: tint), resetLabel], spacing: 7)
+        usage.distribution = .fill
         stack.addArrangedSubview(usage)
         usage.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         usage.heightAnchor.constraint(equalToConstant: 18).isActive = true
@@ -478,10 +492,11 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDeleg
             let hour = remainingPercent(hourly)
             button.title = week == 0 ? "⌛ 0%" : (hour == 0 ? "\(week) · 0⌛" : "\(week) · \(hour)")
             let drained = week == 0 || hour == 0
-            button.attributedTitle = NSAttributedString(string: button.title, attributes: [
-                .font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium),
-                .foregroundColor: drained ? NSColor.systemRed : NSColor.labelColor
-            ])
+            // Only override the color when drained; otherwise the status bar renders the
+            // title like any other menu extra (correct over light or dark wallpapers).
+            var attributes: [NSAttributedString.Key: Any] = [.font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)]
+            if drained { attributes[.foregroundColor] = NSColor.systemRed }
+            button.attributedTitle = NSAttributedString(string: button.title, attributes: attributes)
             button.toolTip = "Work Codex · \(week)% weekly left · \(hour)% 5-hour left"
         } else {
             button.title = store.error != nil ? "— !" : "— · —"
