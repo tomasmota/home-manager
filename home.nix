@@ -34,6 +34,7 @@
     yq-go
     openssh
     ffmpeg
+    imagemagick
     gnumake
     gh
     bitwarden-cli
