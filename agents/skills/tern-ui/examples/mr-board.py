@@ -12,6 +12,7 @@ and confirmed by the kit. `--fixture` shows sample data; commands stay blocked.
 
 from __future__ import annotations
 
+import html
 import re
 import shutil
 import webbrowser
@@ -26,6 +27,8 @@ from ternui import Board, command_json
 LIST = "merge_requests"
 PER_PAGE = 50
 TICKET = re.compile(r"\b([A-Z][A-Z0-9]{1,9}-\d+)\b")
+# Jira links GitLab renders from ticket keys (its Jira integration), so no site URL lives here.
+JIRA_LINK = re.compile(r'href="(https?://[^"]*/browse/([A-Z][A-Z0-9]{1,9}-\d+)[^"]*)"')
 ACTIVE = {"running", "pending", "created", "scheduled", "preparing", "waiting_for_resource"}
 ACTIVE_POLL, IDLE_POLL = 15.0, 120.0
 FAILED = {"failed", "canceled"}
@@ -65,7 +68,7 @@ def _blank(row: dict[str, Any], error: str | None = None) -> dict[str, Any]:
         "draft": bool(row.get("draft") or row.get("work_in_progress")),
         "pipeline": None, "pipeline_url": None, "merge": "unknown", "sha": None,
         "approvals": None, "required": None, "approval_error": None,
-        "conflicts": None, "threads": None, "error": error,
+        "conflicts": None, "threads": None, "error": error, "tickets": {},
     }
 
 
@@ -73,7 +76,7 @@ def _item(row: dict[str, Any]) -> dict[str, Any]:
     item = _blank(row)
     pid, iid = row["project_id"], row["iid"]
     try:
-        detail = glab(f"projects/{pid}/merge_requests/{iid}")
+        detail = glab(f"projects/{pid}/merge_requests/{iid}?render_html=true")
         if not isinstance(detail, dict):
             raise RuntimeError("unexpected merge request payload")
     except Exception as exc:
@@ -98,6 +101,11 @@ def _item(row: dict[str, Any]) -> dict[str, Any]:
         conflicts=detail.get("has_conflicts"),
         threads=detail.get("blocking_discussions_resolved"),
     )
+    tickets: dict[str, str] = {}  # title links first, then description links
+    for field in ("title_html", "description_html"):
+        for url, key in JIRA_LINK.findall(str(detail.get(field) or "")):
+            tickets.setdefault(key, html.unescape(url))
+    item["tickets"] = tickets
     try:
         data = glab(f"projects/{pid}/merge_requests/{iid}/approvals")
         if not isinstance(data, dict) or not isinstance(data.get("approved_by"), list):
@@ -127,6 +135,15 @@ def fetch() -> dict[str, Any]:
 def _ticket(title: str) -> str | None:
     found = TICKET.search(title)
     return found.group(1) if found else None
+
+
+def _ticket_link(item: dict[str, Any]) -> tuple[str, str] | None:
+    """The MR's ticket and its Jira URL: the title's ticket, else the description's first."""
+    tickets = item.get("tickets") or {}
+    key = _ticket(item["title"])
+    if key:
+        return (key, tickets[key]) if key in tickets else None
+    return next(iter(tickets.items()), None)
 
 
 def _repo(item: dict[str, Any]) -> str:
@@ -264,12 +281,15 @@ def _meta(item: dict[str, Any], key: str) -> ui.Node:
     for text, tone in reasons:  # blockers lead, and bold; a CI blocker links its pipeline
         add(text, f"strong {tone}" if tone in {"error", "warning"} else tone,
             item["pipeline_url"] if text == ci else None)
-    if item["iid"]:
-        add(f"!{item['iid']}", "muted", item["url"])
+    if item["iid"]:  # links draw in link color; muted would hide them
+        add(f"!{item['iid']}", None if item["url"] else "muted", item["url"])
+    ticket = _ticket_link(item)
+    if ticket and not _ticket(item["title"]):  # a title ticket is linked in the card head
+        add(ticket[0], None, ticket[1])
     if item["branch"]:
         add(item["branch"], "muted")
     if ci and ci not in done:
-        add(ci, "muted", item["pipeline_url"])
+        add(ci, None if item["pipeline_url"] else "muted", item["pipeline_url"])
     if item["approvals"] is not None and item["required"] is not None:
         add(f"{item['approvals']}/{item['required']} approvals", "muted")
     if not reasons and item["sha"]:  # the exact revision a merge would be pinned to
@@ -323,6 +343,9 @@ def _menu(board: Board, item: dict[str, Any]) -> dict[str, Any]:
         entries["Ask agent"] = lambda _event=None: _ask(board, item)
     if item["url"]:
         entries["Open MR"] = lambda _event=None: _open(board, item["url"])
+    ticket = _ticket_link(item)
+    if ticket:
+        entries["Open ticket"] = lambda _event=None: _open(board, ticket[1])
     if item["pipeline_url"]:
         entries["Open pipeline"] = lambda _event=None: _open(board, item["pipeline_url"])
     if item["branch"]:
@@ -337,12 +360,13 @@ def _row(board: Board, item: dict[str, Any], group: str) -> ui.Node:
     title = item["title"]
     if group == _ticket(title) and title.upper().startswith(f"{group}:"):
         title = title[len(group) + 1:].lstrip()  # the card head already names the ticket
-    return ui.col(
+    return ui.col(  # a plain click anywhere on the row opens the MR in Tern's link handling
         ui.row(_state_node(item),
-               ui.text(title, grow=1, truncate="end", key=f"title:{ref}", href=item["url"] or None),
+               ui.text(title, grow=1, truncate="end", key=f"title:{ref}"),
                gap="sm", align="center", key=f"head:{ref}"),
         _meta(item, f"meta:{ref}"),
         gap="xs", key=f"mr:{ref}", title=item["approval_error"] or item["error"] or None,
+        href=item["url"] or None, actions={"click": "open"} if item["url"] else None,
         on_menu=_menu(board, item),
     )
 
@@ -373,15 +397,18 @@ def view(board: Board) -> ui.Node:
         group = groups[key]
         projects = sorted({_project(item) for item in group})
         label = key if projects == [key] else f"{key} · {', '.join(projects)}"
+        head = f"{label} · {len(group)} MR{'s' if len(group) > 1 else ''}"
+        url = next((link[1] for item in group
+                    if (link := _ticket_link(item)) and link[0] == key), None)
         cards.append(ui.card(*(_row(board, item, key) for item in group),
-                             head=f"{label} · {len(group)} MR{'s' if len(group) > 1 else ''}",
+                             head=[ui.span(key, href=url), head[len(key):]] if url else head,
                              key=f"group:{key}"))
 
     empty = ui.card(ui.text("No open merge requests.", key="empty-text"),
                     ui.text("Nothing authored by you is open now. Press r to check again.",
                             tone="muted", wrap="word"), head="All clear", key="empty")
-    hint = ("Row menu: open MR, open pipeline, copy branch"
-            + (", ask agent" if board.agent_session else "")
+    hint = ("Click a row to open its MR; ⌘-click a link to open it. Row menu: open MR, ticket "
+            "or pipeline, copy branch" + (", ask agent" if board.agent_session else "")
             + ". Merge appears only when every check is known good; it confirms first.")
     return ui.col(
         ui.row(

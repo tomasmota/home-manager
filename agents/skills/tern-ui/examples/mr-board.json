@@ -1,6 +1,6 @@
 {
   "fixture": true,
-  "note": "Sample fixture: generic references only. Covers ready, waiting, draft, conflict and detail-failure rows. Merge stays disabled.",
+  "note": "Sample fixture: generic references only. Covers ready, waiting, draft, conflict, detail-failure and ticket-link rows (linked, unlinked, description-only). Merge stays disabled.",
   "mrs": [
     {
       "ref": "sample/web-app!42",
@@ -19,7 +19,8 @@
       "approval_error": null,
       "conflicts": false,
       "threads": true,
-      "error": null
+      "error": null,
+      "tickets": {"SHOP-142": "https://jira.example.com/browse/SHOP-142"}
     },
     {
       "ref": "sample/web-app!45",
@@ -38,7 +39,8 @@
       "approval_error": null,
       "conflicts": false,
       "threads": true,
-      "error": null
+      "error": null,
+      "tickets": {"SHOP-151": "https://jira.example.com/browse/SHOP-151"}
     },
     {
       "ref": "sample/web-app!51",
@@ -57,7 +59,28 @@
       "approval_error": null,
       "conflicts": false,
       "threads": true,
-      "error": null
+      "error": null,
+      "tickets": {"SHOP-142": "https://jira.example.com/browse/SHOP-142"}
+    },
+    {
+      "ref": "sample/web-app!53",
+      "iid": 53,
+      "title": "Bump lint rules",
+      "branch": "chore/lint-rules",
+      "url": "https://gitlab.example.com/sample/web-app/-/merge_requests/53",
+      "state": "opened",
+      "draft": false,
+      "pipeline": "success",
+      "pipeline_url": "https://gitlab.example.com/sample/web-app/-/pipelines/9007",
+      "merge": "not_approved",
+      "sha": "7c9e1a3b5d7f9b1d3f5a7c9e1b3d5f7a9c1e3b5d",
+      "approvals": 0,
+      "required": 1,
+      "approval_error": null,
+      "conflicts": false,
+      "threads": true,
+      "error": null,
+      "tickets": {"SHOP-163": "https://jira.example.com/browse/SHOP-163"}
     },
     {
       "ref": "sample/billing-api!19",

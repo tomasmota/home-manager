@@ -108,6 +108,8 @@ labels (`ask-agent` → Ask agent). Do not use a built-in name for a Python
 callback: built-ins do not send action events. With href, modifier-click can
 open instead of running a custom click. `Session.poll` dispatches node handlers
 itself; apps must not route those events again.
+A span with `href` draws as a link only without a tone/`muted` style. Node `href`
+alone opens on ⌘-click; add `actions={"click": "open"}` to open on a plain click.
 
 `b.session` exposes the connected SDK Session for advanced use, for example
 `b.surface.stylesheet("layout", css)` after the surface exists. A convenient
