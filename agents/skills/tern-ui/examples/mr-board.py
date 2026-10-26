@@ -5,20 +5,32 @@
 # ///
 """Open authored MRs grouped by ticket, from read-only `glab api --method GET`.
 
+A ticket in the MR title (never the description) makes the card: the head names the
+key, each row is one MR. An MR with no ticket leads its own card, headed `repo!iid`.
 One failed detail call keeps its list row and shows the error. Merge is offered
 only when every safety signal is known good, pinned to the fetched head SHA,
-and confirmed by the kit. `--fixture` shows sample data; commands stay blocked.
+and confirmed by the kit. Ticket titles are read through the Atlassian MCP
+server with omp's existing sign-in; without it, cards show bare ticket keys.
+`--fixture` shows sample data; commands stay blocked.
 """
 
 from __future__ import annotations
 
 import html
+import json
 import re
 import shutil
+import sqlite3
+import time
+import urllib.request
 import webbrowser
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
+from datetime import datetime
+from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from tern_sdk import ui
 
@@ -33,9 +45,16 @@ ACTIVE = {"running", "pending", "created", "scheduled", "preparing", "waiting_fo
 ACTIVE_POLL, IDLE_POLL = 15.0, 120.0
 FAILED = {"failed", "canceled"}
 HARD_MERGE = {"conflict", "requested_changes"}
-STATE_WIDTH = {"w": "10ch"}
 BUCKETS = (("blocked", "needs attention", "warning"), ("ready", "ready", "success"),
            ("waiting", "waiting", "pending"), ("unknown", "unknown", "warning"))
+RANK = {bucket: rank for rank, (bucket, _, _) in enumerate(BUCKETS)}  # card and row order
+# omp keeps its Atlassian MCP OAuth sign-in here. The board only reads the access
+# token and never refreshes it: omp owns the rotating refresh token, so titles pause
+# once the token expires until omp next uses an Atlassian tool.
+ATLASSIAN_MCP = "https://mcp.atlassian.com/v2/mcp"
+OMP_AUTH_DB = Path.home() / ".omp" / "agent" / "agent.db"
+TITLE_TTL = 3600.0
+_titles: dict[str, tuple[str | None, float]] = {}  # key -> (summary, monotonic fetch time)
 
 
 def glab(path: str) -> Any:
@@ -66,6 +85,7 @@ def _blank(row: dict[str, Any], error: str | None = None) -> dict[str, Any]:
         "title": str(row.get("title") or ""), "branch": str(row.get("source_branch") or ""),
         "url": str(row.get("web_url") or ""), "state": str(row.get("state") or "unknown"),
         "draft": bool(row.get("draft") or row.get("work_in_progress")),
+        "updated": str(row.get("updated_at") or ""),
         "pipeline": None, "pipeline_url": None, "merge": "unknown", "sha": None,
         "approvals": None, "required": None, "approval_error": None,
         "conflicts": None, "threads": None, "error": error, "tickets": {},
@@ -94,6 +114,7 @@ def _item(row: dict[str, Any]) -> dict[str, Any]:
         url=str(detail.get("web_url") or item["url"]),
         state=str(detail.get("state") or item["state"]),
         draft=bool(detail.get("draft") or detail.get("work_in_progress")),
+        updated=str(detail.get("updated_at") or item["updated"]),
         pipeline=pipe.get("status"),
         pipeline_url=pipe.get("web_url"),
         merge=detail.get("detailed_merge_status") or detail.get("merge_status") or "unknown",
@@ -120,6 +141,85 @@ def _item(row: dict[str, Any]) -> dict[str, Any]:
     return item
 
 
+def _mcp_token() -> str:
+    try:
+        with closing(sqlite3.connect(f"{OMP_AUTH_DB.as_uri()}?mode=ro", uri=True, timeout=5)) as db:
+            row = db.execute(
+                "SELECT data FROM auth_credentials WHERE provider = ? AND disabled_cause IS NULL"
+                " ORDER BY updated_at DESC LIMIT 1",
+                (f"mcp_oauth:profile:default:{ATLASSIAN_MCP}",)).fetchone()
+    except sqlite3.Error as exc:
+        raise RuntimeError(f"omp sign-in unreadable ({exc})") from None
+    data = json.loads(row[0]) if row else {}
+    if not data.get("access"):
+        raise RuntimeError("no Atlassian sign-in in omp")
+    if float(data.get("expires") or 0) / 1000 < time.time() + 60:
+        raise RuntimeError("omp's Atlassian sign-in expired; using any Atlassian tool in omp renews it")
+    return str(data["access"])
+
+
+def _mcp(token: str, body: dict[str, Any], session: str | None = None) -> tuple[Any, str | None]:
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json",
+               "Accept": "application/json, text/event-stream"}
+    if session:
+        headers["Mcp-Session-Id"] = session
+    request = urllib.request.Request(ATLASSIAN_MCP, data=json.dumps(body).encode(),
+                                     headers=headers, method="POST")
+    with urllib.request.urlopen(request, timeout=30) as response:
+        text = response.read().decode()
+        session = response.headers.get("Mcp-Session-Id") or session
+    if "id" not in body:  # a notification has no reply
+        return None, session
+    # The reply is one server-sent event or plain JSON.
+    payload = next((line[5:] for line in text.splitlines() if line.startswith("data:")), text)
+    return json.loads(payload), session
+
+
+def _jira_summaries(site: str, keys: list[str]) -> dict[str, str]:
+    """Read-only JQL lookup; keys match TICKET, so they are safe inside the query."""
+    token = _mcp_token()
+    _, session = _mcp(token, {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+        "protocolVersion": "2025-06-18", "capabilities": {},
+        "clientInfo": {"name": "tern-ui-mr-board", "version": "1"}}})
+    if not session:
+        raise RuntimeError("Atlassian MCP gave no session")
+    _mcp(token, {"jsonrpc": "2.0", "method": "notifications/initialized"}, session)
+    reply, _ = _mcp(token, {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {
+        "name": "searchJiraIssuesUsingJql", "arguments": {
+            "cloudId": site, "jql": f"key in ({', '.join(keys)})", "fields": ["summary"],
+            "maxResults": len(keys), "responseFields": ["issues.key", "issues.fields.summary"]}}},
+        session)
+    result = reply.get("result") if isinstance(reply, dict) else None
+    content = (result or {}).get("content") or [{}]
+    text = str(content[0].get("text") or "")
+    if not result or result.get("isError"):
+        error = (reply or {}).get("error") or {}
+        raise RuntimeError(f"Jira lookup failed: {(text or error.get('message') or 'no result')[:200]}")
+    issues = (json.loads(text).get("data") or {}).get("issues") or []
+    return {str(issue["key"]): str(issue["fields"]["summary"]) for issue in issues
+            if isinstance(issue, dict) and (issue.get("fields") or {}).get("summary")}
+
+
+def _ticket_titles(items: list[dict[str, Any]]) -> tuple[dict[str, str], str | None]:
+    """Cached ticket summaries; a failed lookup keeps earlier titles and is retried next fetch."""
+    links = {link for item in items if (link := _ticket_link(item))}
+    now = time.monotonic()
+    sites: dict[str, list[str]] = {}
+    for key, url in sorted(links):
+        if now - _titles.get(key, (None, float("-inf")))[1] > TITLE_TTL:
+            sites.setdefault(urlsplit(url).hostname or "", []).append(key)
+    error = None
+    for site, keys in sites.items():
+        try:
+            found = _jira_summaries(site, keys)
+        except Exception as exc:
+            error = str(exc)
+            continue
+        for key in keys:  # no title: unknown key or no access; retried after the TTL
+            _titles[key] = (found.get(key), now)
+    return {key: title for key, _ in links if (title := _titles.get(key, (None, 0.0))[0])}, error
+
+
 def fetch() -> dict[str, Any]:
     found: list[dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=6) as pool:
@@ -130,7 +230,8 @@ def fetch() -> dict[str, Any]:
             except Exception as exc:
                 found.append(_blank(row, str(exc)))
     found.sort(key=lambda item: item["ref"])
-    return {"mrs": found}
+    titles, title_error = _ticket_titles(found)
+    return {"mrs": found, "titles": titles, "title_error": title_error}
 
 
 def _ticket(title: str) -> str | None:
@@ -153,6 +254,11 @@ def _repo(item: dict[str, Any]) -> str:
 
 def _project(item: dict[str, Any]) -> str:
     return _repo(item).rsplit("/", 1)[-1] or "unknown"
+
+
+def _ref_text(item: dict[str, Any]) -> str | None:
+    """`project !iid`, the reference this board shows; None until detail supplies the IID."""
+    return f"{_project(item)} !{item['iid']}" if item["iid"] else None
 
 
 def blockers(item: dict[str, Any]) -> list[str]:
@@ -206,7 +312,7 @@ def _ci(item: dict[str, Any]) -> str:
 
 def _reasons(item: dict[str, Any]) -> list[tuple[str, str]]:
     """Specific blockers, most serious first, each with a span tone. Every MR needs an
-    approval, so a shortfall shows only in the muted approval count."""
+    approval, so a shortfall is no reason; the meta line marks approval once given."""
     if item["error"]:
         return [("detail failed", "error")]
     reasons: list[tuple[str, str]] = []
@@ -257,42 +363,62 @@ def _state(item: dict[str, Any]) -> tuple[str, str, str]:
     return "waiting", "waiting", "pending"
 
 
+def _order(item: dict[str, Any]) -> tuple[int, float]:
+    """Most urgent first, in the summary's bucket order, then most recently updated."""
+    try:
+        updated = datetime.fromisoformat(str(item.get("updated") or "")).timestamp()
+    except ValueError:
+        updated = 0.0
+    return RANK[_state(item)[0]], -updated
+
+
 def _state_node(item: dict[str, Any]) -> ui.Node:
+    """Compact leading marker. Labels are one short word each, so badges line up by
+    themselves; pinning a wider column would only add air between state and title."""
     bucket, label, tone = _state(item)
     if bucket == "ready":  # all clear: quiet text, not another filled badge
-        inner = ui.row(ui.icon("check", tone="success"),
-                       ui.text(label, tone="success"), gap="xs")
-    else:
-        inner = ui.badge(label, tone=tone)
-    return ui.row(inner, min=STATE_WIDTH)
+        return ui.row(ui.icon("check", tone="success"),
+                      ui.text(label, tone="success"), gap="xs")
+    return ui.badge(label, tone=tone)
 
 
-def _meta(item: dict[str, Any], key: str, show_repo: bool) -> ui.Node:
+def _meta(item: dict[str, Any], key: str) -> ui.Node:
+    """Attention signals lead, then one fixed slot order: ref, branch, CI, approvals.
+    CI keeps its slot even when it blocks, so the same fact never moves between rows.
+    Slots are sibling nodes rather than spans of one text so the branch can carry an icon."""
     reasons = _reasons(item)
-    done = {text for text, _ in reasons}
-    spans: list[ui.Span] = []
-
-    def add(text: str, style: str | None = None, href: str | None = None) -> None:
-        if spans:
-            spans.append(ui.span(" · ", "dim"))
-        spans.append(ui.span(text, style, href=href or None))
-
     ci = _ci(item) if item["pipeline"] else None
-    for text, tone in reasons:  # blockers lead, and bold; a CI blocker links its pipeline
-        add(text, f"strong {tone}" if tone in {"error", "warning"} else tone,
-            item["pipeline_url"] if text == ci else None)
-    if item["iid"]:  # links draw in link color; muted would hide them
-        ref = f"{_project(item) if show_repo else ''}!{item['iid']}"
-        add(ref, None if item["url"] else "muted", item["url"])
+    ci_tone = next((tone for text, tone in reasons if text == ci), None)
+    parts: list[ui.Node] = []
+
+    def add(slot: str, text: str, style: str | None = None, href: str | None = None,
+            icon: ui.IconName | None = None) -> None:
+        if parts:
+            parts.append(ui.text([ui.span("·", "dim")], key=f"sep:{slot}"))
+        span = ui.span(text, style, href=href or None)
+        parts.append(ui.row(ui.icon(icon, tone="muted"), ui.text([span], key="text"),
+                            gap="xs", align="center", key=slot)
+                     if icon else ui.text([span], key=slot))
+
+    for index, (text, tone) in enumerate(reasons):
+        if text != ci:  # a failing pipeline already reads in its own slot
+            add(f"reason{index}", text, f"strong {tone}" if tone in {"error", "warning"} else tone)
+    if ref := _ref_text(item):  # links draw in link color; muted would hide them
+        add("ref", ref, None if item["url"] else "muted", item["url"])
     if item["branch"]:
-        add(item["branch"], "muted")
-    if ci and ci not in done:
-        add(ci, None if item["pipeline_url"] else "muted", item["pipeline_url"])
-    if item["approvals"] is not None and item["required"] is not None:
-        add(f"{item['approvals']}/{item['required']} approvals", "muted")
+        add("branch", item["branch"], "muted", icon="branch")
+    if ci:
+        style = f"strong {ci_tone}" if ci_tone in {"error", "warning"} else ci_tone or "muted"
+        add("ci", ci, style, item["pipeline_url"])
+    have, need = item["approvals"], item["required"]
+    if have is not None and need is not None:  # every MR needs one, so only news shows
+        if have and have >= need:
+            add("approvals", "approved", "success")
+        elif need > 1:  # a count only where one approval is not enough
+            add("approvals", f"{have}/{need} approvals", "muted")
     if item["sha"] and not blockers(item):  # the exact revision a merge would be pinned to
-        add(item["sha"][:8], "dim")
-    return ui.text(spans, wrap="word", key=key)
+        add("sha", item["sha"][:8], "dim")
+    return ui.row(*parts, gap="xs", wrap=True, align="center", key=key)
 
 
 def _open(board: Board, url: str) -> None:
@@ -353,16 +479,24 @@ def _menu(board: Board, item: dict[str, Any]) -> dict[str, Any]:
     return entries
 
 
-def _row(board: Board, item: dict[str, Any], group: str, show_repo: bool) -> ui.Node:
+def _clean_title(title: str, key: str) -> str:
+    """Drop the ticket prefix a ticket card head already shows: `KEY:`, `[KEY]:` or `[KEY]`."""
+    match = re.match(rf"^(?:\[{re.escape(key)}\]|{re.escape(key)}\b)[\s:\-\u2013\u2014]*",
+                     title, re.IGNORECASE)
+    rest = title[match.end():].strip() if match else ""
+    return rest or title
+
+
+def _row(board: Board, item: dict[str, Any], group: str) -> ui.Node:
     ref = item["ref"]
     title = item["title"]
-    if group == _ticket(title) and title.upper().startswith(f"{group}:"):
-        title = title[len(group) + 1:].lstrip()  # the card head already names the ticket
+    if group == _ticket(title):  # the card head already shows the key, bracket or colon form
+        title = _clean_title(title, group)
     return ui.col(  # a plain click anywhere on the row opens the MR in Tern's link handling
         ui.row(_state_node(item),
                ui.text(title, grow=1, truncate="end", key=f"title:{ref}"),
                gap="sm", align="center", key=f"head:{ref}"),
-        _meta(item, f"meta:{ref}", show_repo),
+        _meta(item, f"meta:{ref}"),
         gap="xs", key=f"mr:{ref}", title=item["approval_error"] or item["error"] or None,
         href=item["url"] or None, actions={"click": "open"} if item["url"] else None,
         on_menu=_menu(board, item),
@@ -386,21 +520,29 @@ def _summary(items: list[dict[str, Any]]) -> ui.Node:
 def view(board: Board) -> ui.Node:
     data = board.data if isinstance(board.data, dict) else {}
     items = [item for item in data.get("mrs") or [] if isinstance(item, dict)]
+    titles = data.get("titles") if isinstance(data.get("titles"), dict) else {}
+    # A card groups MRs that share one decision: a ticket, or the single MR itself when
+    # nothing ties it to a ticket. Repo is a data source, not a decision.
     groups: dict[str, list[dict[str, Any]]] = {}
     for item in items:
-        groups.setdefault(_ticket(item["title"]) or _project(item), []).append(item)
+        groups.setdefault(_ticket(item["title"]) or item["ref"], []).append(item)
 
     cards: list[ui.Node] = []
-    for key in sorted(groups):
-        group = groups[key]
-        projects = sorted({_project(item) for item in group})
-        label = key if projects == [key] else f"{key} · {', '.join(projects)}"
-        head = f"{label} · {len(group)} MR{'s' if len(group) > 1 else ''}"
-        url = next((link[1] for item in group if (link := _ticket_link(item))), None)
-        # A card spanning repositories names each row's repository beside its MR number.
-        cards.append(ui.card(*(_row(board, item, key, len(projects) > 1) for item in group),
-                             head=[ui.span(key, href=url), head[len(key):]] if url else head,
-                             key=f"group:{key}"))
+    untitled = False
+    # Most urgent card first: a card ranks by its most urgent, then newest, MR; rows likewise.
+    ordered = {key: sorted(group, key=_order) for key, group in groups.items()}
+    for key in sorted(ordered, key=lambda key: (_order(ordered[key][0]), key)):
+        group = ordered[key]
+        first = group[0]
+        head: Any = None  # a ticketless card is one MR, whose details line names it
+        if key == _ticket(first["title"]):  # ticket card: head names the ticket
+            url = next((link[1] for item in group if (link := _ticket_link(item))), None)
+            title = titles.get(key) if url else None
+            untitled = untitled or bool(url and not title)
+            rest = f" · {title}" if title else ""
+            head = [ui.span(key, href=url), rest] if url else key + rest
+        cards.append(ui.card(*(_row(board, item, key) for item in group),
+                             head=head, key=f"group:{key}"))
 
     empty = ui.card(ui.text("No open merge requests.", key="empty-text"),
                     ui.text("Nothing authored by you is open now. Press r to check again.",
@@ -409,11 +551,13 @@ def view(board: Board) -> ui.Node:
     return ui.col(
         ui.row(
             ui.text("My open merge requests", key="h-title"),
-            ui.text(f"{count} open", tone="muted", key="h-count"),
+            ui.text(count, tone="muted", key="h-count"),
             gap="sm", wrap=True, key="header",
         ),
         _summary(items) if items else None,
         *(cards or [empty]),
+        ui.text(f"Ticket titles unavailable: {data['title_error']}", tone="muted", wrap="word",
+                key="title-error") if untitled and data.get("title_error") else None,
         gap="md", key="root",
     )
 

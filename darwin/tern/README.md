@@ -86,6 +86,7 @@ It switches by exact name to avoid Tern's numeric-ID truncation; keep session na
 
 `Ctrl+Space m` (palette: **MR board**) opens the MR board beside the focused pane, or focuses it when open; `q` closes it.
 The [`tern-ui`](tern-ui) window plugin, linked the same way, runs the [tern-ui skill](../../agents/skills/tern-ui/SKILL.md)'s `mr-board` example in place, so edits apply on the next open.
+Its ticket titles reuse omp's Atlassian MCP sign-in read-only, and pause while that token is expired.
 
 ## SDK example plugins
 

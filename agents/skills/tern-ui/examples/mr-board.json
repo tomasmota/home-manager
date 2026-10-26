@@ -1,10 +1,13 @@
 {
   "fixture": true,
-  "note": "Sample fixture: generic references only. Covers ready, waiting, draft, conflict and detail-failure rows, linked and unlinked title tickets, a ticket spanning two repositories and a ticketless row. Merge stays disabled.",
+  "note": "Sample fixture: generic references only. Covers ready, waiting, draft, conflict and detail-failure rows, linked tickets with and without titles, a ticket with no rendered Jira link, colon- and bracket-prefixed titles, a ticket spanning two repositories, two ticketless merge requests in one repository (one headless card each), an MR needing two approvals, and update times so cards order by urgency, then recency. Merge stays disabled.",
+  "titles": {"SHOP-142": "Saved searches for returning shoppers"},
+  "title_error": null,
   "mrs": [
     {
       "ref": "sample/web-app!42",
       "iid": 42,
+      "updated": "2026-01-14T09:30:00.000Z",
       "title": "SHOP-142: Add saved search filters",
       "branch": "feat/saved-search",
       "url": "https://gitlab.example.com/sample/web-app/-/merge_requests/42",
@@ -25,7 +28,8 @@
     {
       "ref": "sample/web-app!45",
       "iid": 45,
-      "title": "SHOP-151: Cache product facets",
+      "updated": "2026-01-15T16:05:00.000Z",
+      "title": "[SHOP-151] Cache product facets",
       "branch": "perf/facet-cache",
       "url": "https://gitlab.example.com/sample/web-app/-/merge_requests/45",
       "state": "opened",
@@ -34,8 +38,8 @@
       "pipeline_url": "https://gitlab.example.com/sample/web-app/-/pipelines/8994",
       "merge": "not_approved",
       "sha": "9b7e0d1c4a2f6853c9d7e0b1a4f6c8d2e3b5a709",
-      "approvals": 0,
-      "required": 1,
+      "approvals": 1,
+      "required": 2,
       "approval_error": null,
       "conflicts": false,
       "threads": true,
@@ -45,6 +49,7 @@
     {
       "ref": "sample/web-app!51",
       "iid": 51,
+      "updated": "2026-01-16T11:20:00.000Z",
       "title": "SHOP-142: Paginate saved results",
       "branch": "feat/saved-paging",
       "url": "https://gitlab.example.com/sample/web-app/-/merge_requests/51",
@@ -65,6 +70,7 @@
     {
       "ref": "sample/web-app!53",
       "iid": 53,
+      "updated": "2026-01-12T08:45:00.000Z",
       "title": "Bump lint rules",
       "branch": "chore/lint-rules",
       "url": "https://gitlab.example.com/sample/web-app/-/merge_requests/53",
@@ -83,8 +89,30 @@
       "tickets": {}
     },
     {
+      "ref": "sample/web-app!55",
+      "iid": 55,
+      "updated": "2026-01-16T14:10:00.000Z",
+      "title": "Refresh icon set",
+      "branch": "chore/icon-set",
+      "url": "https://gitlab.example.com/sample/web-app/-/merge_requests/55",
+      "state": "opened",
+      "draft": false,
+      "pipeline": "success",
+      "pipeline_url": "https://gitlab.example.com/sample/web-app/-/pipelines/9012",
+      "merge": "not_approved",
+      "sha": "1a3c5e7b9d2f4a6c8e0b2d4f6a8c0e2b4d6f8a0c",
+      "approvals": 0,
+      "required": 1,
+      "approval_error": null,
+      "conflicts": false,
+      "threads": true,
+      "error": null,
+      "tickets": {}
+    },
+    {
       "ref": "sample/billing-api!19",
       "iid": 19,
+      "updated": "2026-01-13T10:00:00.000Z",
       "title": "PAY-91: Retry failed payouts",
       "branch": "fix/payout-retry",
       "url": "https://gitlab.example.com/sample/billing-api/-/merge_requests/19",
@@ -104,6 +132,7 @@
     {
       "ref": "sample/billing-api!17",
       "iid": 17,
+      "updated": "2026-01-15T09:15:00.000Z",
       "title": "PAY-88: Reject expired mandates",
       "branch": "fix/expired-mandate",
       "url": "https://gitlab.example.com/sample/billing-api/-/merge_requests/17",
@@ -123,6 +152,7 @@
     {
       "ref": "sample/web-app!48",
       "iid": 48,
+      "updated": "2026-01-11T12:00:00.000Z",
       "title": "SHOP-160: Tighten session cookie flags",
       "branch": "chore/cookie-flags",
       "url": "https://gitlab.example.com/sample/web-app/-/merge_requests/48",
@@ -142,6 +172,7 @@
     {
       "ref": "sample/data-pipeline!7",
       "iid": 7,
+      "updated": "2026-01-16T07:40:00.000Z",
       "title": "PAY-91: Backfill retried payouts",
       "branch": "task/payout-backfill",
       "url": "https://gitlab.example.com/sample/data-pipeline/-/merge_requests/7",
