@@ -373,8 +373,7 @@ def _order(item: dict[str, Any]) -> tuple[int, float]:
 
 
 def _state_node(item: dict[str, Any]) -> ui.Node:
-    """Compact leading marker. Labels are one short word each, so badges line up by
-    themselves; pinning a wider column would only add air between state and title."""
+    """Compact trailing marker at the row's right edge, after the growing title."""
     bucket, label, tone = _state(item)
     if bucket == "ready":  # all clear: quiet text, not another filled badge
         return ui.row(ui.icon("check", tone="success"),
@@ -493,8 +492,8 @@ def _row(board: Board, item: dict[str, Any], group: str) -> ui.Node:
     if group == _ticket(title):  # the card head already shows the key, bracket or colon form
         title = _clean_title(title, group)
     return ui.col(  # a plain click anywhere on the row opens the MR in Tern's link handling
-        ui.row(_state_node(item),
-               ui.text(title, grow=1, truncate="end", key=f"title:{ref}"),
+        ui.row(ui.text(title, grow=1, truncate="end", key=f"title:{ref}"),
+               _state_node(item),  # right edge: titles align left, pills form a column
                gap="sm", align="center", key=f"head:{ref}"),
         _meta(item, f"meta:{ref}"),
         gap="xs", key=f"mr:{ref}", title=item["approval_error"] or item["error"] or None,
