@@ -28,13 +28,14 @@ tern.command({
 	title = "MR board",
 	icon = "branch",
 	run = function(cx)
-		if cx.session:focused() == nil or opening then
+		if opening then
+			cx:toast("info", "MR board is already opening")
 			return
 		end
 		opening = true
 		-- A login shell supplies the PATH (uv, tern, glab) a Dock-started app lacks.
 		-- Window pane ids are not the CLI's block ids, so the CLI resolves @focused.
-		tern.process.run({
+		local ok, err = pcall(tern.process.run, {
 			"/bin/zsh",
 			"-lc",
 			'exec uv run "$0" open my-mrs --app "$1" --focus --pane @focused',
@@ -49,5 +50,11 @@ tern.command({
 				later:toast("error", "MR board did not open", failure(result))
 			end
 		end)
+		if ok then
+			cx:toast("info", "Opening MR board")
+		else
+			opening = false
+			cx:toast("error", "MR board did not open", tostring(err))
+		end
 	end,
 })
