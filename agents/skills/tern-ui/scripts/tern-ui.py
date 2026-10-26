@@ -336,9 +336,9 @@ def cmd_open(args: argparse.Namespace) -> int:
     name = args.name
     directory = board_dir(name)
     app = resolve_app(directory, args.app)
-    pane = os.environ.get("TERN_PANE", "")
-    if not pane.isdigit():
-        raise CliError("this command works only inside a tern pane: TERN_PANE is not numeric")
+    pane = args.pane or os.environ.get("TERN_PANE", "")
+    if not pane:
+        raise CliError("this command works only inside a tern pane, or with --pane SPEC")
     tern = which("tern")
     try:
         probe = subprocess.run([tern, "process", pane, "--json"],
@@ -350,6 +350,13 @@ def cmd_open(args: argparse.Namespace) -> int:
     if probe.returncode != 0:
         detail = (probe.stderr or probe.stdout or f"exit {probe.returncode}").strip()
         raise CliError(f"tern cannot read pane {pane}: {detail}")
+    try:
+        resolved = json.loads(probe.stdout).get("pane")
+    except (ValueError, AttributeError):
+        resolved = None
+    if not isinstance(resolved, int) or isinstance(resolved, bool):
+        raise CliError(f"tern process {pane} did not report a pane id; nothing was started")
+    pane = str(resolved)
     fixture = resolve_fixture(args.fixture)
     current_session = os.environ.get("PI_SESSION_ID") or None
 
@@ -704,6 +711,8 @@ def build_parser() -> argparse.ArgumentParser:
     open_parser.add_argument("--record", action="store_true", help="also keep record.jsonl")
     open_parser.add_argument("--focus", action="store_true",
                              help="for user launchers: focus the board, including one already open")
+    open_parser.add_argument("--pane", metavar="SPEC",
+                             help="split beside this pane (id or @focused) instead of $TERN_PANE")
     open_parser.set_defaults(func=cmd_open)
 
     wait = sub.add_parser("wait", help="print unread board events")

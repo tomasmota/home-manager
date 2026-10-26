@@ -28,21 +28,20 @@ tern.command({
 	title = "MR board",
 	icon = "branch",
 	run = function(cx)
-		local pane = cx.session:focused()
-		if pane == nil or opening then
+		if cx.session:focused() == nil or opening then
 			return
 		end
 		opening = true
 		-- A login shell supplies the PATH (uv, tern, glab) a Dock-started app lacks.
+		-- Window pane ids are not the CLI's block ids, so the CLI resolves @focused.
 		tern.process.run({
 			"/bin/zsh",
 			"-lc",
-			'exec uv run "$0" open my-mrs --app "$1" --focus',
+			'exec uv run "$0" open my-mrs --app "$1" --focus --pane @focused',
 			SKILL .. "/scripts/tern-ui.py",
 			SKILL .. "/examples/mr-board.py",
 		}, {
 			cwd = HOME,
-			env = { TERN_PANE = string.format("%.0f", pane) },
 			timeout_ms = 60000,
 		}, function(result, later)
 			opening = false
