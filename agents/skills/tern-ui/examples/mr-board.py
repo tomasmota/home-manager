@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 import shutil
 import webbrowser
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
@@ -27,15 +28,11 @@ PER_PAGE = 50
 TICKET = re.compile(r"\b([A-Z][A-Z0-9]{1,9}-\d+)\b")
 ACTIVE = {"running", "pending", "created", "scheduled", "preparing", "waiting_for_resource"}
 ACTIVE_POLL, IDLE_POLL = 15.0, 120.0
-PIPE_TONE = {
-    "success": "success", "failed": "error", "running": "info", "pending": "pending",
-    "created": "pending", "manual": "muted", "skipped": "muted", "canceled": "muted",
-}
-MERGE_TONE = {
-    "mergeable": "success", "not_approved": "warning", "approvals_syncing": "info",
-    "ci_must_pass": "info", "ci_still_running": "info", "discussions_not_resolved": "warning",
-    "draft": "muted", "conflict": "error", "requested_changes": "error", "checking": "pending",
-}
+FAILED = {"failed", "canceled"}
+HARD_MERGE = {"conflict", "requested_changes"}
+STATE_WIDTH = {"w": "10ch"}
+BUCKETS = (("blocked", "needs attention", "warning"), ("ready", "ready", "success"),
+           ("waiting", "waiting", "pending"), ("unknown", "unknown", "warning"))
 
 
 def glab(path: str) -> Any:
@@ -184,14 +181,98 @@ def changes(old: Any, new: Any) -> list[dict[str, Any]]:
     return events
 
 
-def _approvals(item: dict[str, Any], key: str) -> ui.Node:
-    approved, required = item["approvals"], item["required"]
-    if approved is None:
-        return ui.badge("approvals unknown", tone="muted",
-                        title=item["approval_error"] or "approvals unavailable", key=key)
-    text = f"{approved}/{required}" if required is not None else f"{approved} approved"
-    tone = ("success" if approved >= required else "warning") if required is not None else "muted"
-    return ui.badge(text, tone=tone, key=key)
+def _ci(item: dict[str, Any]) -> str:
+    pipe = (item["pipeline"] or "").lower()
+    return "CI passed" if pipe == "success" else f"CI {pipe}"
+
+
+def _reasons(item: dict[str, Any]) -> list[tuple[str, str]]:
+    """Specific blockers, most serious first, each with a span tone."""
+    if item["error"]:
+        return [("detail failed", "error")]
+    reasons: list[tuple[str, str]] = []
+    pipe = (item["pipeline"] or "").lower()
+    if item["draft"]:
+        reasons.append(("draft", "muted"))
+    if not pipe:
+        reasons.append(("pipeline unknown", "warning"))
+    elif pipe in FAILED:
+        reasons.append((_ci(item), "error"))
+    elif pipe in ACTIVE:
+        reasons.append((_ci(item), "info"))
+    if item["conflicts"] is not False:
+        reasons.append(("conflicts" if item["conflicts"] else "conflicts unknown",
+                        "error" if item["conflicts"] else "warning"))
+    if item["threads"] is not True:
+        reasons.append(("threads unknown" if item["threads"] is None else "threads open",
+                        "warning"))
+    have, need = item["approvals"], item["required"]
+    if have is None:
+        reasons.append(("approvals unknown", "warning"))
+    elif need is None:
+        reasons.append(("required approvals unknown", "warning"))
+    elif have < need:
+        short = need - have
+        reasons.append((f"{short} approval{'s' if short > 1 else ''} needed", "warning"))
+    if item["state"] != "opened":
+        reasons.append((f"state {item['state']}", "warning"))
+    if item["merge"] in {"checking", "approvals_syncing"}:
+        reasons.append((item["merge"].replace("_", " "), "info"))
+    elif not reasons and item["merge"] != "mergeable":
+        reasons.append(("merge status unknown" if item["merge"] == "unknown"
+                        else item["merge"].replace("_", " "), "warning"))
+    return reasons
+
+
+def _state(item: dict[str, Any]) -> tuple[str, str, str]:
+    """Bucket, row label and tone: ready, blocked, waiting or unknown."""
+    if not blockers(item):
+        return "ready", "ready", "success"
+    pipe = (item["pipeline"] or "").lower()
+    if (pipe in FAILED or item["conflicts"] is True or item["threads"] is False
+            or item["merge"] in HARD_MERGE or item["state"] != "opened"):
+        tone = "error" if pipe in FAILED or item["conflicts"] is True else "warning"
+        return "blocked", "blocked", tone
+    if (item["error"] or not item["pipeline"] or item["merge"] == "unknown"
+            or item["approvals"] is None or item["required"] is None
+            or item["conflicts"] is None or item["threads"] is None or not item["sha"]):
+        return "unknown", "unknown", "warning"
+    return "waiting", "waiting", "pending"
+
+
+def _state_node(item: dict[str, Any]) -> ui.Node:
+    bucket, label, tone = _state(item)
+    if bucket == "ready":  # all clear: quiet text, not another filled badge
+        inner = ui.row(ui.icon("check", tone="success"),
+                       ui.text(label, tone="success"), gap="xs")
+    else:
+        inner = ui.badge(label, tone=tone)
+    return ui.row(inner, min=STATE_WIDTH)
+
+
+def _meta(item: dict[str, Any], key: str) -> ui.Node:
+    reasons = _reasons(item)
+    done = {text for text, _ in reasons}
+    spans: list[ui.Span] = []
+
+    def add(text: str, style: str | None = None) -> None:
+        if spans:
+            spans.append(ui.span(" · ", "dim"))
+        spans.append(ui.span(text, style))
+
+    for text, tone in reasons:  # blockers lead, and bold
+        add(text, f"strong {tone}" if tone in {"error", "warning"} else tone)
+    if item["iid"]:
+        add(f"!{item['iid']}", "muted")
+    if item["branch"]:
+        add(item["branch"], "muted")
+    if item["pipeline"] and _ci(item) not in done:
+        add(_ci(item), "muted")
+    if item["approvals"] is not None and item["required"] is not None:
+        add(f"{item['approvals']}/{item['required']} approvals", "muted")
+    if not reasons and item["sha"]:  # the exact revision a merge would be pinned to
+        add(item["sha"][:8], "dim")
+    return ui.text(spans, wrap="word", key=key)
 
 
 def _open(board: Board, url: str) -> None:
@@ -249,27 +330,33 @@ def _menu(board: Board, item: dict[str, Any]) -> dict[str, Any]:
     return entries
 
 
-def _row(board: Board, item: dict[str, Any]) -> ui.Node:
+def _row(board: Board, item: dict[str, Any], group: str) -> ui.Node:
     ref = item["ref"]
-    pipe = item["pipeline"] or ""
-    thread = ("threads unknown", "muted") if item["threads"] is None else (
-        ("threads resolved", "success") if item["threads"] else ("threads open", "warning"))
-    bits: list[ui.Node] = [
-        ui.text(ref, href=item["url"] or None, tone="accent", key=f"ref:{ref}"),
-        ui.text(item["title"], grow=1, truncate="end", key=f"title:{ref}"),
-        ui.badge(pipe or "no CI", tone=PIPE_TONE.get(pipe, "muted"),
-                 href=item["pipeline_url"] or None, key=f"ci:{ref}"),
-        ui.badge((item["merge"] or "unknown").replace("_", " "),
-                 tone=MERGE_TONE.get(item["merge"], "neutral"), key=f"st:{ref}"),
-        _approvals(item, f"ap:{ref}"),
-        ui.badge(thread[0], tone=thread[1], key=f"th:{ref}"),
-    ]
-    if item["conflicts"]:
-        bits.append(ui.badge("conflicts", tone="error", key=f"cf:{ref}"))
-    if item["error"]:
-        bits.append(ui.badge("detail failed", tone="error", title=item["error"], key=f"de:{ref}"))
-    return ui.row(*bits, gap="sm", align="center", wrap=True, key=f"mr:{ref}",
-                  on_menu=_menu(board, item))
+    title = item["title"]
+    if group == _ticket(title) and title.upper().startswith(f"{group}:"):
+        title = title[len(group) + 1:].lstrip()  # the card head already names the ticket
+    return ui.col(
+        ui.row(_state_node(item),
+               ui.text(title, grow=1, truncate="end", key=f"title:{ref}"),
+               gap="sm", align="center", key=f"head:{ref}"),
+        _meta(item, f"meta:{ref}"),
+        gap="xs", key=f"mr:{ref}", title=item["approval_error"] or item["error"] or None,
+        on_menu=_menu(board, item),
+    )
+
+
+def _summary(items: list[dict[str, Any]]) -> ui.Node:
+    counts = Counter(_state(item)[0] for item in items)
+    spans: list[ui.Span] = []
+    for bucket, label, tone in BUCKETS:
+        if not counts[bucket]:
+            continue
+        if spans:
+            spans.append(ui.span(" · ", "dim"))
+        if bucket == "blocked" and counts[bucket] > 1:
+            label = "need attention"
+        spans.append(ui.span(f"{counts[bucket]} {label}", tone))
+    return ui.text(spans, wrap="word", key="summary")
 
 
 def view(board: Board) -> ui.Node:
@@ -284,21 +371,26 @@ def view(board: Board) -> ui.Node:
         group = groups[key]
         projects = sorted({_project(item) for item in group})
         label = key if projects == [key] else f"{key} · {', '.join(projects)}"
-        cards.append(ui.card(*(_row(board, item) for item in group),
-                             head=f"{label} · {len(group)} MR", key=f"group:{key}"))
+        cards.append(ui.card(*(_row(board, item, key) for item in group),
+                             head=f"{label} · {len(group)} MR{'s' if len(group) > 1 else ''}",
+                             key=f"group:{key}"))
 
+    empty = ui.card(ui.text("No open merge requests.", key="empty-text"),
+                    ui.text("Nothing authored by you is open now. Press r to check again.",
+                            tone="muted", wrap="word"), head="All clear", key="empty")
+    hint = ("Row menu: open MR, open pipeline, copy branch"
+            + (", ask agent" if board.agent_session else "")
+            + ". Merge appears only when every check is known good; it confirms first.")
     return ui.col(
         ui.row(
             ui.text("My open merge requests", key="h-title"),
-            ui.text(f"{len(items)} open", tone="muted"),
+            ui.text(f"{len(items)} open", tone="muted", key="h-count"),
             gap="sm", wrap=True, key="header",
         ),
-        *(cards or [ui.card(ui.text("No open merge requests.", key="empty-text"), key="empty")]),
-        ui.text(f"Showing up to {PER_PAGE} most recently updated open MRs. "
-                "Links open the MR and pipeline. Row menu: copy branch"
-                + (", ask agent. " if board.agent_session else ". ")
-                + "Merge appears only when every safety check is known good; it confirms first.",
-                tone="muted", key="hint"),
+        _summary(items) if items else None,
+        *(cards or [empty]),
+        ui.text(f"Up to {PER_PAGE} most recently updated MRs. {hint}",
+                tone="muted", wrap="word", key="hint"),
         gap="md", key="root",
     )
 

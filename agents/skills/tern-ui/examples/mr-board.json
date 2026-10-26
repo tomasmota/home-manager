@@ -1,6 +1,6 @@
 {
   "fixture": true,
-  "note": "Sample fixture: generic references only. Merge stays disabled.",
+  "note": "Sample fixture: generic references only. Covers ready, waiting, draft, conflict and detail-failure rows. Merge stays disabled.",
   "mrs": [
     {
       "ref": "sample/web-app!42",
@@ -37,6 +37,44 @@
       "required": 1,
       "approval_error": null,
       "conflicts": false,
+      "threads": true,
+      "error": null
+    },
+    {
+      "ref": "sample/web-app!51",
+      "iid": 51,
+      "title": "SHOP-142: Paginate saved results",
+      "branch": "feat/saved-paging",
+      "url": "https://gitlab.example.com/sample/web-app/-/merge_requests/51",
+      "state": "opened",
+      "draft": true,
+      "pipeline": "running",
+      "pipeline_url": "https://gitlab.example.com/sample/web-app/-/pipelines/9004",
+      "merge": "draft",
+      "sha": "2d4f6a8c0e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f",
+      "approvals": 0,
+      "required": 1,
+      "approval_error": null,
+      "conflicts": false,
+      "threads": true,
+      "error": null
+    },
+    {
+      "ref": "sample/billing-api!19",
+      "iid": 19,
+      "title": "PAY-91: Retry failed payouts",
+      "branch": "fix/payout-retry",
+      "url": "https://gitlab.example.com/sample/billing-api/-/merge_requests/19",
+      "state": "opened",
+      "draft": false,
+      "pipeline": "success",
+      "pipeline_url": "https://gitlab.example.com/sample/billing-api/-/pipelines/4420",
+      "merge": "conflict",
+      "sha": "6a8c0e2d4f6b8a0c2e4d6f8a0c2e4d6f8a0c2e4d",
+      "approvals": 1,
+      "required": 1,
+      "approval_error": null,
+      "conflicts": true,
       "threads": true,
       "error": null
     },
