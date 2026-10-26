@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Manage tern-ui boards: create, check, open, wait for events, list and close.
 
-A board is an app.py run by `uv` in its own tern pane. All state lives in
-$XDG_STATE_HOME/tern-ui/<name> (or ~/.local/state/tern-ui/<name>).
+A board is an app file run by `uv` in its own tern pane: the board's app.py, or
+any file passed with --app (run in place, so a versioned file stays the source).
+All state lives in $XDG_STATE_HOME/tern-ui/<name> (or ~/.local/state/tern-ui/<name>).
 """
 from __future__ import annotations
 
@@ -116,6 +117,20 @@ def resolve_fixture(value: str | None) -> Path | None:
     return path
 
 
+def resolve_app(directory: Path, value: str | None) -> Path:
+    """The board's own app.py, or a file run in place with --app."""
+    if value is None:
+        app = directory / "app.py"
+        if not app.is_file():
+            raise CliError(f"no app.py in {directory}; run `tern-ui.py new {directory.name} --from ...` "
+                           "or pass --app")
+        return app
+    app = Path(value).expanduser().resolve()
+    if not app.is_file():
+        raise CliError(f"app is not a file: {app}")
+    return app
+
+
 def board_state(launch: Any, status: Any) -> str:
     """live, closed, dead, unknown (launch but no status), or absent."""
     if isinstance(status, dict):
@@ -203,6 +218,15 @@ def still_shown(layout: dict[str, Any] | None, before: dict[str, Any]) -> bool:
     return False
 
 
+def focus_block(tern: str, scope: list[str], block: Any) -> bool:
+    try:
+        result = subprocess.run([tern, "focus", *scope, str(block)],
+                                capture_output=True, text=True, timeout=10)
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+    return result.returncode == 0
+
+
 def restore_focus(tern: str, scope: list[str], before: dict[str, Any] | None,
                   layout: dict[str, Any] | None) -> bool:
     """Restore focus only when split moved it and the old block is still visible."""
@@ -211,12 +235,7 @@ def restore_focus(tern: str, scope: list[str], before: dict[str, Any] | None,
         return False
     if not still_shown(layout, before):
         return False
-    try:
-        result = subprocess.run([tern, "focus", *scope, str(before["block"])],
-                                capture_output=True, text=True, timeout=10)
-    except (subprocess.TimeoutExpired, OSError):
-        return False
-    return result.returncode == 0
+    return focus_block(tern, scope, before["block"])
 
 
 # ---------------------------------------------------------------- commands
@@ -254,10 +273,7 @@ def uv_command(app: Path, fixture: Path | None, once: bool) -> list[str]:
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    directory = board_dir(args.name)
-    app = directory / "app.py"
-    if not app.is_file():
-        raise CliError(f"no app.py in {directory}; run `tern-ui.py new {args.name} --from ...`")
+    app = resolve_app(board_dir(args.name), args.app)
     fixture = resolve_fixture(args.fixture)
     command = uv_command(app, fixture, once=True)
     env = os.environ.copy()
@@ -302,7 +318,7 @@ def reuse_output(name: str, directory: Path, app: Path, launch: Any, status: Any
         "status": "already-running",
         "name": name,
         "dir": str(directory),
-        "app": str(app),
+        "app": launch.get("app") or str(app),
         "block": launch.get("block"),
         "session": launch.get("session"),
         "tab": launch.get("tab"),
@@ -319,9 +335,7 @@ def reuse_output(name: str, directory: Path, app: Path, launch: Any, status: Any
 def cmd_open(args: argparse.Namespace) -> int:
     name = args.name
     directory = board_dir(name)
-    app = directory / "app.py"
-    if not app.is_file():
-        raise CliError(f"no app.py in {directory}; run `tern-ui.py new {name} --from ...`")
+    app = resolve_app(directory, args.app)
     pane = os.environ.get("TERN_PANE", "")
     if not pane.isdigit():
         raise CliError("this command works only inside a tern pane: TERN_PANE is not numeric")
@@ -347,7 +361,9 @@ def cmd_open(args: argparse.Namespace) -> int:
     block_missing = False
 
     if state in ("live", "unknown"):
-        if recorded_owner and recorded_owner != current_session:
+        # Agents must not share another agent's board and event cursor; a user
+        # launcher (no PI session) may always reuse an open board.
+        if current_session and recorded_owner and recorded_owner != current_session:
             raise CliError(
                 f"board {name!r} belongs to PI session {recorded_owner} and is still open; "
                 "refusing to reuse it")
@@ -361,7 +377,10 @@ def cmd_open(args: argparse.Namespace) -> int:
                     f"cannot tell whether recorded block {recorded_block} still exists; "
                     "inspect `tern ls --json` once and do not open another board")
         if state in ("live", "unknown"):
-            emit(reuse_output(name, directory, app, launch, status, state))
+            receipt = reuse_output(name, directory, app, launch, status, state)
+            if args.focus and recorded_block is not None:
+                receipt["focused"] = focus_block(tern, window_scope(), recorded_block)
+            emit(receipt)
             return 0
 
     # state is closed/dead here (or unknown without a block)
@@ -376,10 +395,11 @@ def cmd_open(args: argparse.Namespace) -> int:
                 f"board {name!r} still has block {recorded_block} open, but its app is not running; "
                 f"close it first with `tern-ui.py close {name}`")
 
+    directory.mkdir(parents=True, exist_ok=True)
     command = launch_argv(directory, name, app, fixture, args.record)
     cwd = os.getcwd()
     scope = window_scope()
-    focus_before = shown_focus(read_layout(tern, scope))
+    focus_before = None if args.focus else shown_focus(read_layout(tern, scope))
     if (directory / "status.json").exists():
         try:
             (directory / "status.json").unlink()
@@ -616,8 +636,8 @@ def cmd_list(args: argparse.Namespace) -> int:
             boards.append({
                 "name": directory.name,
                 "dir": str(directory),
-                "app": str(directory / "app.py"),
-                "app_exists": (directory / "app.py").is_file(),
+                "app": launch.get("app") or str(directory / "app.py"),
+                "app_exists": Path(launch.get("app") or directory / "app.py").is_file(),
                 "fixture": launch.get("fixture") if launch.get("fixture")
                            else (str(directory / "fixture.json") if (directory / "fixture.json").is_file() else None),
                 "block": launch.get("block"),
@@ -673,13 +693,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = sub.add_parser("check", help="run a board once without tern")
     check.add_argument("name")
+    check.add_argument("--app", help="run this file in place instead of the board's app.py")
     check.add_argument("--fixture")
     check.set_defaults(func=cmd_check)
 
     open_parser = sub.add_parser("open", help="open a board in a new tern pane")
     open_parser.add_argument("name")
+    open_parser.add_argument("--app", help="run this file in place instead of the board's app.py")
     open_parser.add_argument("--fixture")
     open_parser.add_argument("--record", action="store_true", help="also keep record.jsonl")
+    open_parser.add_argument("--focus", action="store_true",
+                             help="for user launchers: focus the board, including one already open")
     open_parser.set_defaults(func=cmd_open)
 
     wait = sub.add_parser("wait", help="print unread board events")

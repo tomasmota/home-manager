@@ -49,6 +49,7 @@ class Board:
         self.render_errors = []
         self.directory = Path(os.environ.get("TERN_UI_DIR", "."))
         self.name = os.environ.get("TERN_UI_NAME", Path(sys.argv[0]).stem)
+        self.agent_session = os.environ.get("PI_SESSION_ID") or None
         self.session = None
         self.surface = None
         self._results = queue.Queue()
@@ -63,7 +64,7 @@ class Board:
     def emit(self, type, text, **data):
         """Queue a structured event for the single CLI wait consumer."""
         event = dict(id=uuid4().hex, at=datetime.now(timezone.utc).isoformat(),
-                     board=self.name, session=os.environ.get("PI_SESSION_ID"),
+                     board=self.name, session=self.agent_session,
                      type=type, text=text, data=data)
         line = (json.dumps(event, ensure_ascii=False, allow_nan=False) + "\n").encode()
         with (self.directory / "events.jsonl").open("ab") as out:

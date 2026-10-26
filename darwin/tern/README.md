@@ -84,6 +84,9 @@ It switches by exact name to avoid Tern's numeric-ID truncation; keep session na
 `tern-settings-apply` links it into Tern's plugin directory; reload with
 `tern plugin reload`, without restarting the daemon.
 
+`Ctrl+Space m` (palette: **MR board**) opens the MR board beside the focused pane, or focuses it when open; `q` closes it.
+The [`tern-ui`](tern-ui) window plugin, linked the same way, runs the [tern-ui skill](../../agents/skills/tern-ui/SKILL.md)'s `mr-board` example in place, so edits apply on the next open.
+
 ## SDK example plugins
 
 Home Manager installs the SDK's

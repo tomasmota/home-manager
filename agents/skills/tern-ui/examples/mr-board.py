@@ -235,7 +235,9 @@ def _merge(board: Board, item: dict[str, Any]) -> None:
 
 
 def _menu(board: Board, item: dict[str, Any]) -> dict[str, Any]:
-    entries: dict[str, Any] = {"Ask agent": lambda _event=None: _ask(board, item)}
+    entries: dict[str, Any] = {}
+    if board.agent_session:  # only an agent that opened the board can wait for asks
+        entries["Ask agent"] = lambda _event=None: _ask(board, item)
     if item["url"]:
         entries["Open MR"] = lambda _event=None: _open(board, item["url"])
     if item["pipeline_url"]:
@@ -293,8 +295,9 @@ def view(board: Board) -> ui.Node:
         ),
         *(cards or [ui.card(ui.text("No open merge requests.", key="empty-text"), key="empty")]),
         ui.text(f"Showing up to {PER_PAGE} most recently updated open MRs. "
-                "Links open the MR and pipeline. Row menu: copy branch, ask agent. "
-                "Merge appears only when every safety check is known good; it confirms first.",
+                "Links open the MR and pipeline. Row menu: copy branch"
+                + (", ask agent. " if board.agent_session else ". ")
+                + "Merge appears only when every safety check is known good; it confirms first.",
                 tone="muted", key="hint"),
         gap="md", key="root",
     )

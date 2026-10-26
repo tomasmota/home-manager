@@ -36,6 +36,7 @@ old data before comparing it.
 | API | Behaviour |
 | --- | --- |
 | `b.data`, `b.error`, `b.checked_at`, `b.busy`, `b.fixture` | Last-good data, fetch error, successful epoch timestamp, in-flight fetch, fixture flag |
+| `b.agent_session` | PI session that opened the board, else `None`; user-opened boards have no listener, so hide ask/pick actions |
 | `b.notify(text, sub=None, tone="info")` | Toast, removed after five seconds |
 | `b.emit(type, text, **data)` | Append structured event for `wait` |
 | `b.ask(text, **data)` / `b.pick(text, **data)` | Queue agent request/choice and show delivery limitation |

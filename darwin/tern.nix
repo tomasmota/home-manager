@@ -33,6 +33,11 @@
     hash = "sha256-bDV1rYULsMTh1joxQKkParIRcwMUcnSBU4L5+H5X5Jo=";
   };
   labels = ["tern-pilot-daemon"];
+  # Window plugins that tern-settings-apply links from the store into Tern's plugin directory.
+  windowPlugins = {
+    session-navigation = ./tern/session-navigation;
+    tern-ui = ./tern/tern-ui;
+  };
   keyboardConfig = {
     keymap = "tmux";
     keymap_prefix = "ctrl+space";
@@ -59,6 +64,7 @@
       "ctrl+space>ctrl+q" = "close_tab";
       "ctrl+space>i" = "inbox";
       "ctrl+space>g" = "new_git_block";
+      "ctrl+space>m" = "plugin.tern-ui.mr-board";
     };
   };
   keyboardSettings = pkgs.writeText "tern-keyboard-settings.json" (builtins.toJSON keyboardConfig);
@@ -97,11 +103,13 @@
     directory="''${TERN_CONFIG_DIR:-$HOME/Library/Application Support/Tern}"
     target="$directory/settings.json"
     mkdir -p "$directory"
-    plugin="$directory/plugins/session-navigation"
-    if [ -e "$plugin" ] && [ ! -L "$plugin" ]; then
-      echo "Tern session-navigation path is not a symlink; refusing replacement" >&2
-      exit 1
-    fi
+    for name in ${lib.concatStringsSep " " (lib.attrNames windowPlugins)}; do
+      plugin="$directory/plugins/$name"
+      if [ -e "$plugin" ] && [ ! -L "$plugin" ]; then
+        echo "Tern $name plugin path is not a symlink; refusing replacement" >&2
+        exit 1
+      fi
+    done
     tmp=$(mktemp "$directory/.settings.json.XXXXXX")
     trap 'rm -f "$tmp"' EXIT
     if [ -e "$target" ]; then
@@ -115,7 +123,10 @@
     chmod 600 "$tmp"
     mv -f "$tmp" "$target"
     mkdir -p "$directory/plugins"
-    ln -sfn ${./tern/session-navigation} "$plugin"
+    ${lib.concatStrings (lib.mapAttrsToList (name: source: ''
+        ln -sfn ${source} "$directory/plugins/${name}"
+      '')
+      windowPlugins)}
   '';
   preflight = pkgs.writeShellScript "tern-pilot-preflight" ''
     set -euo pipefail

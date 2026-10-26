@@ -1,0 +1,6 @@
+schema = 1
+id = "tern-ui"
+name = "tern-ui boards"
+version = "0.1.0"
+description = "Open the standing MR board beside the focused pane."
+window = "window.luau"
