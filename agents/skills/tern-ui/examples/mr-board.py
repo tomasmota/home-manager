@@ -255,19 +255,21 @@ def _meta(item: dict[str, Any], key: str) -> ui.Node:
     done = {text for text, _ in reasons}
     spans: list[ui.Span] = []
 
-    def add(text: str, style: str | None = None) -> None:
+    def add(text: str, style: str | None = None, href: str | None = None) -> None:
         if spans:
             spans.append(ui.span(" · ", "dim"))
-        spans.append(ui.span(text, style))
+        spans.append(ui.span(text, style, href=href or None))
 
-    for text, tone in reasons:  # blockers lead, and bold
-        add(text, f"strong {tone}" if tone in {"error", "warning"} else tone)
+    ci = _ci(item) if item["pipeline"] else None
+    for text, tone in reasons:  # blockers lead, and bold; a CI blocker links its pipeline
+        add(text, f"strong {tone}" if tone in {"error", "warning"} else tone,
+            item["pipeline_url"] if text == ci else None)
     if item["iid"]:
-        add(f"!{item['iid']}", "muted")
+        add(f"!{item['iid']}", "muted", item["url"])
     if item["branch"]:
         add(item["branch"], "muted")
-    if item["pipeline"] and _ci(item) not in done:
-        add(_ci(item), "muted")
+    if ci and ci not in done:
+        add(ci, "muted", item["pipeline_url"])
     if item["approvals"] is not None and item["required"] is not None:
         add(f"{item['approvals']}/{item['required']} approvals", "muted")
     if not reasons and item["sha"]:  # the exact revision a merge would be pinned to
@@ -337,7 +339,7 @@ def _row(board: Board, item: dict[str, Any], group: str) -> ui.Node:
         title = title[len(group) + 1:].lstrip()  # the card head already names the ticket
     return ui.col(
         ui.row(_state_node(item),
-               ui.text(title, grow=1, truncate="end", key=f"title:{ref}"),
+               ui.text(title, grow=1, truncate="end", key=f"title:{ref}", href=item["url"] or None),
                gap="sm", align="center", key=f"head:{ref}"),
         _meta(item, f"meta:{ref}"),
         gap="xs", key=f"mr:{ref}", title=item["approval_error"] or item["error"] or None,
