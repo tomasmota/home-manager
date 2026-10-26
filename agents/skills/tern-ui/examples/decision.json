@@ -1,0 +1,52 @@
+{
+  "fixture": true,
+  "id": "feature-flag-evaluation",
+  "title": "Where should feature flags be evaluated?",
+  "context": "A public HTTP API and its web client need per-account flags. Flags change without a redeploy, assignment stays consistent across two regions, and peak traffic is 8k requests per second.",
+  "constraints": [
+    "Change flags without redeploying",
+    "Consistent per-account bucketing",
+    "p99 added latency under 5 ms",
+    "No new always-on infrastructure"
+  ],
+  "recommendation": {
+    "option": "in-service",
+    "reason": "Keep request context and latency local; share fixtures between the Go and TypeScript evaluators so parity is testable."
+  },
+  "options": [
+    {
+      "id": "in-service",
+      "title": "Evaluate inside each service",
+      "summary": "Load rules from the config service and evaluate in-process per request.",
+      "rationale": "Request context is already present, and the decision stays next to the code that uses it.",
+      "tradeoff": "Two evaluator implementations must agree on bucketing and defaults.",
+      "pros": ["Lowest latency", "Full request context", "Survives control-plane outage"],
+      "cons": ["Two SDKs to keep in parity", "Per-service cache and refresh loop"],
+      "effort": "Medium · 4–6 days",
+      "risk": "Low"
+    },
+    {
+      "id": "edge",
+      "title": "Evaluate at the edge",
+      "summary": "Push rules to edge workers and decide before requests reach origin.",
+      "rationale": "One evaluation point serves every region and runtime without changing service code.",
+      "tradeoff": "The edge sees less context and adds a platform dependency to the request path.",
+      "pros": ["Single implementation", "Near-user latency", "Region-local rollout"],
+      "cons": ["Runtime limits and cold starts", "Limited account state", "Harder local replay"],
+      "effort": "High · 2–3 weeks",
+      "risk": "Medium"
+    },
+    {
+      "id": "precompute",
+      "title": "Precompute assignments in a background job",
+      "summary": "Write per-account assignments to a low-latency store that services read.",
+      "rationale": "Evaluation leaves the request path and every runtime reads the same plain values.",
+      "tradeoff": "Assignments lag rule changes and storage grows with accounts × flags.",
+      "pros": ["Cheap constant-time reads", "Deterministic output", "Auditable assignments"],
+      "cons": ["Lag after a change", "Storage growth", "Backfill and invalidation work"],
+      "effort": "High · 2 weeks",
+      "risk": "Medium"
+    }
+  ],
+  "note": "SAMPLE fixture: same generic static decision as live mode."
+}

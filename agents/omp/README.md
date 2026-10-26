@@ -36,6 +36,9 @@ Discovery semantics: `docs/context-files.md` in the [upstream omp repository](ht
 sessions, separate from omp's built-in same-session handoff. Interactive terminal
 testing follows the [native rules](RULES.md).
 
+[`tern-ui`](../skills/tern-ui/SKILL.md) builds task-specific live panes with a
+file-backed wait relay and confirmed direct actions; it needs no omp extension.
+
 No switch is needed for skill edits: fresh processes discover them, and existing
 sessions can use `/reload-plugins` (which also reconnects MCP servers). Check
 discovery without a model call with `omp read skill://<name>`.

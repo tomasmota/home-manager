@@ -1,0 +1,17 @@
+{
+  "fixture": true,
+  "job": "local-report-build",
+  "source": "fixture",
+  "state": "running",
+  "step": "test",
+  "progress": 0.4,
+  "updated_at": "2026-10-25T09:06:10Z",
+  "note": "Sample fixture: local job status, not a deployment and not remote data.",
+  "steps": [
+    {"name": "prepare", "state": "done", "detail": "12 changed inputs", "at": "2026-10-25T09:00:40Z"},
+    {"name": "build", "state": "done", "detail": "artifact 4.2 MB", "at": "2026-10-25T09:02:25Z"},
+    {"name": "test", "state": "running", "detail": "412 of 1,068 checks", "at": "2026-10-25T09:05:50Z"},
+    {"name": "package", "state": "pending", "detail": "", "at": ""},
+    {"name": "publish", "state": "pending", "detail": "", "at": ""}
+  ]
+}
