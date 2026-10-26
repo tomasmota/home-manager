@@ -14,6 +14,7 @@
 
   imports = [
     ./shell/zsh.nix
+    ./shell/learn.nix
     (import ./git.nix {inherit pkgs config;})
   ];
 
