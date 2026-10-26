@@ -101,10 +101,11 @@ def _item(row: dict[str, Any]) -> dict[str, Any]:
         conflicts=detail.get("has_conflicts"),
         threads=detail.get("blocking_discussions_resolved"),
     )
-    tickets: dict[str, str] = {}  # title links first, then description links
-    for field in ("title_html", "description_html"):
-        for url, key in JIRA_LINK.findall(str(detail.get(field) or "")):
-            tickets.setdefault(key, html.unescape(url))
+    # Only the title names the MR's ticket: GitLab's Jira integration also links
+    # key-shaped prose in descriptions, such as the ACME challenge type DNS-01.
+    tickets: dict[str, str] = {}
+    for url, key in JIRA_LINK.findall(str(detail.get("title_html") or "")):
+        tickets.setdefault(key, html.unescape(url))
     item["tickets"] = tickets
     try:
         data = glab(f"projects/{pid}/merge_requests/{iid}/approvals")
@@ -138,12 +139,12 @@ def _ticket(title: str) -> str | None:
 
 
 def _ticket_link(item: dict[str, Any]) -> tuple[str, str] | None:
-    """The MR's ticket and its Jira URL: the title's ticket, else the description's first."""
-    tickets = item.get("tickets") or {}
+    """The title's ticket and the Jira URL GitLab rendered for it, if any."""
     key = _ticket(item["title"])
-    if key:
-        return (key, tickets[key]) if key in tickets else None
-    return next(iter(tickets.items()), None)
+    if not key:
+        return None
+    url = (item.get("tickets") or {}).get(key)
+    return (key, url) if url else None
 
 
 def _repo(item: dict[str, Any]) -> str:
@@ -204,7 +205,8 @@ def _ci(item: dict[str, Any]) -> str:
 
 
 def _reasons(item: dict[str, Any]) -> list[tuple[str, str]]:
-    """Specific blockers, most serious first, each with a span tone."""
+    """Specific blockers, most serious first, each with a span tone. Every MR needs an
+    approval, so a shortfall shows only in the muted approval count."""
     if item["error"]:
         return [("detail failed", "error")]
     reasons: list[tuple[str, str]] = []
@@ -228,14 +230,12 @@ def _reasons(item: dict[str, Any]) -> list[tuple[str, str]]:
         reasons.append(("approvals unknown", "warning"))
     elif need is None:
         reasons.append(("required approvals unknown", "warning"))
-    elif have < need:
-        short = need - have
-        reasons.append((f"{short} approval{'s' if short > 1 else ''} needed", "warning"))
     if item["state"] != "opened":
         reasons.append((f"state {item['state']}", "warning"))
     if item["merge"] in {"checking", "approvals_syncing"}:
         reasons.append((item["merge"].replace("_", " "), "info"))
-    elif not reasons and item["merge"] != "mergeable":
+    elif not reasons and item["merge"] != "mergeable" and not (
+            item["merge"] == "not_approved" and have < need):
         reasons.append(("merge status unknown" if item["merge"] == "unknown"
                         else item["merge"].replace("_", " "), "warning"))
     return reasons
@@ -267,7 +267,7 @@ def _state_node(item: dict[str, Any]) -> ui.Node:
     return ui.row(inner, min=STATE_WIDTH)
 
 
-def _meta(item: dict[str, Any], key: str) -> ui.Node:
+def _meta(item: dict[str, Any], key: str, show_repo: bool) -> ui.Node:
     reasons = _reasons(item)
     done = {text for text, _ in reasons}
     spans: list[ui.Span] = []
@@ -282,17 +282,15 @@ def _meta(item: dict[str, Any], key: str) -> ui.Node:
         add(text, f"strong {tone}" if tone in {"error", "warning"} else tone,
             item["pipeline_url"] if text == ci else None)
     if item["iid"]:  # links draw in link color; muted would hide them
-        add(f"!{item['iid']}", None if item["url"] else "muted", item["url"])
-    ticket = _ticket_link(item)
-    if ticket and not _ticket(item["title"]):  # a title ticket is linked in the card head
-        add(ticket[0], None, ticket[1])
+        ref = f"{_project(item) if show_repo else ''}!{item['iid']}"
+        add(ref, None if item["url"] else "muted", item["url"])
     if item["branch"]:
         add(item["branch"], "muted")
     if ci and ci not in done:
         add(ci, None if item["pipeline_url"] else "muted", item["pipeline_url"])
     if item["approvals"] is not None and item["required"] is not None:
         add(f"{item['approvals']}/{item['required']} approvals", "muted")
-    if not reasons and item["sha"]:  # the exact revision a merge would be pinned to
+    if item["sha"] and not blockers(item):  # the exact revision a merge would be pinned to
         add(item["sha"][:8], "dim")
     return ui.text(spans, wrap="word", key=key)
 
@@ -355,7 +353,7 @@ def _menu(board: Board, item: dict[str, Any]) -> dict[str, Any]:
     return entries
 
 
-def _row(board: Board, item: dict[str, Any], group: str) -> ui.Node:
+def _row(board: Board, item: dict[str, Any], group: str, show_repo: bool) -> ui.Node:
     ref = item["ref"]
     title = item["title"]
     if group == _ticket(title) and title.upper().startswith(f"{group}:"):
@@ -364,7 +362,7 @@ def _row(board: Board, item: dict[str, Any], group: str) -> ui.Node:
         ui.row(_state_node(item),
                ui.text(title, grow=1, truncate="end", key=f"title:{ref}"),
                gap="sm", align="center", key=f"head:{ref}"),
-        _meta(item, f"meta:{ref}"),
+        _meta(item, f"meta:{ref}", show_repo),
         gap="xs", key=f"mr:{ref}", title=item["approval_error"] or item["error"] or None,
         href=item["url"] or None, actions={"click": "open"} if item["url"] else None,
         on_menu=_menu(board, item),
@@ -398,28 +396,24 @@ def view(board: Board) -> ui.Node:
         projects = sorted({_project(item) for item in group})
         label = key if projects == [key] else f"{key} · {', '.join(projects)}"
         head = f"{label} · {len(group)} MR{'s' if len(group) > 1 else ''}"
-        url = next((link[1] for item in group
-                    if (link := _ticket_link(item)) and link[0] == key), None)
-        cards.append(ui.card(*(_row(board, item, key) for item in group),
+        url = next((link[1] for item in group if (link := _ticket_link(item))), None)
+        # A card spanning repositories names each row's repository beside its MR number.
+        cards.append(ui.card(*(_row(board, item, key, len(projects) > 1) for item in group),
                              head=[ui.span(key, href=url), head[len(key):]] if url else head,
                              key=f"group:{key}"))
 
     empty = ui.card(ui.text("No open merge requests.", key="empty-text"),
                     ui.text("Nothing authored by you is open now. Press r to check again.",
                             tone="muted", wrap="word"), head="All clear", key="empty")
-    hint = ("Click a row to open its MR; ⌘-click a link to open it. Row menu: open MR, ticket "
-            "or pipeline, copy branch" + (", ask agent" if board.agent_session else "")
-            + ". Merge appears only when every check is known good; it confirms first.")
+    count = f"{len(items)}+" if len(items) >= PER_PAGE else str(len(items))  # the list is capped
     return ui.col(
         ui.row(
             ui.text("My open merge requests", key="h-title"),
-            ui.text(f"{len(items)} open", tone="muted", key="h-count"),
+            ui.text(f"{count} open", tone="muted", key="h-count"),
             gap="sm", wrap=True, key="header",
         ),
         _summary(items) if items else None,
         *(cards or [empty]),
-        ui.text(f"Up to {PER_PAGE} most recently updated MRs. {hint}",
-                tone="muted", wrap="word", key="hint"),
         gap="md", key="root",
     )
 

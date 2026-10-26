@@ -1,6 +1,6 @@
 {
   "fixture": true,
-  "note": "Sample fixture: generic references only. Covers ready, waiting, draft, conflict, detail-failure and ticket-link rows (linked, unlinked, description-only). Merge stays disabled.",
+  "note": "Sample fixture: generic references only. Covers ready, waiting, draft, conflict and detail-failure rows, linked and unlinked title tickets, a ticket spanning two repositories and a ticketless row. Merge stays disabled.",
   "mrs": [
     {
       "ref": "sample/web-app!42",
@@ -80,7 +80,7 @@
       "conflicts": false,
       "threads": true,
       "error": null,
-      "tickets": {"SHOP-163": "https://jira.example.com/browse/SHOP-163"}
+      "tickets": {}
     },
     {
       "ref": "sample/billing-api!19",
@@ -142,8 +142,8 @@
     {
       "ref": "sample/data-pipeline!7",
       "iid": 7,
-      "title": "DATA-31: Backfill settlement events",
-      "branch": "task/settlement-backfill",
+      "title": "PAY-91: Backfill retried payouts",
+      "branch": "task/payout-backfill",
       "url": "https://gitlab.example.com/sample/data-pipeline/-/merge_requests/7",
       "state": "opened",
       "draft": false,
