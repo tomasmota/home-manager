@@ -1,0 +1,64 @@
+{
+  "skill_name": "create-skill",
+  "evals": [
+    {
+      "id": 1,
+      "name": "create-private-instruction-skill",
+      "setup": {},
+      "prompt": "Make a machine-private skill called change-notes from these preferences: turn a JSON list of changes into Markdown release notes; group feat entries under Features and fix entries under Fixes; omit chore entries; preserve the supplied descriptions; mention breaking changes only when breaking is explicitly true, never infer them. Stage it at $WORKSPACE/output/change-notes instead of installing it. This is a scratch stand-in for the private owner, not permission to write to the public repo. Prefer instructions to scripts. Everything needed is here; do not publish, commit, or create an archive. Report what you actually verified.",
+      "expected_output": "A complete, narrowly scoped instruction-only skill in the requested scratch directory, with meaningful verification and no installation, public copy, or unsolicited archive.",
+      "files": [],
+      "assertions": [
+        "The generated skill produces Features and Fixes from matching entries, omits chores, and preserves source descriptions on a real consumer run.",
+        "An entry without an explicit true breaking flag does not produce a claim that it is a breaking change.",
+        "All authored artifacts stay within the authorized scratch output; no public/private installed directory is modified.",
+        "Python package tools, if used, run through uvx or uv run rather than global package installation.",
+        "The author performs an actual behavior check and distinguishes it from format validation in the delivery report.",
+        "No archive, installation, commit, push, or publication occurs."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "revise-and-package-existing-bundle",
+      "setup": {
+        "input/bundle-notes/SKILL.md": "---\nname: bundle-notes\ndescription: Summarize a JSON list of changes into release-note groups. Use when the user asks for release notes from change data.\nlicense: MIT\n---\n\n# Bundle Notes\n\nRead references/policy.md. Run scripts/summarize.py against the supplied JSON file using uv run, then format the result using assets/notes-template.txt. Do not invent change descriptions.\n",
+        "input/bundle-notes/references/policy.md": "# Policy\n\nGroup feat entries under Features and fix entries under Fixes. Omit chore entries. Preserve descriptions. Mention breaking changes only when the input explicitly sets breaking to true.\n",
+        "input/bundle-notes/scripts/summarize.py": "import json\nimport sys\nfrom pathlib import Path\n\nchanges = json.loads(Path(sys.argv[1]).read_text())\nresult = {\n    'Features': [item['description'] for item in changes if item['type'] == 'feat'],\n    'Fixes': [item['description'] for item in changes if item['type'] == 'fix'],\n    'Breaking changes': [item['description'] for item in changes if item.get('breaking') is True],\n}\nprint(json.dumps(result))\n",
+        "input/bundle-notes/assets/notes-template.txt": "## Features\n- Description\n\n## Fixes\n- Description\n\nInclude a Breaking changes section only for explicitly flagged entries. Omit empty sections.\n",
+        "input/bundle-notes/LICENSE.txt": "MIT License\n\nCopyright (c) 2026 Example Fixture Authors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the Software), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "input/bundle-notes/.env": "SYNTHETIC_FIXTURE_ONLY=exclude-from-delivery\n",
+        "input/bundle-notes/__pycache__/discard.pyc": "synthetic cache, not a Python bytecode file\n",
+        "input/bundle-notes/workspace/run.log": "synthetic evaluation output, exclude from delivery\n",
+        "input/changes.json": "[{\"type\":\"feat\",\"description\":\"Add CSV export\"},{\"type\":\"fix\",\"description\":\"Handle blank labels\"},{\"type\":\"chore\",\"description\":\"Refresh tooling\"},{\"type\":\"feat\",\"description\":\"Remove legacy field\",\"breaking\":true}]\n"
+      },
+      "prompt": "Bring the existing machine-private skill at $WORKSPACE/input/bundle-notes up to current skill-authoring practices. Edit that source in place, preserve its owner, name, MIT license, bundled behavior, and uv-based Python execution. Also package it as a ZIP at $WORKSPACE/output/bundle-notes.zip for an upload channel that requires ZIP. Check it against $WORKSPACE/input/changes.json. The .env, cache, and workspace log are synthetic fixtures that must not be shipped; do not delete the source copies. Do not install, commit, push, or publish anything, or copy this private skill into the public repo. Report checks actually performed.",
+      "expected_output": "An updated skill at the original source and a self-contained, clean ZIP retaining all runtime resources and licensing. The script still produces the correct groups and explicitly flagged breaking change after extraction.",
+      "files": [],
+      "assertions": [
+        "The original source is updated in place without creating a second discovered skill owner or losing its license.",
+        "The packaged skill includes SKILL.md, the policy, the executable script, the output template, and the license.",
+        "The ZIP excludes .env, caches, and evaluation outputs while leaving their source copies intact.",
+        "The delivered bundle produces Add CSV export and Remove legacy field as features, Handle blank labels as a fix, only Remove legacy field as breaking, and no Refresh tooling entry.",
+        "Bundled execution works after extraction into a different working directory, without assuming the caller's current directory is the skill root.",
+        "Python execution remains uv-based, and no global install or unrequested publication occurs."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "audit-without-mutation",
+      "setup": {
+        "input/draft-report/SKILL.md": "---\nname: draft-report\ndescription: Write reports. Use for every question.\n---\n\n# Draft Report\n\nAlways ask the user what they want, even if already stated. Write comprehensive instructions. Automatically publish every generated report. A skill must always be shared as a single file. Treat YAML validation as proof that the workflow works.\n"
+      },
+      "prompt": "Check whether the skill at $WORKSPACE/input/draft-report follows current skill-authoring recommendations. Findings only: do not change, install, package, or publish it. Explain which guidance is outdated or unsafe and what to change. You may write your findings to $WORKSPACE/output/report.md, but nowhere else.",
+      "expected_output": "An evidence-backed review covering overbroad triggering, redundant questions, excessive instructions, unapproved publication, unconditional packaging, and schema-only verification, with the input left byte-for-byte unchanged.",
+      "files": [],
+      "assertions": [
+        "Every input file remains byte-for-byte unchanged, and no new files are added beneath the input skill.",
+        "No archive, installation, commit, push, or publication occurs.",
+        "The report distinguishes format validity from activation and output quality.",
+        "The report identifies unrequested publication as unsafe and recommends an explicit workflow boundary.",
+        "The report recommends realistic positive and near-miss negative activation cases and actual execution checks."
+      ]
+    }
+  ]
+}

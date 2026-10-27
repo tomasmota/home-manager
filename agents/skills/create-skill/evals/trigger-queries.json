@@ -1,0 +1,18 @@
+[
+  {"query":"turn the workflow we just used into a reusable skill","should_trigger":true},
+  {"query":"my create-skill skill is kinda old, check if it is still up to date","should_trigger":true},
+  {"query":"update the description in my pdf-extraction SKILL.md so it activates for scanned documents","should_trigger":true},
+  {"query":"test whether my incident-review skill actually improves the reports","should_trigger":true},
+  {"query":"this skill fires for unrelated tasks; help me tune its trigger boundaries","should_trigger":true},
+  {"query":"package this skill and its scripts for a ZIP-only upload form","should_trigger":true},
+  {"query":"make a private machine-only skill from these preferences, keep it out of my public repo","should_trigger":true},
+  {"query":"revamp our existing skill but preserve its owner and uvx commands","should_trigger":true},
+  {"query":"use my existing release-notes skill to summarize this change list","should_trigger":false},
+  {"query":"explain progressive disclosure in agent systems","should_trigger":false},
+  {"query":"create a Python script that extracts text from a PDF","should_trigger":false},
+  {"query":"review this application's error handling, not its agent instructions","should_trigger":false},
+  {"query":"zip these vacation photos","should_trigger":false},
+  {"query":"run ruff with uvx on the files I changed","should_trigger":false},
+  {"query":"draft release notes using the workflow already installed; do not change that workflow","should_trigger":false},
+  {"query":"write a job description listing the engineering skills we need","should_trigger":false}
+]
