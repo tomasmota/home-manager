@@ -74,7 +74,7 @@ node IDs; don't put a duplicate key among siblings.
 | `ui.diff(text, path=..., mode="auto")` | Unified or split diff |
 | `ui.kv([("name", "value")])` | Aligned properties |
 | `ui.badge(text, tone="warning")` | Labelled state |
-| `ui.list(ui.item(label, key="a"), on_select=fn)` | Selectable items; select event has `item` |
+| `ui.list(ui.item(label, key="a"), on_select=fn)` | Select event `item` is the full item node id, not `"a"` |
 | `ui.tabs([{"id":"a", "label":"A"}], active="a", on_select=fn)` | Tab selection owned by app |
 | `ui.checklist([{"id":"g", "title":"Gates", "items":[{"id":"ci", "text":"CI", "status":"active"}]}])` | Gates: pending/active/done/dropped/blocked |
 | `ui.progress(0.5, "Uploading")`, `ui.spinner("Running")` | Progress or indeterminate activity |
@@ -90,6 +90,28 @@ Rows do not have their own click/menu events. Use cards/list items when rows
 need actions. Tree/picker/prefs/editor kinds exist too; consult SDK signatures
 and docs before using them. Editors/input own text/caret state in the app;
 they are not a browser's automatically managed text fields.
+
+For a list select event, `event.id` is the list's node id and `event.item` is
+the item's full node id. Map back to the data identity before persisting it:
+when item keys are your data ids, strip the exact `event.id + "."` prefix.
+Do not store the wire id as a domain id or split away dots within a data id.
+
+### Editable field focus
+
+An `on_edit` handler alone does not make a field usable. Answer `on_focus` with
+`b.surface.focus(event.id)`; view diffs never send focus automatically. Give
+fields stable keys.
+
+The kit's default loop handles `q`/`r`, not text entry, and does not negotiate
+native `edit`/`undo`. Editable apps need app-owned key handling or a verified SDK
+edit setup; native editing also depends on Tern's settings and version.
+Focus capture is not editing: insert `key.text` into the focused buffer,
+handle deletion/caret movement, render its new text/cursor, and persist changes.
+Do not just suppress board shortcuts while waiting for `on_edit`.
+
+While a field owns input, `q`/`r` must be text, not board shortcuts. Cursor/edit
+offsets are UTF-16 code units. Verify by clicking, typing and reading the saved
+value, not by calling an edit handler. See the [input contract](https://docs.stencil.so/tern/elements/input.html).
 
 ## Actions, images and custom layout
 

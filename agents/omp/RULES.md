@@ -10,3 +10,9 @@
 - For read-only GitLab API requests, always use `glab api --method GET <endpoint>`. Do not rely on the implicit method, add request-body flags, or specify another method later in the command.
 - Prefer the Atlassian MCP for Jira and Confluence; make any fallback to browser automation or direct HTTP explicit.
 - For Google Cloud architecture, IAM, APIs, SDKs, or product behaviour, MUST use the Google Developer Knowledge MCP before generic web search.
+
+# Documentation
+
+This rule supersedes the built-in Workflow → Cleanup requirement to update docs/changelog for every permanent fix or feature.
+
+Update documentation when existing guidance becomes incorrect or essential, non-obvious operational knowledge needs recording. Do not add prose that merely restates code, configuration, defaults, or their evident implications. A permanent change does not inherently require a documentation change.

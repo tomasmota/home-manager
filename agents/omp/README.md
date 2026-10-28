@@ -151,6 +151,10 @@ additional background, never implicitly the session's current work item.
 
 Regression checks: `node --test agents/omp/guard.test.mjs`.
 
+## Session reference
+
+[`session-id.ts`](session-id.ts) makes `/sid` or `Alt+Shift+S` copy the absolute transcript path, which an agent can read directly or pass as `seance`'s `sourceSession` from any project on this machine. For a readable thread, run `omp render "<copied-path>" --plain`; the same path also works with `omp --resume`.
+
 ## MCP context
 
 `mcp.json` excludes Chrome performance and memory tools at discovery and uses [Atlassian v2's deferred tool catalog](https://support.atlassian.com/atlassian-ai-gateway/docs/supported-tools/).

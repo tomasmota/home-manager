@@ -1,26 +1,29 @@
-# Choose a UI for the question
+# Choose a shape for the task
 
-Do not let the example dictate the app. A task-specific UI may mix native kinds,
-HTML elements with a stylesheet, generated SVG/PNG blobs and pointer handlers.
+Apply the skill's selection rule and design method first. These are interaction
+patterns, not activation triggers or a catalogue of dashboards to build.
+A workspace may mix native kinds, HTML/CSS, generated images and pointer handlers.
 It is a Python process, not a browser: no JavaScript or arbitrary DOM APIs.
 
-| Question | Useful shape | Action |
+| Pattern | Useful shape | Updates and optional interaction |
 | --- | --- | --- |
-| What blocks this work? | Ticket cards with MR rows, gate checklist, hazard banner | Open MR, explain blocker, confirmed merge |
-| What is still progressing? | Resource cards, progress, transition timeline | Inspect logs, request diagnosis |
-| Which option do I want? | Option cards with rationale/tradeoffs, pick buttons | Emit a choice to the agent |
-| What needs review? | Selectable queue, preview/diff, disposition controls | Keep/skip/approve under task scope |
-| How is the run doing? | Stage checklist, chart, current command/log excerpt | Open output, confirmed stop |
-| Which leads need attention? | Stage groups, age/deadline, selected lead details | Open contact, queue reply request |
+| Watcher | Progress, blockers, evidence and freshness | Read changing external state; inspect details; controls only if useful |
+| Workbench | Pinned comparisons, source-linked notes or a stepped explanation | Local edits, artifacts, agent results or example inputs; annotate, compare or explore |
+| Queue | Stable item identities, preview/diff and disposition | New items and individual verdicts; inspect, accept, reject or defer |
+
+For an explanatory workbench, let local navigation or example inputs reveal
+relationships and consequences. Keep sources, assumptions and illustrative
+scenarios distinct from observations of a real system; a simulated outcome is
+not a live health check.
 
 ## Layout
 
-- Put the answer and next action first; raw fields belong in details. Carry in
-  context the API cannot know: runbook gates, dependencies, deadlines, hazards.
+- Put the working question or concept first; raw fields belong in details.
+  Keep evidence attached to decisions and feedback to its candidate.
 - Design for a narrow split (~50 columns). Wrap badge rows, clamp long titles,
   collapse low-value details. Don't shrink labels to cram in a desktop layout.
-- Group things that share a decision, not just a data source. Several repos for
-  one issue belong together. A single changing MR can still justify a board.
+- Group things that share a decision or activity, not just a data source.
+  The task determines the boundary; an object's existence does not justify a pane.
 - Native semantic tones plus text: success, error, warning, pending, muted.
   Never use colour alone to encode state. Unknown is not success or zero.
 - Main scrolls; the kit's dock pins freshness/keys; the layer carries transient
@@ -31,11 +34,18 @@ It is a Python process, not a browser: no JavaScript or arbitrary DOM APIs.
 
 ## Data and transitions
 
+Choose update sources deliberately. A local workbench may change only through
+user input, file changes, or new agent results; do not invent a remote polling
+dependency. Keep annotations and draft decisions separate from replaceable
+fetched data so refreshes cannot erase the user's work.
+
+For external state that benefits from polling:
+
 | Situation | Typical interval |
 | --- | --- |
-| Running CI / short job | 15 seconds |
-| Waiting on reviews / idle work | 2–5 minutes |
-| Long provisioning / handover | 15–30 minutes |
+| Active rollout or experiment within an ongoing workflow | 15 seconds |
+| Review queue awaiting responses | 2–5 minutes |
+| Slow provisioning or handover | 15–30 minutes |
 
 Choose cadence from actual task behaviour and API limits; `every(data)` supports
 adaptive intervals. The kit keeps polling while hidden because the agent may
@@ -52,13 +62,15 @@ silently dropping rows. Global fetch failure leaves the last successful view
 visible with its age and error. Don't overwrite a known state with invented
 zero approvals or an assumed healthy pipeline.
 
-## Actions
+## Interactions
 
-Links and copy are local. `ask`/`pick` queue context for the agent's `wait`.
-A mutation goes through `board.command`: explicit target, exact command,
-confirmation, asynchronous execution, result event, then refresh. The app can
-perform it directly; no agent turn is required. For judgment-heavy or
-underspecified actions, prefer an agent request rather than guessing a command.
+Local selection, filtering, annotations and draft verdicts update app-owned
+state. Distinguish a recorded decision from applying or publishing it.
+Links and copy are local; `ask`/`pick` queue context for the agent's `wait`.
+Commands affecting repositories, processes, files outside workspace state, or
+external systems go through `board.command`: explicit target, exact command,
+confirmation, result event, then refresh. For judgment-heavy or underspecified
+actions, prefer an agent request rather than guessing a command.
 
 Use optimistic-revision checks (for example an MR's observed SHA), not a
 stale UI badge as authorization. Disable unsafe choices and label irreversible

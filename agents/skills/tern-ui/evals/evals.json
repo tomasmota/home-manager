@@ -1,0 +1,55 @@
+{
+  "skill_name": "tern-ui",
+  "scope": "Consumer acceptance cases. Run each in a fresh tool-enabled session; prompts and setup are inputs, assertions are evaluator-only. Recorded runs and generated apps belong outside the installed skill.",
+  "evals": [
+    {
+      "id": "local-review-workbench",
+      "prompt": "We will compare these interface candidates over several rounds. Keep a workspace beside our conversation where I can select a candidate, pin it, add a note, and mark it retained or rejected with a reason. Preserve my review state when the candidate file refreshes or I reopen the workspace; attach feedback to the version I reviewed. Read candidates from $WORKSPACE/candidates.json. All data is local; do not alter the candidates file.",
+      "setup": {
+        "candidates.json": {"revision": 1, "candidates": [
+          {"id": "compact", "version": 1, "title": "Compact list", "description": "Dense rows expose many items; details open on selection."},
+          {"id": "cards", "version": 1, "title": "Detail cards", "description": "Each item exposes its summary and primary action."},
+          {"id": "split", "version": 1, "title": "Split inspector", "description": "A selectable list stays beside a persistent detail view."}
+        ]}
+      },
+      "assertions": [
+        "Builds a local interactive workspace rather than merely describing a proposed UI.",
+        "Selecting a candidate changes the displayed detail and review target.",
+        "Pin targets the intended candidate. Notes and dispositions attach to the intended candidate version.",
+        "A previously empty review accepts real typed text; q/r inside a field do not activate board shortcuts, and Unicode editing does not corrupt feedback.",
+        "A source refresh preserves notes and decisions; a new candidate version does not inherit an old verdict as a current approval.",
+        "Closing and reopening restores saved review state.",
+        "Source fixtures are unchanged by review actions; no network queries or external mutations are introduced.",
+        "The emitted UI can be rendered and its controls exercised without runtime errors."
+      ]
+    },
+    {
+      "id": "interactive-concept-board",
+      "prompt": "Use tern-ui to explain the system described in $WORKSPACE/source.txt. Assume I know almost nothing. Let me step forward and back through a request, select an example port and see which worker it reaches, and explore what happens if a worker or the gateway fails. This is a teaching example, not a request to query or change a real system.",
+      "setup": {
+        "source.txt": "Illustrative port-mapping model, not deployed infrastructure. A client connects to gateway.example. Port 8001 maps to worker Red on port 80. Port 8002 maps to worker Blue on port 80. The request path is client -> gateway -> selected worker. If Red is down, only requests to 8001 fail. If Blue is down, only requests to 8002 fail. If the gateway is down, both fail. There is no retry or automatic failover in this model. All names, ports and states here are made-up teaching inputs."
+      },
+      "assertions": [
+        "Builds an explanatory board despite static source material and no remote polling need.",
+        "Forward and back navigation change the explanation coherently.",
+        "Selecting 8001 versus 8002 visibly changes the destination between Red and Blue.",
+        "Worker failure affects only its mapped port; gateway failure affects both.",
+        "Recovery restores the appropriate outcome without stale failure state.",
+        "Illustrative outcomes remain distinguishable from live health observations; no network calls or infrastructure actions occur.",
+        "The emitted UI can be rendered and its controls exercised without runtime errors."
+      ]
+    },
+    {
+      "id": "one-off-status-handoff",
+      "prompt": "Read the saved merge-request status in $WORKSPACE/mr.json once. Tell me whether its pipeline passed and give me its link; I will handle the review myself.",
+      "setup": {
+        "mr.json": {"iid": 7, "web_url": "https://gitlab.example.invalid/demo/app/-/merge_requests/7", "state": "opened", "draft": false, "head_pipeline": {"status": "success"}}
+      },
+      "assertions": [
+        "Reads the supplied status and reports pipeline success with the supplied MR link.",
+        "Does not create a board, app, pane, polling process or event waiter.",
+        "Does not contact a remote service, modify the fixture or publish anything."
+      ]
+    }
+  ]
+}

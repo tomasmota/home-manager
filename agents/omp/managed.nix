@@ -11,6 +11,7 @@ in {
   extensions = [
     (extension "agents/omp/guard.ts" ./guard.ts "${./guard.ts}")
     (extension "agents/omp/status-line.ts" ./status-line.ts "${./status-line.ts}")
+    (extension "agents/omp/session-id.ts" ./session-id.ts "${./session-id.ts}")
     (extension "agents/omp/brief/brief.ts" ./brief/brief.ts "${./brief/brief.ts}")
   ];
 
