@@ -1,13 +1,14 @@
 # SDK and kit reference
 
-The CLI pins `tern-sdk==0.1.0` in an isolated uv environment and adds this skill's
+The CLI pins `tern-sdk==0.2.0` in an isolated uv environment and adds this skill's
 `scripts/` to `PYTHONPATH`. No global package install. App scripts use PEP 723
 `requires-python = ">=3.11"`; declare additional dependencies there when needed.
 
 Authoritative sources: [Python SDK](https://github.com/stencil-hq/tern-sdk/tree/main/python),
-[TSP](https://docs.stencil.so/tern/protocol/index.html),
-[elements](https://docs.stencil.so/tern/elements/index.html),
-[styling](https://docs.stencil.so/tern/styles/index.html).
+[TSP](https://docs.stencil.so/tern/protocol/index.md),
+[elements](https://docs.stencil.so/tern/elements/index.md),
+[Designing Views](https://docs.stencil.so/tern/guides/design.md),
+[styling](https://docs.stencil.so/tern/styles/index.md).
 The SDK is bundled functionality, not a separate skill to discover.
 
 ## Kit API
@@ -68,33 +69,82 @@ node IDs; don't put a duplicate key among siblings.
 | Builders | Useful shape |
 | --- | --- |
 | `ui.col(*children, gap="sm")`, `ui.row(*children, wrap=True)` | Native layout; `grow=1`, `truncate="end"` on long text |
-| `ui.card(*children, head=..., status="running")` | Group with header; status is pending/running/done/error/cancelled |
+| `ui.split(left, right, sizes=[0.6, 0.4], variant="hairline")` | Resizable related panes; handle `on_change` to retain the shares |
+| `ui.scroll(*children, max={"h":"20ch"}, stick="end")` | Bounded growing logs; only follow the end when useful |
+| `ui.card(*children, head=..., icon=..., meta=..., end=...)` | One object's detail and head controls; `status` is pending/running/done/error/cancelled |
 | `ui.section(*children, head=..., collapsible=True)` | Lighter disclosure group |
 | `ui.text(text)`, `ui.md(markdown)`, `ui.code(text, "sh")` | Text, Markdown, code |
 | `ui.diff(text, path=..., mode="auto")` | Unified or split diff |
 | `ui.kv([("name", "value")])` | Aligned properties |
+| `ui.stats([{"label":"Blocked", "value":"3", "tone":"warning"}])` | Up to four known headline values, outside cards |
 | `ui.badge(text, tone="warning")` | Labelled state |
 | `ui.list(ui.item(label, key="a"), on_select=fn)` | Select event `item` is the full item node id, not `"a"` |
 | `ui.tabs([{"id":"a", "label":"A"}], active="a", on_select=fn)` | Tab selection owned by app |
 | `ui.checklist([{"id":"g", "title":"Gates", "items":[{"id":"ci", "text":"CI", "status":"active"}]}])` | Gates: pending/active/done/dropped/blocked |
 | `ui.progress(0.5, "Uploading")`, `ui.spinner("Running")` | Progress or indeterminate activity |
+| `ui.trace(lines, variant="rail")` | Observed work log, not a plan; summary/card variants for settled reasoning |
+| `ui.empty(title="No matches", text="Change the filter")`, `ui.skeleton("rows", rows=5)` | Empty and first-load states; keep last-good content on refresh failure |
 | `ui.elapsed(age_ms, format="short")` | Native live timer; negative age counts down |
-| `ui.chart("bars", series=[{"label":"A", "value":3}])` | Bars, spark, heatmap |
+| `ui.chart("line", series=[{"label":"p95", "values":[80,95,82]}])` | Bars, spark, heatmap, line, area and donut |
 | `ui.meter(0.7, "Capacity", style="ring")` | Bar/ring/blocks |
 | `ui.image(blob, alt=..., w=400)` | SVG/PNG or another supported image blob |
-| `ui.html.button("Choose", on_click=fn)` | Custom styled HTML-kind control |
-| `ui.html.input(type="checkbox", checked=False, on_change=fn)` | Native checkbox/radio, event.checked |
+| `ui.button("Choose", variant="primary", on_click=fn)` | Native button with `size`, `keys`, `busy`, `disabled` and `on` states |
+| `ui.select(["eu", "us"], value="eu", on_change=fn)` | A choice; `field` in forms, `quiet` in a toolbar |
+| `ui.switch("Failures only", on=False, on_change=fn)` | Boolean setting, not an HTML checkbox |
+| `ui.field(control, label="Region", hint="Local filter", error=...)` | Native label, help and validation around a control |
+
+For source excerpts, `ui.code(text, "py", nums=[41, 42, 57], numbers=True)`
+keeps the file's actual line numbers; `folds` and `overview` suit longer
+evidence. Do not renumber non-contiguous excerpts as if they were contiguous.
 
 For tables, `ui.table(cols=[{"id":"name","head":"Name"}], rows=[{"id":"a","cells":{"name":"A"}}])`.
-Rows do not have their own click/menu events. Use cards/list items when rows
-need actions. Tree/picker/prefs/editor kinds exist too; consult SDK signatures
-and docs before using them. Editors/input own text/caret state in the app;
-they are not a browser's automatically managed text fields.
+Use `selectable=True` and `on_select` for selection; row `menu` entries and cell
+buttons send actions with the row id in `event.item`. Sortable headers send
+`event.act == "sort"` with `event.value == {"col": ..., "dir": ...}`; the app
+orders rows and returns `sort` in its next view. Editors/input still own
+text/caret state in the app; they are not browser-managed text fields.
 
 For a list select event, `event.id` is the list's node id and `event.item` is
 the item's full node id. Map back to the data identity before persisting it:
 when item keys are your data ids, strip the exact `event.id + "."` prefix.
 Do not store the wire id as a domain id or split away dots within a data id.
+
+### Value and navigation events
+
+| Control | Event and app responsibility |
+| --- | --- |
+| `select`, `switch`, `slider`, `date`/`calendar` | `on_change`: `event.value` holds the pick, boolean, number/range or date. Store it in draft state and redraw. `switch` uses `on=`, not `checked=`. |
+| `split` | `on_change`: `event.value` is the list of pane shares; retain it if resizing should survive redraw/refresh. |
+| `pager` | `on_change`: `event.value` is a **1-based** page. Bound it against the current filtered data and retain the selection by data id. |
+| `tabs`, `nav`, `breadcrumb` | `on_select`: `event.item` is the declared item id. Render the selected view; don't strip a node-path prefix from these ids. |
+| `menu` | `on_action={"id": handler}` handles command ids; check/radio picks also carry `event.checked`. Right-click `actions.menu` uses `on_menu` instead. |
+
+For example, a local view can own choices independently of fetched data:
+
+```python
+CHOICES = {"region": "eu", "failures": False}
+
+def view(b):
+    def change(name, event):
+        CHOICES[name] = event.value
+        b.refresh()
+
+    return ui.col(
+        ui.field(
+            ui.select(["eu", "us"], value=CHOICES["region"], key="region",
+                      on_change=lambda e: change("region", e)),
+            label="Region",
+        ),
+        ui.switch("Failures only", on=CHOICES["failures"], key="failures",
+                  on_change=lambda e: change("failures", e)),
+    )
+```
+
+Picks are pointer-driven; keyboard shortcuts require app handling. `keys=`
+only draws hints: the kit binds `q`/`r`, not every displayed shortcut. Keep
+drafts separate from fetched data, persist them only when promised, and use
+`board.command` for consequential Apply actions rather than running them in
+`on_change`.
 
 ### Editable field focus
 
@@ -134,11 +184,11 @@ A span with `href` draws as a link only without a tone/`muted` style. Node `href
 alone opens on ⌘-click; add `actions={"click": "open"}` to open on a plain click.
 
 `b.session` exposes the connected SDK Session for advanced use, for example
-`b.surface.stylesheet("layout", css)` after the surface exists. A convenient
-pattern is installing your sheet once on the first `view` call when
-`b.surface` is not None. The kit reserves only its own `tern-ui` stylesheet.
-Tern supports an allowed subset of HTML tags/CSS; unknown tags can produce an
-error and are not an arbitrary browser canvas. No JS execution.
+`b.surface.stylesheet("layout", css)` after the surface exists. The kit opens
+screen surfaces with `font="sans"`; machine strings use `mono`, `path` or `code`
+spans. Prefer native `button`, `field`, `select`, `switch`, `stats`, `empty`,
+`trace` and `split` kinds before CSS. Use a sheet only for custom layout; Tern
+supports an allowed subset of HTML tags/CSS, not arbitrary browser DOM or JS.
 
 For custom geometry, generate SVG/PNG in Python and use
 `ui.image(b.blob(image_bytes, "image/svg+xml"), alt="...")`. Give plain output
@@ -158,6 +208,12 @@ not invented coordinate events. Do not send private data to external renderers.
   exhausted. `ack` is cumulative and means applied **and drawn**. A hidden tab
   can withhold acks; this is not proof of a crash. Keep fetching if the agent is
   waiting for completion, without forcing that tab into view.
+- For isolated native checks, use a dedicated `tern serve --control EP --out DIR`
+  with scratch home/config/state/log directories, and name that endpoint on
+  every `tern ctl` call. Never inspect or drive the user's other panes.
+- A visible native table's `empty` message may not satisfy `plugins expect`.
+  Verify control-generated content in the rendered tree or a task-owned
+  headless capture instead of treating that timeout as a missing view.
 - `VisibleEvent` and `ResizeEvent.visible` exist. Repeated visibility events
   can be frequent; the kit writes status only when visibility changes.
 - Toast TTL does not remove its node from the program's tree. Kit owns expiry.

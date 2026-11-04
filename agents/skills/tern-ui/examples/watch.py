@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["tern-sdk==0.1.0"]
+# dependencies = ["tern-sdk==0.2.0"]
 # ///
 """Read-only watcher for a local job's JSON status.
 
@@ -90,8 +90,8 @@ CARD_STATUS = {
     "failed": "error", "cancelled": "cancelled", "skipped": "done",
 }
 STEP = {
-    "pending": ("clock", "muted"), "running": ("run", "info"), "done": ("check", "success"),
-    "failed": ("x", "error"), "skipped": ("minus", "muted"), "cancelled": ("slash", "muted"),
+    "pending": ("clock", "pending"), "running": ("run", "running"), "done": ("check", "done"),
+    "failed": ("x", "error"), "skipped": ("minus", "done"), "cancelled": ("slash", "done"),
 }
 
 
@@ -190,23 +190,17 @@ def view(board: Board) -> ui.Node:
     updated = _age(data.get("updated_at", ""))
     steps = data.get("steps") or []
 
-    rows: list[ui.Node] = []
+    trace_status = {"pending": "pending", "queued": "pending", "running": "running",
+                    "succeeded": "done", "failed": "error", "skipped": "done", "cancelled": "done"}
+    lines = []
     for index, step in enumerate(steps):
-        icon, step_tone = STEP.get(step["state"], ("help", "muted"))
-        at = step["at"][11:19] if len(step["at"]) >= 19 else ""
-        rows.append(ui.row(
-            ui.text(f"{index + 1:02d}", tone="muted", key=f"n:{index}"),
-            ui.icon(icon, tone=step_tone, key=f"i:{index}"),
-            ui.col(
-                ui.text(step["name"], key=f"name:{index}"),
-                ui.text(step["detail"], tone="muted", truncate="end",
-                        key=f"detail:{index}") if step["detail"] else None,
-                gap="none", key=f"label:{index}",
-            ),
-            ui.badge(step["state"], tone=step_tone, key=f"s:{index}"),
-            ui.text(at, tone="muted", key=f"at:{index}"),
-            gap="sm", align="center", key=f"row:{index}",
-        ))
+        icon, status = STEP.get(step["state"], ("help", "pending"))
+        at = step["at"][11:19] if len(step["at"]) >= 19 else step["at"]
+        lines.append({
+            "id": f"step:{index}", "icon": icon, "title": step["name"],
+            "target": at, "detail": " · ".join(filter(None, (step["state"], step["detail"]))),
+            "status": status,
+        })
 
     return ui.col(
         ui.card(
@@ -240,7 +234,10 @@ def view(board: Board) -> ui.Node:
             ),
             head="State", status=CARD_STATUS.get(state), key="state-card",
         ),
-        ui.card(*rows, head="Timeline", key="timeline"),
+        ui.trace(lines, title="Timeline", variant="rail", status=trace_status.get(state, "pending"),
+                 key="timeline") if lines else
+        ui.empty(title="No steps reported", text="The source has not reported step history.",
+                 variant="inline", key="timeline"),
         ui.text("Read-only local JSON command; it never writes status.", tone="muted", key="hint"),
         gap="md", key="root",
     )

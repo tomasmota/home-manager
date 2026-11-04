@@ -98,11 +98,13 @@ directory symlinks under `~/Library/Application Support/Tern/plugins/`;
 the next Home Manager activation (Darwin switch), not `tern-pilot-activate`.
 Keep the managed package read-only and update its Nix revision and hash rather
 than replacing it through Tern. See the upstream docs for usage.
+The local native-view patches in `darwin/tern.nix` require Tern 0.9.9 or newer.
 
 ## Kubernetes plugin
 
 Home Manager pins [Tern Kube](https://github.com/contrafy/tern-kube) in `darwin/tern.nix`; settings live at `~/.config/tern-kube/config.json`, and the optional shell guard stays off.
 The local [window-load patch](tern-kube-window-load.patch) stages heavy imports across callbacks to stay within Tern's 50 ms window budget.
+The [native-view patch](tern-kube-native-views.patch) retains the lens's custom grid for inline inspectors and state-carrying page actions.
 Use trusted kubeconfigs and manifests; mutation previews and secret masking are advisory, not security guarantees.
 
 ## Scheduled agents

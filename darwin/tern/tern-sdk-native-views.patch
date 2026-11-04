@@ -1,0 +1,283 @@
+--- a/plugins/examples/jsonx/host.luau
++++ b/plugins/examples/jsonx/host.luau
+@@ -510,34 +510,28 @@
+ 		state.loading = false
+ 		read(state)
+ 	end
+-end
+-
+-local function button(label: string, act: string, tone: string): Node
+-	local node = ui.badge(label, tone)
+-	local p: { [string]: any } = node.p or {}
+-	p.actions = { click = act }
+-	node.p = p
+-	return node
+ end
+ 
+ local function problem_view(state: State, problem: Problem): Node
++	if problem.kind == "nofile" then
++		return ui.node("empty", { icon = "braces", title = problem.title, text = problem.text })
++	end
+ 	local children: { Node } = {}
+ 	local diag = problem.diag
+ 	if diag then
+ 		table.insert(children, ui.diagnostic(diag, state.cx.cwd))
+-	elseif problem.kind == "nofile" then
+-		table.insert(children, ui.md(problem.text))
+ 	else
+ 		table.insert(children, ui.text({ ui.span(problem.text) }))
+ 	end
+ 	if state.path then
+-		local buttons: { Node } = { button("Open as text", "open", "accent") }
+-		table.insert(buttons, button("Reload", "reload", "neutral"))
+-		table.insert(children, ui.row(buttons))
++		table.insert(children, ui.row({
++			ui.button("Open as text", { keys = { "o" }, actions = { click = "open" } }),
++			ui.button("Reload", { keys = { "r" }, busy = state.loading, actions = { click = "reload" } }),
++		}))
+ 	end
+ 	local card = ui.card({ ui.span(problem.title, "strong") }, children)
+ 	local p: { [string]: any } = card.p or {}
+-	p.tone = if problem.kind == "large" or problem.kind == "nofile" then "warning" else "error"
++	p.tone = if problem.kind == "large" then "warning" else "error"
+ 	card.p = p
+ 	return card
+ end
+@@ -551,20 +545,20 @@
+ 		if cut then
+ 			quoted = string.sub(quoted, 1, -2) .. "…"
+ 		end
+-		return ui.span(quoted, "success")
++		return ui.span(quoted, "success mono")
+ 	elseif v.kind == "number" then
+ 		return ui.span(text, "num")
+ 	elseif v.kind == "boolean" then
+-		return ui.span(text, "accent")
++		return ui.span(text, "accent mono")
+ 	end
+-	return ui.span(text, "muted")
++	return ui.span(text, "muted mono")
+ end
+ 
+ local function name_span(name: string): Span
+ 	if name == "" or string.find(name, "%c") then
+-		return ui.span(tern.json.encode(name), "info")
++		return ui.span(tern.json.encode(name), "info mono")
+ 	end
+-	return ui.span(name, "info")
++	return ui.span(name, "info mono")
+ end
+ 
+ local function item(state: State, row: Row): Item
+@@ -572,22 +566,22 @@
+ 	local hidden = row.more
+ 	if hidden then
+ 		return {
+-			label = { ui.span(indent .. "  … " .. hidden .. " more", "muted") },
++			label = { ui.span(indent .. "  … " .. hidden .. " more", "muted mono") },
+ 			detail = { ui.span("Enter shows " .. math.min(hidden, CHILD_ROWS) .. " more", "dim") },
+ 		}
+ 	end
+ 	local v = row.value :: Value
+ 	local glyph = if not is_container(v) then "  " elseif state.expanded[row.path] then "▾ " else "▸ "
+-	local label: { Span | string } = { ui.span(indent .. glyph, "muted") }
++	local label: { Span | string } = { ui.span(indent .. glyph, "muted mono") }
+ 	if row.depth == 0 then
+-		table.insert(label, ui.span(state.name, "strong"))
++		table.insert(label, ui.span(state.name, "strong mono"))
+ 	elseif row.name then
+ 		table.insert(label, name_span(row.name))
+ 	else
+ 		table.insert(label, ui.span(row.label, "muted num"))
+ 	end
+ 	if not is_container(v) then
+-		table.insert(label, ui.span(": ", "muted"))
++		table.insert(label, ui.span(": ", "muted mono"))
+ 		table.insert(label, scalar(v))
+ 		return { label = label }
+ 	end
+@@ -640,12 +634,13 @@
+ 		table.insert(chain, 1, row)
+ 		at = row.parent
+ 	end
+-	local crumbs: { Span | string } = {}
+-	for i, row in chain do
+-		if i > 1 then
+-			table.insert(crumbs, ui.span("  ›  ", "dim"))
++	local crumbs: { { id: string, label: string } } = {}
++	for _, row in chain do
++		local label = row.label
++		if row.name and (row.name == "" or string.find(row.name, "%c")) then
++			label = tern.json.encode(row.name)
+ 		end
+-		table.insert(crumbs, ui.span(row.label, if i == #chain then "strong" else "muted"))
++		table.insert(crumbs, { id = row.path, label = label })
+ 	end
+ 
+ 	local cursor = state.rows[state.index[state.cursor] or 0]
+@@ -661,7 +656,10 @@
+ 	end
+ 	table.insert(info, ui.span("  " .. bytes(state.bytes), "dim"))
+ 
+-	local lines: { Node } = { ui.text(crumbs), ui.text(info) }
++	local lines: { Node } = {
++		ui.node("breadcrumb", { key = "where", variant = "path", max = 4, items = crumbs }),
++		ui.text(info),
++	}
+ 	if state.capped then
+ 		table.insert(
+ 			lines,
+@@ -713,6 +711,7 @@
+ end
+ 
+ tern.block.define("explorer", {
++	font = "sans",
+ 	init = function(cx: BlockCx, args: { string }, saved: any): State
+ 		local path: string? = args[1]
+ 		if path and string.sub(path, 1, 1) ~= "/" and cx.cwd then
+@@ -749,7 +748,7 @@
+ 			state.problem = {
+ 				kind = "nofile",
+ 				title = "No file to explore",
+-				text = "Open a `.json` file from the Files pane, or choose **Open with › JSON Explorer** in a file's menu.",
++				text = "Open a .json file from the Files pane, or choose Open with › JSON Explorer in a file's menu.",
+ 			}
+ 		else
+ 			load(state)
+@@ -770,7 +769,12 @@
+ 		elseif state.problem then
+ 			return { main = ui.col({ problem_view(state, state.problem) }) }
+ 		end
+-		return { main = ui.col({ ui.progress(nil, "Reading " .. state.name .. "…") }) }
++		return { main = ui.col({
++			ui.node("spinner", {
++				label = { ui.span("Reading "), ui.span(state.name, "mono"), ui.span("…") },
++			}),
++			ui.node("skeleton", { key = "tree", shape = "rows", rows = math.min(8, list_lines(cx)) }),
++		}) }
+ 	end,
+ 
+ 	key = function(state: State, key: Key, cx: BlockCx): boolean?
+@@ -838,7 +842,11 @@
+ 			open_as_text(state, cx)
+ 		elseif ev.ev == "action" and ev.act == "reload" then
+ 			load(state)
+-		elseif (ev.ev == "select" or ev.ev == "activate") and type(ev.item) == "string" then
++		elseif ev.ev == "select" and ev.id == "dock.0.where" and type(ev.item) == "string" then
++			if state.index[ev.item] then
++				state.cursor = ev.item
++			end
++		elseif (ev.ev == "select" or ev.ev == "activate") and ev.id == "main.tree" and type(ev.item) == "string" then
+ 			local path = string.sub(ev.item, #LIST_ID + 1)
+ 			local row = state.rows[state.index[path] or 0]
+ 			if row then
+--- a/plugins/examples/terraform/host.luau
++++ b/plugins/examples/terraform/host.luau
+@@ -1,6 +1,6 @@
+ --!strict
+ -- The `plan` lens: Terraform's (and OpenTofu's) human-readable plan output
+--- as summary badges, diagnostics and resources grouped by action. Clicking a
++-- as summary stats, diagnostics and resources grouped by action. Clicking a
+ -- resource copies its address.
+ 
+ local ui = tern.ui
+@@ -206,8 +206,17 @@
+ 	return n
+ end
+ 
+-local function badges(state: State): { Node }
++local function overview(state: State): ({ Node }, { StatItem })
+ 	local out: { Node } = {}
++	local stats: { StatItem } = {}
++	local function total(label: string, n: number, tone: string)
++		if #stats < 4 then
++			table.insert(stats, { label = label, value = tostring(n), tone = tone })
++		else
++			-- Keep less-common totals visible without crowding the stat strip.
++			table.insert(out, ui.badge(n .. " " .. string.lower(label), tone))
++		end
++	end
+ 	local errors, warnings = 0, 0
+ 	for _, d in state.diags do
+ 		if d.severity == "error" then
+@@ -221,17 +230,17 @@
+ 		local any = false
+ 		for _, b in
+ 			{
+-				{ "import", "to import", "info" },
+-				{ "add", "to add", "success" },
+-				{ "change", "to change", "warning" },
+-				{ "destroy", "to destroy", "error" },
+-				{ "forget", "to forget", "muted" },
++				{ "import", "To import", "info" },
++				{ "add", "To add", "success" },
++				{ "change", "To change", "warning" },
++				{ "destroy", "To destroy", "error" },
++				{ "forget", "To forget", "muted" },
+ 			}
+ 		do
+ 			local n = summary[b[1]] or 0
+ 			if n > 0 then
+ 				any = true
+-				table.insert(out, ui.badge(n .. " " .. b[2], b[3]))
++				total(b[2], n, b[3])
+ 			end
+ 		end
+ 		if not any then
+@@ -244,7 +253,7 @@
+ 		local n = counts(state)
+ 		for _, g in GROUPS do
+ 			if n[g.action] then
+-				table.insert(out, ui.badge(n[g.action] .. " " .. string.lower(g.title), "muted"))
++				total(g.title, n[g.action], "muted")
+ 			end
+ 		end
+ 	elseif state.status ~= 0 and state.status ~= 2 then
+@@ -264,7 +273,7 @@
+ 	if state.refreshed > 0 then
+ 		table.insert(out, ui.text({ ui.span(state.refreshed .. " refreshed", "muted") }))
+ 	end
+-	return out
++	return out, stats
+ end
+ 
+ local function view(state: State): Node?
+@@ -278,7 +287,11 @@
+ 		return nil -- not a plan we can read (`-json`, `-help`): raw output
+ 	end
+ 
+-	local children: { Node } = { ui.row(badges(state)) }
++	local badges, stats = overview(state)
++	local children: { Node } = { ui.row(badges) }
++	if #stats > 0 then
++		table.insert(children, ui.stats(stats))
++	end
+ 	for _, d in state.diags do
+ 		table.insert(
+ 			children,
+--- a/plugins/examples/terraform/plugin.toml
++++ b/plugins/examples/terraform/plugin.toml
+@@ -2,7 +2,7 @@
+ id = "terraform"
+ name = "Terraform"
+ version = "1.0.0"
+-description = "Reads terraform and tofu plans as summary badges and resources grouped by action."
++description = "Reads terraform and tofu plans as summary stats, diagnostics and resources grouped by action."
+ icon = "stack"
+ host = "host.luau"
+ styles = ["terraform.css"]
+--- a/plugins/examples/terraform/README.md
++++ b/plugins/examples/terraform/README.md
+@@ -1,9 +1,9 @@
+ # terraform
+ 
+ Reads `terraform plan` and `tofu plan` output as a native view instead of
+-a wall of text: summary badges ("2 to add", "1 to change", "2 to destroy",
+-output changes, errors, warnings), diagnostics with their source excerpt,
+-and the resources grouped by action, the destructive groups first. A plan
++a wall of text: summary counts ("2 to add", "1 to change", "2 to destroy"),
++badges for output changes, errors and warnings, diagnostics with their source
++excerpt, and the resources grouped by action, the destructive groups first. A plan
+ that destroys or replaces anything gets a red rule down its side.
+ 
+ - **Click a resource** to copy its address (`module.db.aws_db_instance.main`)

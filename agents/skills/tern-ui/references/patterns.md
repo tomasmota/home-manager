@@ -2,8 +2,10 @@
 
 Apply the skill's selection rule and design method first. These are interaction
 patterns, not activation triggers or a catalogue of dashboards to build.
-A workspace may mix native kinds, HTML/CSS, generated images and pointer handlers.
-It is a Python process, not a browser: no JavaScript or arbitrary DOM APIs.
+Default to native kinds; use HTML/CSS or generated images only for gaps in the
+native vocabulary. It is a Python process, not a browser: no JavaScript or
+arbitrary DOM APIs. Follow Tern's [Designing Views](https://docs.stencil.so/tern/guides/design.md)
+for the native look, not a custom stylesheet.
 
 | Pattern | Useful shape | Updates and optional interaction |
 | --- | --- | --- |
@@ -28,9 +30,36 @@ not a live health check.
   Never use colour alone to encode state. Unknown is not success or zero.
 - Main scrolls; the kit's dock pins freshness/keys; the layer carries transient
   notices and confirmation. `r` refreshes; `q` closes when no action is running.
-- Table cells are display-only; use keyed cards/rows/list items for individual
-  click/context-menu actions. SVG/PNG blobs can show any geometry, but pixel
-  coordinates are not an arbitrary custom interaction surface.
+- Native tables support row selection, right-click menus and button cells;
+  the app owns sorting and the selected data id. Keep cards for items grouped by
+  one decision. SVG/PNG blobs show geometry, not arbitrary coordinate events.
+
+## Native views
+
+Target Tern 0.9.9+ and the kit's pinned SDK. Start with a title row, the working
+view and the kit's freshness/key dock; add navigation or summary tiles only
+when the task needs them. Sans is already enabled; keep refs, paths, commands
+and numeric columns monospaced. Use semantic tones, not custom status colours.
+
+| Need | Native choice and constraint |
+| --- | --- |
+| Actions and local modes | `button`/`buttons`; one primary action, quiet secondary actions, `sm` inside rows/details. Mark selected modes with `on`/`active`, not `primary`. `busy` and a disabled reason express real state. |
+| Choices and settings | `select`, `switch`, `slider` or `date` inside `field` rows. Store picks in draft state; choosing a value is not applying it. Free text still needs working focus/key/edit handling. |
+| A queue and its selection | A full-width selectable `table`, optionally beside the selected object's `card` in a resizable `split`. No card around a table or another card. Stack or show one panel when narrow. |
+| Navigation and overflow | Segmented `tabs` for local filters, `nav`/`breadcrumb` for places, `pager` for bounded pages, `menu` for secondary commands; render only the active view. |
+| Headline values and trends | At most four `stats` directly on the page; `chart` line/area for observed series, donut for a real whole. Keep unknown distinct from zero; never invent history to fill a chart. |
+| Evidence and work history | `code`/`diff` with source line numbers and useful folds; source citations for claims; `trace` for observed steps, `checklist` for a plan. Do not portray a planned tool call as completed work. |
+| Details and transient states | Card `icon`/`meta`/`end`, scroll areas for bounded logs, sheets/drawers for temporary detail. `skeleton` names the expected shape; `empty` explains what is missing and a useful next action. |
+| Conversation and questions | `message`, `attachment`, `suggestions` or `questions` only when they serve the task. Wire requests to `ask`/`pick` and the relay; the widget itself cannot wake an agent. |
+
+Value controls are not browser-managed forms: handle their events, update
+app-owned state and render the accepted values again. Sorting, filtering and
+paging must preserve the selected data identity, not its row position.
+See the [event contracts](sdk.md#value-and-navigation-events) before wiring them.
+
+Keep confirmation in `board.command`; a native tool-approval widget or an
+“Always” option does not grant new scope or authorize later commands. Do not
+replace the kit's exact-command confirmation with an unguarded callback.
 
 ## Data and transitions
 

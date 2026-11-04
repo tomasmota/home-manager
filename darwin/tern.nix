@@ -10,11 +10,15 @@
   configDir = "${home}/Library/Application Support/Tern";
   daemonSocket = "${configDir}/daemon.sock";
   runtime = import ./tern/runtime {inherit pkgs;};
-  ternSdk = pkgs.fetchFromGitHub {
-    owner = "stencil-hq";
-    repo = "tern-sdk";
-    rev = "13d3cca8bbd8f055431f8eb3caa434a22e966f8f";
-    hash = "sha256-9QW++GEcXzvr+csjAsUtr139KKH9jfeJ5ery7fKc4rc=";
+  ternSdk = pkgs.applyPatches {
+    name = "tern-sdk";
+    src = pkgs.fetchFromGitHub {
+      owner = "stencil-hq";
+      repo = "tern-sdk";
+      rev = "13d3cca8bbd8f055431f8eb3caa434a22e966f8f";
+      hash = "sha256-9QW++GEcXzvr+csjAsUtr139KKH9jfeJ5ery7fKc4rc=";
+    };
+    patches = [./tern/tern-sdk-native-views.patch];
   };
   ternKube = pkgs.applyPatches {
     name = "tern-kube";
@@ -24,13 +28,17 @@
       rev = "220aa65c78eeb6f3a92f55e67561da3c111410fd";
       hash = "sha256-hPwAUVqtIvqcgcGapoKzk0NRZya5/USEfZecK5v3kQI=";
     };
-    patches = [./tern/tern-kube-window-load.patch];
+    patches = [./tern/tern-kube-window-load.patch ./tern/tern-kube-native-views.patch];
   };
-  ternSchedules = pkgs.fetchFromGitHub {
-    owner = "bmanturner";
-    repo = "tern-agent-scheduler";
-    rev = "539796596798047a889aefbbca871a38d50588f0";
-    hash = "sha256-bDV1rYULsMTh1joxQKkParIRcwMUcnSBU4L5+H5X5Jo=";
+  ternSchedules = pkgs.applyPatches {
+    name = "tern-agent-scheduler";
+    src = pkgs.fetchFromGitHub {
+      owner = "bmanturner";
+      repo = "tern-agent-scheduler";
+      rev = "91f2e387df3b5d46848b5316747947515e60ed7f";
+      hash = "sha256-lIrnfBd2GYIg4gpYVEaPcl0XIQceAFld20xREkbFarQ=";
+    };
+    patches = [./tern/tern-agent-scheduler-native-views.patch];
   };
   labels = ["tern-pilot-daemon"];
   # Window plugins that tern-settings-apply links from the store into Tern's plugin directory.
@@ -80,6 +88,9 @@
       // {
         "darwin/tern.nix" = builtins.hashFile "sha256" ./tern.nix;
         "darwin/tern/tern-kube-window-load.patch" = builtins.hashFile "sha256" ./tern/tern-kube-window-load.patch;
+        "darwin/tern/tern-kube-native-views.patch" = builtins.hashFile "sha256" ./tern/tern-kube-native-views.patch;
+        "darwin/tern/tern-sdk-native-views.patch" = builtins.hashFile "sha256" ./tern/tern-sdk-native-views.patch;
+        "darwin/tern/tern-agent-scheduler-native-views.patch" = builtins.hashFile "sha256" ./tern/tern-agent-scheduler-native-views.patch;
       };
     omp = {inherit (omp) extensions mcpServers;};
     tern = {

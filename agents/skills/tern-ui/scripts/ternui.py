@@ -165,15 +165,19 @@ class Board:
         if self._seen:
             content = self.view(self)
         elif self.error:
-            content = ui.text("No data yet. Refresh to try again.", tone="muted")
+            content = None
         else:
-            content = ui.spinner("Loading")
+            content = ui.col(ui.spinner("Loading"), ui.skeleton("rows", rows=4), key="loading")
         warnings = []
         if self.fixture:
             warnings.append(ui.badge("FIXTURE · not live data", tone="warning", key="fixture"))
         if self.error:
-            warnings.append(ui.card(ui.text(self.error), head="Refresh failed · showing last good data"
-                                    if self._seen else "Fetch failed", status="error", key="error"))
+            warnings.append(ui.card(
+                ui.text(self.error, wrap="word"),
+                ui.button("Retry", icon="repeat", busy=self.busy,
+                          on_click=lambda e: self.refresh(), key="retry"),
+                head="Refresh failed · showing last good data" if self._seen else "Fetch failed",
+                status="error", key="error"))
         status = [ui.seg(self.title, priority=10, key="title")]
         if self.busy:
             status.append(ui.seg("", ui.spinner("refreshing"), key="busy"))
@@ -184,7 +188,11 @@ class Board:
             status.append(ui.seg("", ui.spinner(self._action), key="action"))
         if self.render_errors:
             status.append(ui.seg("Tern rejected UI", tone="error", key="render-error"))
-        status.append(ui.seg("r refresh · q close", side="right", priority=0, key="keys"))
+        status.append(ui.seg("", ui.button(
+            "Refresh", icon="repeat", keys=["r"], variant="quiet", size="sm",
+            busy=self.busy, on_click=lambda e: self.refresh(), key="refresh"),
+            side="right", priority=1, key="refresh"))
+        status.append(ui.seg("q close", side="right", priority=0, key="keys"))
         layers = [ui.toast(text, sub=sub, tone=tone, ttl=5, key=key)
                   for key, text, sub, tone, until in self._toasts]
         if self._confirm:
@@ -192,13 +200,15 @@ class Board:
             layers.append(ui.overlay(
                 ui.text(f"Directory: {cwd or Path.cwd()}"),
                 ui.code(shlex.join(argv), "sh"),
-                ui.row(
-                    ui.html.button("Run action", class_="tu-button", key="run",
-                                   on_click=lambda e: self._execute()),
-                    ui.html.button("Cancel", class_="tu-button", key="cancel",
-                                   on_click=lambda e: self._cancel()), gap="sm"),
                 ui.text("y run · Esc cancel", tone="muted"),
-                head=label, anchor="center", size="md", modal=True, key="confirm"))
+                foot=ui.row(
+                    ui.button("Cancel", variant="quiet", keys=["esc"], key="cancel",
+                              on_click=lambda e: self._cancel()),
+                    ui.button("Run action", variant="primary", keys=["y"], key="run",
+                              on_click=lambda e: self._execute()),
+                    gap="sm", justify="end"),
+                head=label, icon="terminal", side="bottom", variant="inset",
+                size=0.5, modal=True, key="confirm"))
         return dict(main=[ui.col(*warnings, content, gap="sm", key="body")],
                     dock=[ui.status(*status, key="status")], layer=layers)
 
@@ -256,8 +266,7 @@ class Board:
             with self.session, (self.directory / "app.log").open("a") as log:
                 # SDK writes to captured tty fds; stray prints must not paint over the UI.
                 with contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
-                    self.surface = self.session.open(mode="screen", title=self.title)
-                    self.surface.stylesheet("tern-ui", ".tu-button { padding: 5px 12px; border-radius: 6px; background: var(--accent-fill); color: var(--fg); }")
+                    self.surface = self.session.open(mode="screen", title=self.title, font="sans")
                     self._status()
                     while not self._quit and not self.surface.closed and not self.session.closed:
                         while not self._results.empty():

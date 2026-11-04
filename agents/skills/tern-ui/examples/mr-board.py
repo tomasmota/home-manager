@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["tern-sdk==0.1.0"]
+# dependencies = ["tern-sdk==0.2.0"]
 # ///
 """Open authored MRs grouped by ticket, from read-only `glab api --method GET`.
 
@@ -16,6 +16,7 @@ server with omp's existing sign-in; without it, cards show bare ticket keys.
 
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import re
@@ -48,6 +49,19 @@ HARD_MERGE = {"conflict", "requested_changes"}
 BUCKETS = (("blocked", "needs attention", "warning"), ("ready", "ready", "success"),
            ("waiting", "waiting", "pending"), ("unknown", "unknown", "warning"))
 RANK = {bucket: rank for rank, (bucket, _, _) in enumerate(BUCKETS)}  # card and row order
+REPO_COLORS = ("--ansi4", "--ansi5", "--ansi6", "--ink-pen", "--a1", "--live")
+REPO_STYLES = "\n".join(
+    f'.sf.sf-badge[data-role="mr-repo-{index}"] {{ color: var({color}); '
+    f'background: rgb(from var({color}) r g b/12%); }}'
+    for index, color in enumerate(REPO_COLORS)
+)
+CARD_STYLES = "\n".join(
+    f'.sf.sf-card[data-role="mr-status"][data-tone="{tone}"] {{ '
+    f'background: rgb(from var({color}) r g b/6%); border-left: 3px solid var({color}); }}'
+    for tone, color in (("success", "--ok"), ("error", "--bad"),
+                        ("warning", "--warn"), ("muted", "--t3"))
+)
+_repo_colors: dict[str, int] = {}
 # omp keeps its Atlassian MCP OAuth sign-in here. The board only reads the access
 # token and never refreshes it: omp owns the rotating refresh token, so titles pause
 # once the token expires until omp next uses an Atlassian tool.
@@ -252,6 +266,17 @@ def _repo(item: dict[str, Any]) -> str:
     return item["ref"].split("!", 1)[0] or "unknown"
 
 
+def _repo_color(repo: str) -> int:
+    """Keep assignments through refreshes; avoid sharing hues until the palette fills."""
+    if repo not in _repo_colors:
+        start = int.from_bytes(hashlib.sha256(repo.encode()).digest()[:4]) % len(REPO_COLORS)
+        used = set(_repo_colors.values())
+        _repo_colors[repo] = next(
+            (slot for offset in range(len(REPO_COLORS))
+             if (slot := (start + offset) % len(REPO_COLORS)) not in used), start)
+    return _repo_colors[repo]
+
+
 def _project(item: dict[str, Any]) -> str:
     return _repo(item).rsplit("/", 1)[-1] or "unknown"
 
@@ -363,6 +388,18 @@ def _state(item: dict[str, Any]) -> tuple[str, str, str]:
     return "waiting", "waiting", "pending"
 
 
+def _card_tone(items: list[dict[str, Any]]) -> str:
+    """Do not paint a mixed card green while any MR still needs attention."""
+    tones = []
+    for item in items:
+        bucket = _state(item)[0]
+        tones.append("error" if bucket == "blocked" else
+                     "muted" if bucket == "unknown" or item["draft"] else
+                     "warning" if bucket == "waiting" else "success")
+    priority = {"error": 0, "warning": 1, "muted": 2, "success": 3}
+    return min(tones, key=priority.__getitem__)
+
+
 def _order(item: dict[str, Any]) -> tuple[int, float]:
     """Most urgent first, in the summary's bucket order, then most recently updated."""
     try:
@@ -402,8 +439,13 @@ def _meta(item: dict[str, Any], key: str) -> ui.Node:
     for index, (text, tone) in enumerate(reasons):
         if text != ci:  # a failing pipeline already reads in its own slot
             add(f"reason{index}", text, f"strong {tone}" if tone in {"error", "warning"} else tone)
-    if ref := _ref_text(item):  # links draw in link color; muted would hide them
-        add("ref", ref, None if item["url"] else "muted", item["url"])
+    if parts:
+        parts.append(ui.text([ui.span("·", "dim")], key="sep:ref"))
+    repo = _repo(item)
+    color = _repo_color(repo)
+    parts.append(ui.badge(_ref_text(item) or _project(item), key="ref",
+                          role=f"mr-repo-{color}", title=repo, tone="neutral",
+                          href=item["url"] or None))
     if item["branch"]:
         add("branch", item["branch"], "muted", icon="branch")
     if ci:
@@ -504,21 +546,20 @@ def _row(board: Board, item: dict[str, Any], group: str) -> ui.Node:
 
 def _summary(items: list[dict[str, Any]]) -> ui.Node:
     counts = Counter(_state(item)[0] for item in items)
-    spans: list[ui.Span] = []
-    for bucket, label, tone in BUCKETS:
-        if not counts[bucket]:
-            continue
-        if spans:
-            spans.append(ui.span(" · ", "dim"))
-        if bucket == "blocked" and counts[bucket] > 1:
-            label = "need attention"
-        spans.append(ui.span(f"{counts[bucket]} {label}", tone))
-    return ui.text(spans, wrap="word", key="summary")
+    return ui.stats([
+        {"label": label.capitalize(), "value": str(counts[bucket]), "tone": tone}
+        for bucket, label, tone in BUCKETS
+    ], key="summary")
 
 
 def view(board: Board) -> ui.Node:
+    if board.surface is not None and not getattr(board, "_mr_styles", False):
+        board.surface.stylesheet("mr-board", REPO_STYLES + "\n" + CARD_STYLES)
+        board._mr_styles = True
     data = board.data if isinstance(board.data, dict) else {}
     items = [item for item in data.get("mrs") or [] if isinstance(item, dict)]
+    for repo in sorted({_repo(item) for item in items}):
+        _repo_color(repo)
     titles = data.get("titles") if isinstance(data.get("titles"), dict) else {}
     # A card groups MRs that share one decision: a ticket, or the single MR itself when
     # nothing ties it to a ticket. Repo is a data source, not a decision.
@@ -541,15 +582,18 @@ def view(board: Board) -> ui.Node:
             rest = f" · {title}" if title else ""
             head = [ui.span(key, href=url), rest] if url else key + rest
         cards.append(ui.card(*(_row(board, item, key) for item in group),
-                             head=head, key=f"group:{key}"))
+                             head=head, icon="branch" if head else None,
+                             meta=f"{len(group)} MRs" if head and len(group) > 1 else None,
+                             tone=_card_tone(group), role="mr-status", key=f"group:{key}"))
 
-    empty = ui.card(ui.text("No open merge requests.", key="empty-text"),
-                    ui.text("Nothing authored by you is open now. Press r to check again.",
-                            tone="muted", wrap="word"), head="All clear", key="empty")
+    empty = ui.empty(
+        title="No open merge requests", icon="check",
+        text="Nothing authored by you is open now. Refresh to check again.", key="empty",
+    )
     count = f"{len(items)}+" if len(items) >= PER_PAGE else str(len(items))  # the list is capped
     return ui.col(
         ui.row(
-            ui.text("My open merge requests", key="h-title"),
+            ui.text([ui.span("My open merge requests", "title")], key="h-title"),
             ui.text(count, tone="muted", key="h-count"),
             gap="sm", wrap=True, key="header",
         ),

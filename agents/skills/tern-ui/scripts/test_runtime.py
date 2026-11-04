@@ -131,8 +131,8 @@ def changes(old, new):
 def view(b):
     return ui.col(
         ui.text(b.data["state"], key="state"),
-        ui.html.button("Ask", key="ask", on_click=lambda e: b.ask("Explain this state")),
-        ui.html.button("Run", key="command", on_click=lambda e: b.command(
+        ui.button("Ask", key="ask", on_click=lambda e: b.ask("Explain this state")),
+        ui.button("Run", key="command", on_click=lambda e: b.command(
             "Write local result", [sys.executable, "-c",
             "from pathlib import Path; Path(%r).write_text('done'); print('done')" % marker])),
         key="app")

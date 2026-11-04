@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["tern-sdk==0.1.0"]
+# dependencies = ["tern-sdk==0.2.0"]
 # ///
 """Static decision brief with a real pick button on each option card.
 
@@ -139,10 +139,10 @@ def view(board: Board) -> ui.Node:
                     key=f"tradeoff:{option['id']}"),
             ui.row(*badges, gap="sm", wrap=True, key=f"badges:{option['id']}"),
             ui.row(
-                ui.html.button(
+                ui.button(
                     "Picked" if chosen else "Pick this option",
-                    class_="tu-button",
-                    attrs={"disabled": "disabled"} if chosen else None,
+                    variant="quiet" if chosen else "primary" if option["id"] == recommended else "default",
+                    size="sm", on=chosen, disabled="Already picked" if chosen else False,
                     on_click=None if chosen else (
                         lambda _event, item=option: choose(board, item)),
                     key=f"pick:{option['id']}",

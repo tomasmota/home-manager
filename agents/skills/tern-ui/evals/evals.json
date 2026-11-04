@@ -40,6 +40,26 @@
       ]
     },
     {
+      "id": "sortable-local-queue",
+      "prompt": "Keep a small review workspace beside chat for the local services in $WORKSPACE/services.json. Let me select a service and inspect its evidence, sort the queue by latency, and filter to items needing attention. Keep my selected service through sorting and file refreshes, and distinguish missing measurements from zero or healthy results. Read the file on refresh; do not query a real system, change the source file, or add operational action buttons.",
+      "setup": {
+        "services.json": {"revision": 1, "services": [
+          {"id": "api.v2", "name": "API", "state": "healthy", "latency_ms": 12, "evidence": "Local fixture: probe succeeded."},
+          {"id": "worker", "name": "Worker", "state": "degraded", "latency_ms": 80, "evidence": "Local fixture: two delayed jobs."},
+          {"id": "gateway", "name": "Gateway", "state": null, "latency_ms": null, "evidence": "No measurement was supplied."}
+        ]}
+      },
+      "assertions": [
+        "Builds a review queue whose selection changes the associated evidence.",
+        "Sorting latency changes row order without changing which service is selected or losing a dotted data id.",
+        "A source refresh that reorders rows retains the selected service and displays its updated evidence.",
+        "Missing measurements remain unknown, not zero or healthy; the attention filter includes unresolved unknowns.",
+        "An empty filter result has a useful empty state rather than a misleading healthy summary.",
+        "Source fixtures remain unchanged by UI actions; no network calls, operational commands or agent waiters are introduced.",
+        "The emitted UI can be rendered and its controls exercised without runtime errors."
+      ]
+    },
+    {
       "id": "one-off-status-handoff",
       "prompt": "Read the saved merge-request status in $WORKSPACE/mr.json once. Tell me whether its pipeline passed and give me its link; I will handle the review myself.",
       "setup": {

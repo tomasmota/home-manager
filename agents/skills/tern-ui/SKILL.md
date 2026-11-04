@@ -9,7 +9,7 @@ description: >
   polling and action buttons are optional. Do not automatically turn one-off
   answers, routine completion checks, or the existence of an MR, pipeline,
   or job into a UI.
-compatibility: Tern terminal, uv, Python >=3.11; examples use macOS pbcopy and optional glab.
+compatibility: Tern >=0.9.9, uv, Python >=3.11; examples use macOS pbcopy and optional glab.
 metadata:
   runtime: tern-surface-protocol
 ---
@@ -80,8 +80,11 @@ shell alias. Fresh processes discover this skill through the normal skill path.
    file tools. Keep task data and generated apps outside the public skill.
 3. Implement the chosen state and update sources using the
    [kit API](references/sdk.md#kit-api): `fetch()`, `view(board)` and meaningful
-   `changes(old, new)`. Use native kinds, HTML/CSS, charts or image blobs only
-   where they help the task. Use stable sibling keys and wrap narrow rows.
+   `changes(old, new)`. Default to the [native view patterns](references/patterns.md#native-views):
+   controls, tables, stats, splits and evidence views already carry Tern's look.
+   Use HTML/CSS or image blobs only for a task need native kinds cannot express;
+   do not recreate standard controls with CSS. Add only widgets the task needs,
+   with stable sibling keys and a usable narrow layout.
 4. Smoke the actual app without Tern, then open it automatically beside chat:
    ```sh
    uv run CLI check my-work
@@ -95,9 +98,11 @@ shell alias. Fresh processes discover this skill through the normal skill path.
    errors. Inspect **only this board's** record for Tern `ack`/`error` events.
    A plain render or direct handler call is not an interaction smoke. On
    task-owned surfaces, exercise the main controls and observe the resulting
-   state. For editable
-   workspaces, type into a real field and verify that feedback survives refresh
-   and reopen when promised. Test local scenarios, never remote mutations.
+   state, including selection after sorting/filtering and values after refresh.
+   Keycaps are hints, not bindings. For editable workspaces, type into a real
+   field and verify that feedback survives refresh and reopen when promised.
+   Check relevant loading, empty and error states. Test local scenarios, never
+   remote mutations.
    A hidden tab may not acknowledge until drawn; say so instead of claiming
    visual proof. Never force-switch another tab to obtain an ack, take Tern
    window screenshots, inspect global UI trees or send input into other panes.
@@ -165,5 +170,5 @@ continued monitoring is still required after its timeout.
   from zero/success, and emit only changes that merit attention. Tern animates
   timers and spinners; don't render them frame-by-frame.
 
-Validation of the bundled kit/relay: `uv run --with tern-sdk==0.1.0 scripts/test_runtime.py`
+Validation of the bundled kit/relay: `uv run --with tern-sdk==0.2.0 scripts/test_runtime.py`
 from this skill directory. It uses local processes and a protocol peer; no remote writes.
