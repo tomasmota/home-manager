@@ -39,6 +39,11 @@ testing follows the [native rules](RULES.md).
 [`tern-ui`](../skills/tern-ui/SKILL.md) builds task-specific live panes with a
 file-backed wait relay and confirmed direct actions; it needs no omp extension.
 
+`/long-running [topic or workspace]` uses [`long-running`](../skills/long-running/SKILL.md)
+for ongoing file-backed context and proactive local updates. A topic-local
+`.omp/RULES.md` restores the protocol on new/reset sessions; briefs remain
+user-owned background, not a progress ledger.
+
 No switch is needed for skill edits: fresh processes discover them, and existing
 sessions can use `/reload-plugins` (which also reconnects MCP servers). Check
 discovery without a model call with `omp read skill://<name>`.

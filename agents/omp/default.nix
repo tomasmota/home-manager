@@ -180,6 +180,10 @@ in {
 
   programs.omp = {
     enable = true;
+    # Compiled workers must not mistake first-run addon extraction for a source edit.
+    package = omp.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
+      patches = (old.patches or []) ++ [./compiled-code-skew.patch];
+    });
     settings = policy;
   };
 
@@ -206,6 +210,8 @@ in {
         config.lib.file.mkOutOfStoreSymlink "${ompDir}/google-developer-knowledge.mjs";
       ".omp/agent/commands/harness-review.md".source =
         config.lib.file.mkOutOfStoreSymlink "${ompDir}/commands/harness-review.md";
+      ".omp/agent/commands/long-running.md".source =
+        config.lib.file.mkOutOfStoreSymlink "${ompDir}/commands/long-running.md";
       ".omp/agent/agents".source = config.lib.file.mkOutOfStoreSymlink "${ompDir}/agents";
     };
   };
