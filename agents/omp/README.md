@@ -71,6 +71,23 @@ DeepSeek is built in: set `DEEPSEEK_API_KEY` in `secrets.env` and select
 `deepseek/deepseek-flash:high`. Keep its catalog pricing rather than adding flat
 costs in `models.yml`, so peak/off-peak estimates remain automatic.
 
+### Antigravity CLI
+
+The native-auth patch lets `antigravity-cli` use agy's existing local login
+(`auth: none`), including enterprise licenses, without exporting credentials;
+run `agy` to sign in or change that account.
+Remove any saved omp `antigravity-cli` OAuth login with `/logout` first:
+explicit omp credentials otherwise retain their normal precedence.
+
+- [`agy-native-auth.patch`](agy-native-auth.patch) avoids omp's consumer-only
+  credential import when using native enterprise auth; track
+  [upstream external-auth support](https://github.com/can1357/oh-my-pi/issues/19444).
+- On omp updates, review/rebase the patch, run the Nix package's credential/host
+  tests and a real native agy tool-call smoke test before switching; remove the
+  patch once upstream supports this mode.
+- Native-account changes are not detected: restart omp and start a fresh
+  conversation after switching agy's login.
+
 ## Inco models
 
 `default.nix` declares the Inco provider and its model metadata. The provider's

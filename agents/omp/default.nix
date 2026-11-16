@@ -24,6 +24,7 @@
   # by zsh). Standard model metadata advertises reasoning_effort support.
   # Keep the existing `:fast` route for callers that select it explicitly.
   models = {
+    providers.antigravity-cli.auth = "none";
     providers.inco = {
       baseUrl = "https://api.inco.ai/v1";
       api = "openai-completions";
@@ -180,9 +181,15 @@ in {
 
   programs.omp = {
     enable = true;
-    # Compiled workers must not mistake first-run addon extraction for a source edit.
     package = omp.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
-      patches = (old.patches or []) ++ [./compiled-code-skew.patch];
+      patches = (old.patches or []) ++ [./agy-native-auth.patch];
+      doCheck = true;
+      checkPhase = ''
+        runHook preCheck
+        bun test packages/ai/test/antigravity-cli-credentials.test.ts \
+          packages/ai/test/antigravity-cli-host.test.ts
+        runHook postCheck
+      '';
     });
     settings = policy;
   };

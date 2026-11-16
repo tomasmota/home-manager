@@ -3,10 +3,6 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    # Keep Azure CLI on Invoke 2 until Fabric supports Invoke 3: https://github.com/fabric/fabric/issues/2376.
-    azure-cli-nixpkgs.url = "github:nixos/nixpkgs/fe13242281a67641c0102cdb1087f0ebe586c7df";
-    # Keep macOS Atuin on 18.24.2 until its Pi session tests are fixed: https://github.com/NixOS/nixpkgs/commit/aedf37c2d5a1c22270bb54b6c5ef0e9707e7cfdf.
-    atuin-nixpkgs.url = "github:nixos/nixpkgs/31ecbaca1bdefa45dffc409f0250bd8039ea0010";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -22,8 +18,6 @@
   outputs = {
     self,
     nixpkgs,
-    azure-cli-nixpkgs,
-    atuin-nixpkgs,
     home-manager,
     nix-darwin,
     omp,
@@ -47,15 +41,6 @@
         stateVersion = "25.05";
       };
       imports = [./home.nix] ++ extraModules;
-      nixpkgs.overlays = [
-        (_final: prev: {
-          azure-cli = azure-cli-nixpkgs.legacyPackages.${prev.stdenv.hostPlatform.system}.azure-cli;
-        })
-        (_final: prev:
-          prev.lib.optionalAttrs prev.stdenv.hostPlatform.isDarwin {
-            atuin = atuin-nixpkgs.legacyPackages.${prev.stdenv.hostPlatform.system}.atuin;
-          })
-      ];
     };
 
     # Helper to build a standalone home-manager configuration

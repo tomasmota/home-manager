@@ -30,16 +30,6 @@
     };
     patches = [./tern/tern-kube-window-load.patch ./tern/tern-kube-native-views.patch];
   };
-  ternSchedules = pkgs.applyPatches {
-    name = "tern-agent-scheduler";
-    src = pkgs.fetchFromGitHub {
-      owner = "bmanturner";
-      repo = "tern-agent-scheduler";
-      rev = "91f2e387df3b5d46848b5316747947515e60ed7f";
-      hash = "sha256-lIrnfBd2GYIg4gpYVEaPcl0XIQceAFld20xREkbFarQ=";
-    };
-    patches = [./tern/tern-agent-scheduler-native-views.patch];
-  };
   labels = ["tern-pilot-daemon"];
   # Window plugins that tern-settings-apply links from the store into Tern's plugin directory.
   windowPlugins = {
@@ -90,7 +80,6 @@
         "darwin/tern/tern-kube-window-load.patch" = builtins.hashFile "sha256" ./tern/tern-kube-window-load.patch;
         "darwin/tern/tern-kube-native-views.patch" = builtins.hashFile "sha256" ./tern/tern-kube-native-views.patch;
         "darwin/tern/tern-sdk-native-views.patch" = builtins.hashFile "sha256" ./tern/tern-sdk-native-views.patch;
-        "darwin/tern/tern-agent-scheduler-native-views.patch" = builtins.hashFile "sha256" ./tern/tern-agent-scheduler-native-views.patch;
       };
     omp = {inherit (omp) extensions mcpServers;};
     tern = {
@@ -295,7 +284,6 @@ in {
         "Library/Application Support/Tern/plugins/terraform".source = "${ternSdk}/plugins/examples/terraform";
         "Library/Application Support/Tern/plugins/jsonx".source = "${ternSdk}/plugins/examples/jsonx";
         "Library/Application Support/Tern/plugins/tern-kube".source = ternKube;
-        "Library/Application Support/Tern/plugins/tern-agent-scheduler".source = ternSchedules;
       };
     };
   };

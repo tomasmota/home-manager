@@ -1,0 +1,60 @@
+--- a/packages/ai/src/providers/antigravity-cli.ts
++++ b/packages/ai/src/providers/antigravity-cli.ts
+@@ -4,2 +4,2 @@
+- * stream call supplies its result. Authentication is staged into an isolated
+- * agy credential directory; inference always runs through the official CLI.
++ * stream call supplies its result. Exported OAuth grants are staged into an
++ * isolated credential directory; keyless mode uses agy's native local login.
+@@ -7,2 +7,4 @@
+-import * as path from "node:path";
+-import type { Effort } from "@oh-my-pi/pi-catalog/effort";
++import * as fs from "node:fs/promises";
++import * as path from "node:path";
++import type { Effort } from "@oh-my-pi/pi-catalog/effort";
++import { NO_AUTH_SENTINEL } from "../auth-retry";
+@@ -55,4 +57,6 @@
+-	if (!options.apiKey) throw new Error("Antigravity CLI requires sign-in. Run /login antigravity-cli.");
+-	const account = agyCredentialKey(options.apiKey);
+-	const directory = path.join(agyGeminiDir(), account);
+-	await stageAgyCredentials(options.apiKey, directory);
++	if (!options.apiKey) throw new Error("Antigravity CLI requires sign-in. Run /login antigravity-cli.");
++	const nativeAuth = options.apiKey === NO_AUTH_SENTINEL;
++	const account = nativeAuth ? "native" : agyCredentialKey(options.apiKey);
++	const directory = path.join(agyGeminiDir(), account);
++	if (nativeAuth) await fs.mkdir(directory, { recursive: true, mode: 0o700 });
++	else await stageAgyCredentials(options.apiKey, directory);
+@@ -63,1 +67,1 @@
+-		credentialVersion: agyCredentialVersion(options.apiKey),
++		credentialVersion: nativeAuth ? undefined : agyCredentialVersion(options.apiKey),
+@@ -69,1 +73,1 @@
+-		const host = existing instanceof AgyHost ? existing : new AgyHost(directory);
++		const host = existing instanceof AgyHost ? existing : new AgyHost(directory, { nativeAuth });
+@@ -92,1 +96,1 @@
+-	const host = retained?.host ?? new AgyHost(directory);
++	const host = retained?.host ?? new AgyHost(directory, { nativeAuth });
+--- a/packages/ai/src/providers/antigravity-cli/host.ts
++++ b/packages/ai/src/providers/antigravity-cli/host.ts
+@@ -81,1 +81,3 @@
+-	geminiDir: string;
++	geminiDir: string;
++	/** Use agy's local Keychain/profile instead of an imported OAuth file. */
++	nativeAuth?: boolean;
+@@ -98,1 +100,2 @@
+-export interface AgyHostOptions {
++export interface AgyHostOptions {
++	nativeAuth?: boolean;
+@@ -172,1 +175,2 @@
+-		this.#options = {
++		this.#options = {
++			nativeAuth: options.nativeAuth ?? false,
+@@ -390,1 +394,2 @@
+-			geminiDir: this.#geminiDir,
++			geminiDir: this.#geminiDir,
++			nativeAuth: this.#options.nativeAuth,
+@@ -801,1 +806,5 @@
+-				env: { ...Bun.env, ...agyCredentialEnv(), AGY_CLI_DISABLE_AUTO_UPDATE: "1" },
++				env: {
++					...Bun.env,
++					...(options.nativeAuth ? { SSH_TTY: "" } : agyCredentialEnv()),
++					AGY_CLI_DISABLE_AUTO_UPDATE: "1",
++				},

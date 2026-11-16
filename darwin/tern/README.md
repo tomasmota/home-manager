@@ -107,11 +107,6 @@ The local [window-load patch](tern-kube-window-load.patch) stages heavy imports 
 The [native-view patch](tern-kube-native-views.patch) retains the lens's custom grid for inline inspectors and state-carrying page actions.
 Use trusted kubeconfigs and manifests; mutation previews and secret masking are advisory, not security guarantees.
 
-## Scheduled agents
-
-Home Manager pins [Agent Scheduler](https://github.com/bmanturner/tern-agent-scheduler) in `darwin/tern.nix`; open its manager with `Ctrl+Alt+Shift+M` or **Agent Scheduler: Open manager** in the command palette.
-Set **Settings › Setup › omp** to `/etc/profiles/per-user/tomas/bin/omp` for Nix-managed omp; jobs and settings stay writable in Tern's `plugin-data/tern-agent-scheduler/`.
-
 ## Services and private state
 
 `org.nixos.tern-pilot-daemon` is the only Nix-managed LaunchAgent and runs in the
