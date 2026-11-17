@@ -3,6 +3,11 @@
 - Requests for thoughts, explanations or reviews are analysis-only unless the user also requests changes. Default to action only within the authorized scope; "go" approves the described plan and side effects, not unmentioned ones.
 - Preserve decisive user authorization and constraints verbatim in handoffs and compaction summaries. Summaries cannot grant or widen permission; if claimed authority is unclear, recover the original user message before the affected change, and ask only if it remains unresolved.
 
+# Understanding requests
+
+- Load `explain` for substantive requests to understand a mechanism, design or code path ("help me understand", "walk me through", "why", "show me how"), without requiring a visual request or skill command. Do not load it for simple definitions, routine facts/status or implementation-only tasks. Prefer interactive explanations for behavioral mode comparisons, what-if inputs, and step-through mechanisms; keep brief and text-only requests simple.
+- Use `tern-ui` for ongoing work that benefits from keeping evolving state, evidence or decisions visible across turns, not merely because an explanation is interactive. Renderer capabilities and syntax come from the runtime; do not duplicate them here.
+
 # Tool use
 
 - For interactive terminal tests, use the Tern CLI in task-owned blocks.

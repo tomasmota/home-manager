@@ -9,6 +9,7 @@
   l = "eza -l --color always -a -s type";
   ports = "lsof -i -P -n | grep LISTEN";
   nv = "nvim";
+  ompr = "omp --restore";
   tree = "tree -I 'node_modules|dist|coverage'";
   t = "tree -I 'node_modules|dist|coverage'";
   dra = "direnv allow";

@@ -10,13 +10,13 @@ for the native look, not a custom stylesheet.
 | Pattern | Useful shape | Updates and optional interaction |
 | --- | --- | --- |
 | Watcher | Progress, blockers, evidence and freshness | Read changing external state; inspect details; controls only if useful |
-| Workbench | Pinned comparisons, source-linked notes or a stepped explanation | Local edits, artifacts, agent results or example inputs; annotate, compare or explore |
+| Workbench | Pinned comparisons and source-linked notes across rounds | Local edits, artifacts, agent results or example inputs; annotate and compare evolving candidates |
 | Queue | Stable item identities, preview/diff and disposition | New items and individual verdicts; inspect, accept, reject or defer |
 
-For an explanatory workbench, let local navigation or example inputs reveal
-relationships and consequences. Keep sources, assumptions and illustrative
-scenarios distinct from observations of a real system; a simulated outcome is
-not a live health check.
+For a workbench, keep review state attached to the candidate and source version
+that earned it. Keep assumptions and illustrative scenarios distinct from
+observations of a real system; a simulated outcome is not a live health check.
+One-off teaching steppers and what-if explanations belong in chat, not a workspace.
 
 ## Layout
 

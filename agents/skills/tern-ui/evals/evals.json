@@ -24,13 +24,13 @@
       ]
     },
     {
-      "id": "interactive-concept-board",
-      "prompt": "Use tern-ui to explain the system described in $WORKSPACE/source.txt. Assume I know almost nothing. Let me step forward and back through a request, select an example port and see which worker it reaches, and explore what happens if a worker or the gateway fails. This is a teaching example, not a request to query or change a real system.",
+      "id": "one-off-interactive-explanation",
+      "prompt": "Explain the system described in $WORKSPACE/source.txt. Assume I know almost nothing. Let me step forward and back through a request, select an example port and see which worker it reaches, and explore what happens if a worker or the gateway fails. This is a one-off teaching example, not an ongoing review workspace or a request to query or change a real system.",
       "setup": {
         "source.txt": "Illustrative port-mapping model, not deployed infrastructure. A client connects to gateway.example. Port 8001 maps to worker Red on port 80. Port 8002 maps to worker Blue on port 80. The request path is client -> gateway -> selected worker. If Red is down, only requests to 8001 fail. If Blue is down, only requests to 8002 fail. If the gateway is down, both fail. There is no retry or automatic failover in this model. All names, ports and states here are made-up teaching inputs."
       },
       "assertions": [
-        "Builds an explanatory board despite static source material and no remote polling need.",
+        "Explains in chat, using an embedded local page for meaningful interaction rather than creating a tern-ui board, workspace process, or event relay.",
         "Forward and back navigation change the explanation coherently.",
         "Selecting 8001 versus 8002 visibly changes the destination between Red and Blue.",
         "Worker failure affects only its mapped port; gateway failure affects both.",

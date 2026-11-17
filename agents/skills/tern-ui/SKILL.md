@@ -3,12 +3,11 @@ name: tern-ui
 description: >
   Build a task-specific workspace beside chat for ongoing work that benefits
   from keeping evolving state, evidence, comparisons, or decisions visible
-  across turns. Also use for explicitly requested interactive explanations
-  or explorations, even with static source material. State may change through
-  background refresh, local artifacts, agent output, or user interaction;
-  polling and action buttons are optional. Do not automatically turn one-off
-  answers, routine completion checks, or the existence of an MR, pipeline,
-  or job into a UI.
+  across turns. State may change through background refresh, local artifacts,
+  agent output, or user interaction; polling and action buttons are optional.
+  Not for one-off explanations or local teaching demos, even interactive ones.
+  Do not automatically turn routine completion checks or the existence of an
+  MR, pipeline, or job into a UI.
 compatibility: Tern >=0.9.9, uv, Python >=3.11; examples use macOS pbcopy and optional glab.
 metadata:
   runtime: tern-surface-protocol
@@ -32,13 +31,13 @@ Name the benefit over ordinary tool output, chat, or an existing interface.
 Seeing status or having an attractive dashboard is not enough by itself.
 Polling and action buttons are optional; local iterative work can qualify.
 
-An explicit request for an interactive explanation or exploration also qualifies.
-Use navigation, selectable examples, or what-if controls when they clarify the
-concept; neither live data nor a long-running task is required. An ordinary
-request to explain something still belongs in chat.
+One-off explanations, local steppers, and teaching what-if controls belong in
+chat, including embedded pages when useful. Use this skill when the ongoing
+work itself needs retained state, evidence, decisions, or agent interaction;
+buttons alone do not make an explanation a workspace.
 
 - **Watcher:** follow a prolonged rollout as external state changes.
-- **Workbench:** compare and annotate candidates, or explore a concept locally.
+- **Workbench:** compare and annotate evolving candidates across rounds.
 - **Queue:** review accumulating items that need individual decisions.
 
 Creating or pushing an MR, briefly waiting for CI, checking completion, or offering
@@ -50,7 +49,7 @@ ordinary output rather than installing or reconfiguring Tern.
 
 Establish these from the task before choosing a layout or template:
 
-- **Purpose:** the question, activity, or concept the pane helps the user explore.
+- **Purpose:** the ongoing activity or decision the pane supports.
 - **State:** what must remain visible—evidence, candidates, blockers, decisions—
   not every field an API exposes.
 - **Updates:** what changes that state: background reads, local file changes,
