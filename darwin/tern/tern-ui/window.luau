@@ -1,9 +1,10 @@
 --!strict
 
 -- The tern-ui CLI owns reuse, splitting and board state; this only starts it
--- for the focused pane. The board runs in place from the skill checkout.
+-- for the focused pane. The standing board lives beside this plugin.
 local HOME = tern.getenv("HOME") or ""
 local SKILL = HOME .. "/.agents/skills/tern-ui"
+local APP = HOME .. "/.config/home-manager/darwin/tern/tern-ui/mr-board.py"
 local opening = false
 
 local function failure(result: ProcessResult): string
@@ -40,7 +41,7 @@ tern.command({
 			"-lc",
 			'exec uv run "$0" open my-mrs --app "$1" --focus --pane @focused',
 			SKILL .. "/scripts/tern-ui.py",
-			SKILL .. "/examples/mr-board.py",
+			APP,
 		}, {
 			cwd = HOME,
 			timeout_ms = 60000,

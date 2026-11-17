@@ -71,8 +71,8 @@ shell alias. Fresh processes discover this skill through the normal skill path.
 1. Choose a layout around the purpose and state above. Keep evidence and decisions
    connected; include relevant constraints and hazards, not just API fields.
 2. Read [patterns.md](references/patterns.md) and [sdk.md](references/sdk.md).
-   Run `uv run CLI new my-work --from NAME`, choosing `NAME` from `watch`,
-   `decision`, or `mr-board` to suit the design. Examples are starting code,
+   Run `uv run CLI new my-work --from NAME`, choosing `NAME` from `watch`
+   or `decision` to suit the design. Examples are starting code,
    not required feature sets; do not invent needs to fit a template.
    The receipt gives `app.py` and `fixture.json` in
    `${XDG_STATE_HOME:-~/.local/state}/tern-ui/my-work/`. Edit those files with the

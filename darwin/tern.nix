@@ -34,7 +34,7 @@
   # Window plugins that tern-settings-apply links from the store into Tern's plugin directory.
   windowPlugins = {
     session-navigation = ./tern/session-navigation;
-    tern-ui = ./tern/tern-ui;
+    tern-ui = "${home}/.config/home-manager/darwin/tern/tern-ui";
   };
   keyboardConfig = {
     keymap = "tmux";

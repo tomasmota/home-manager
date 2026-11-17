@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["tern-sdk==0.2.0"]
 # ///
-"""Open authored MRs grouped by ticket, from read-only `glab api --method GET`.
+"""Personal and group MRs grouped by ticket, from read-only `glab api --method GET`.
 
 A ticket in the MR title (never the description) makes the card: the head names the
 key, each row is one MR. An MR with no ticket leads its own card, headed `repo!iid`.
@@ -12,6 +12,7 @@ only when every safety signal is known good, pinned to the fetched head SHA,
 and confirmed by the kit. Ticket titles are read through the Atlassian MCP
 server with omp's existing sign-in; without it, cards show bare ticket keys.
 `--fixture` shows sample data; commands stay blocked.
+The optional group/label live in $XDG_CONFIG_HOME/tern-ui/mr-board.json.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from __future__ import annotations
 import hashlib
 import html
 import json
+import os
 import re
 import shutil
 import sqlite3
@@ -31,7 +33,7 @@ from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 from tern_sdk import ui
 
@@ -44,6 +46,7 @@ TICKET = re.compile(r"\b([A-Z][A-Z0-9]{1,9}-\d+)\b")
 JIRA_LINK = re.compile(r'href="(https?://[^"]*/browse/([A-Z][A-Z0-9]{1,9}-\d+)[^"]*)"')
 ACTIVE = {"running", "pending", "created", "scheduled", "preparing", "waiting_for_resource"}
 ACTIVE_POLL, IDLE_POLL = 15.0, 120.0
+STALE_DAYS = 7
 FAILED = {"failed", "canceled"}
 HARD_MERGE = {"conflict", "requested_changes"}
 BUCKETS = (("blocked", "needs attention", "warning"), ("ready", "ready", "success"),
@@ -81,14 +84,20 @@ def glab(path: str) -> Any:
         raise RuntimeError(f"GET {path}: {exc}") from exc
 
 
-def list_rows() -> list[dict[str, Any]]:
-    batch = glab(
-        f"{LIST}?state=opened&scope=created_by_me&order_by=updated_at&sort=desc"
-        f"&per_page={PER_PAGE}"
-    )
-    if not isinstance(batch, list):
-        raise RuntimeError("unexpected merge_requests payload")
-    return [row for row in batch if isinstance(row, dict)]
+def list_rows(path: str = LIST, scope: str = "created_by_me") -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    page = 1
+    while True:
+        batch = glab(
+            f"{path}?state=opened&scope={scope}&order_by=updated_at&sort=desc"
+            f"&per_page={PER_PAGE}&page={page}"
+        )
+        if not isinstance(batch, list):
+            raise RuntimeError("unexpected merge_requests payload")
+        rows.extend(row for row in batch if isinstance(row, dict))
+        if len(batch) < PER_PAGE:
+            return rows
+        page += 1
 
 
 def _blank(row: dict[str, Any], error: str | None = None) -> dict[str, Any]:
@@ -103,6 +112,8 @@ def _blank(row: dict[str, Any], error: str | None = None) -> dict[str, Any]:
         "pipeline": None, "pipeline_url": None, "merge": "unknown", "sha": None,
         "approvals": None, "required": None, "approval_error": None,
         "conflicts": None, "threads": None, "error": error, "tickets": {},
+        "author": str((row.get("author") or {}).get("name") or
+                      (row.get("author") or {}).get("username") or "Unknown author"),
     }
 
 
@@ -235,17 +246,28 @@ def _ticket_titles(items: list[dict[str, Any]]) -> tuple[dict[str, str], str | N
 
 
 def fetch() -> dict[str, Any]:
-    found: list[dict[str, Any]] = []
+    config_path = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "tern-ui" / "mr-board.json"
+    config = json.loads(config_path.read_text()) if config_path.exists() else {}
+    group = str(config.get("group") or "")
+    mine = list_rows()
+    team = list_rows(f"groups/{quote(group, safe='')}/merge_requests", "all") if group else []
+    # An authored MR can also belong to the group; fetch its details only once.
+    rows = {(row["project_id"], row["iid"]): row for row in mine + team}
+    found: dict[tuple[int, int], dict[str, Any]] = {}
     with ThreadPoolExecutor(max_workers=6) as pool:
-        jobs = [(pool.submit(_item, row), row) for row in list_rows()]
-        for job, row in jobs:
+        jobs = [(pool.submit(_item, row), identity, row) for identity, row in rows.items()]
+        for job, identity, row in jobs:
             try:
-                found.append(job.result())
+                found[identity] = job.result()
             except Exception as exc:
-                found.append(_blank(row, str(exc)))
-    found.sort(key=lambda item: item["ref"])
-    titles, title_error = _ticket_titles(found)
-    return {"mrs": found, "titles": titles, "title_error": title_error}
+                found[identity] = _blank(row, str(exc))
+    titles, title_error = _ticket_titles(list(found.values()))
+    return {
+        "mrs": [found[row["project_id"], row["iid"]] for row in mine],
+        "group_mrs": [found[row["project_id"], row["iid"]] for row in team],
+        "group": group, "group_label": str(config.get("label") or group),
+        "titles": titles, "title_error": title_error,
+    }
 
 
 def _ticket(title: str) -> str | None:
@@ -315,7 +337,8 @@ def changes(old: Any, new: Any) -> list[dict[str, Any]]:
         return {row["ref"]: row for row in rows or []
                 if isinstance(row, dict) and row.get("ref")}
 
-    before, after = by_ref(old.get("mrs")), by_ref(new.get("mrs"))
+    before = by_ref((old.get("mrs") or []) + (old.get("group_mrs") or []))
+    after = by_ref((new.get("mrs") or []) + (new.get("group_mrs") or []))
     events = [{"text": f"New MR {ref}", "ref": ref} for ref in sorted(after.keys() - before.keys())]
     for ref, item in after.items():
         previous = before.get(ref)
@@ -418,7 +441,15 @@ def _state_node(item: dict[str, Any]) -> ui.Node:
     return ui.badge(label, tone=tone)
 
 
-def _meta(item: dict[str, Any], key: str) -> ui.Node:
+def _stale_days(updated: str) -> int | None:
+    try:
+        days = int((time.time() - datetime.fromisoformat(updated).timestamp()) // 86400)
+    except ValueError:
+        return None
+    return days if days >= STALE_DAYS else None
+
+
+def _meta(item: dict[str, Any], key: str, *, author: bool = False) -> ui.Node:
     """Attention signals lead, then one fixed slot order: ref, branch, CI, approvals.
     CI keeps its slot even when it blocks, so the same fact never moves between rows.
     Slots are sibling nodes rather than spans of one text so the branch can carry an icon."""
@@ -446,6 +477,8 @@ def _meta(item: dict[str, Any], key: str) -> ui.Node:
     parts.append(ui.badge(_ref_text(item) or _project(item), key="ref",
                           role=f"mr-repo-{color}", title=repo, tone="neutral",
                           href=item["url"] or None))
+    if author:
+        add("author", item.get("author") or "Unknown author", "muted")
     if item["branch"]:
         add("branch", item["branch"], "muted", icon="branch")
     if ci:
@@ -457,6 +490,8 @@ def _meta(item: dict[str, Any], key: str) -> ui.Node:
             add("approvals", "approved", "success")
         elif need > 1:  # a count only where one approval is not enough
             add("approvals", f"{have}/{need} approvals", "muted")
+    if author and (days := _stale_days(str(item.get("updated") or ""))) is not None:
+        add("updated", f"stale · {days}d", "muted")
     if item["sha"] and not blockers(item):  # the exact revision a merge would be pinned to
         add("sha", item["sha"][:8], "dim")
     return ui.row(*parts, gap="xs", wrap=True, align="center", key=key)
@@ -528,17 +563,21 @@ def _clean_title(title: str, key: str) -> str:
     return rest or title
 
 
-def _row(board: Board, item: dict[str, Any], group: str) -> ui.Node:
+def _row(board: Board, item: dict[str, Any], group: str, *, author: bool = False) -> ui.Node:
     ref = item["ref"]
     title = item["title"]
     if group == _ticket(title):  # the card head already shows the key, bracket or colon form
         title = _clean_title(title, group)
+    tooltip = "\n".join(text for text in (
+        item["approval_error"] or item["error"],
+        f"Last updated: {item['updated']}" if item.get("updated") else None,
+    ) if text)
     return ui.col(  # a plain click anywhere on the row opens the MR in Tern's link handling
         ui.row(ui.text(title, grow=1, truncate="end", key=f"title:{ref}"),
                _state_node(item),  # right edge: titles align left, pills form a column
                gap="sm", align="center", key=f"head:{ref}"),
-        _meta(item, f"meta:{ref}"),
-        gap="xs", key=f"mr:{ref}", title=item["approval_error"] or item["error"] or None,
+        _meta(item, f"meta:{ref}", author=author),
+        gap="xs", key=f"mr:{ref}", title=tooltip or None,
         href=item["url"] or None, actions={"click": "open"} if item["url"] else None,
         on_menu=_menu(board, item),
     )
@@ -552,15 +591,8 @@ def _summary(items: list[dict[str, Any]]) -> ui.Node:
     ], key="summary")
 
 
-def view(board: Board) -> ui.Node:
-    if board.surface is not None and not getattr(board, "_mr_styles", False):
-        board.surface.stylesheet("mr-board", REPO_STYLES + "\n" + CARD_STYLES)
-        board._mr_styles = True
-    data = board.data if isinstance(board.data, dict) else {}
-    items = [item for item in data.get("mrs") or [] if isinstance(item, dict)]
-    for repo in sorted({_repo(item) for item in items}):
-        _repo_color(repo)
-    titles = data.get("titles") if isinstance(data.get("titles"), dict) else {}
+def _section(board: Board, items: list[dict[str, Any]], titles: dict[str, str],
+             *, section_key: str, label: str, empty_text: str, author: bool = False) -> ui.Node:
     # A card groups MRs that share one decision: a ticket, or the single MR itself when
     # nothing ties it to a ticket. Repo is a data source, not a decision.
     groups: dict[str, list[dict[str, Any]]] = {}
@@ -568,7 +600,6 @@ def view(board: Board) -> ui.Node:
         groups.setdefault(_ticket(item["title"]) or item["ref"], []).append(item)
 
     cards: list[ui.Node] = []
-    untitled = False
     # Most urgent card first: a card ranks by its most urgent, then newest, MR; rows likewise.
     ordered = {key: sorted(group, key=_order) for key, group in groups.items()}
     for key in sorted(ordered, key=lambda key: (_order(ordered[key][0]), key)):
@@ -578,35 +609,54 @@ def view(board: Board) -> ui.Node:
         if key == _ticket(first["title"]):  # ticket card: head names the ticket
             url = next((link[1] for item in group if (link := _ticket_link(item))), None)
             title = titles.get(key) if url else None
-            untitled = untitled or bool(url and not title)
             rest = f" · {title}" if title else ""
             head = [ui.span(key, href=url), rest] if url else key + rest
-        cards.append(ui.card(*(_row(board, item, key) for item in group),
+        cards.append(ui.card(*(_row(board, item, key, author=author) for item in group),
                              head=head, icon="branch" if head else None,
                              meta=f"{len(group)} MRs" if head and len(group) > 1 else None,
                              tone=_card_tone(group), role="mr-status", key=f"group:{key}"))
 
     empty = ui.empty(
         title="No open merge requests", icon="check",
-        text="Nothing authored by you is open now. Refresh to check again.", key="empty",
+        text=empty_text, key="empty",
     )
-    count = f"{len(items)}+" if len(items) >= PER_PAGE else str(len(items))  # the list is capped
     return ui.col(
         ui.row(
-            ui.text([ui.span("My open merge requests", "title")], key="h-title"),
-            ui.text(count, tone="muted", key="h-count"),
+            ui.text([ui.span(label, "title")], key="h-title"),
+            ui.text(str(len(items)), tone="muted", key="h-count"),
             gap="sm", wrap=True, key="header",
         ),
-        _summary(items) if items else None,
+        _summary(items) if items and not author else None,
         *(cards or [empty]),
+        gap="md", key=section_key,
+    )
+
+
+def view(board: Board) -> ui.Node:
+    if board.surface is not None and not getattr(board, "_mr_styles", False):
+        board.surface.stylesheet("mr-board", REPO_STYLES + "\n" + CARD_STYLES)
+        board._mr_styles = True
+    data = board.data if isinstance(board.data, dict) else {}
+    mine = data.get("mrs") or []
+    team = data.get("group_mrs") or []
+    for repo in sorted({_repo(item) for item in mine + team}):
+        _repo_color(repo)
+    titles = data.get("titles") or {}
+    return ui.col(
+        _section(board, mine, titles, section_key="mine", label="My open merge requests",
+                 empty_text="Nothing authored by you is open now. Refresh to check again."),
+        _section(board, team, titles, section_key="team",
+                 label=f"{data.get('group_label') or data['group']} · open merge requests",
+                 empty_text="No open merge requests in this group, including its subgroups.",
+                 author=True) if data.get("group") else None,
         ui.text(f"Ticket titles unavailable: {data['title_error']}", tone="muted", wrap="word",
-                key="title-error") if untitled and data.get("title_error") else None,
-        gap="md", key="root",
+                key="title-error") if data.get("title_error") else None,
+        gap="lg", key="root",
     )
 
 
 def every(data: Any) -> float:
-    items = data.get("mrs") or [] if isinstance(data, dict) else []
+    items = ((data.get("mrs") or []) + (data.get("group_mrs") or [])) if isinstance(data, dict) else []
     active = any(
         (item.get("pipeline") or "").lower() in ACTIVE
         or item.get("merge") in {"checking", "approvals_syncing"}

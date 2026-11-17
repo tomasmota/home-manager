@@ -85,8 +85,8 @@ It switches by exact name to avoid Tern's numeric-ID truncation; keep session na
 `tern plugin reload`, without restarting the daemon.
 
 `Ctrl+Space m` (palette: **MR board**) opens the MR board beside the focused pane, or focuses it when open; `q` closes it.
-The [`tern-ui`](tern-ui) window plugin, linked the same way, runs the [tern-ui skill](../../agents/skills/tern-ui/SKILL.md)'s `mr-board` example in place, so edits apply on the next open.
-Its ticket titles reuse omp's Atlassian MCP sign-in read-only, and pause while that token is expired.
+The [`tern-ui`](tern-ui) window plugin runs its [standing board](tern-ui/mr-board.py) in place using the [tern-ui skill](../../agents/skills/tern-ui/SKILL.md)'s runtime; edits apply on the next open.
+The optional `group` and `label` in `~/.config/tern-ui/mr-board.json` add all open group MRs below authored MRs; ticket titles reuse omp's Atlassian MCP sign-in read-only and pause while that token is expired.
 
 ## SDK example plugins
 

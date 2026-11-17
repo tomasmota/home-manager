@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
-TEMPLATES = ("mr-board", "watch", "decision")
+TEMPLATES = ("watch", "decision")
 SDK_WITH = "tern-sdk==0.2.0"
 CONNECT_TIMEOUT = 15.0
 SPLIT_TIMEOUT = 30.0
