@@ -52,6 +52,8 @@
       "ctrl+space>0" = "goto_tab:10";
       "ctrl+space>space" = "show_previous_tab";
       "ctrl+space>tab" = "plugin.session-navigation.last";
+      "ctrl+space>]" = "plugin.session-navigation.next";
+      "ctrl+space>[" = "plugin.session-navigation.prev";
       "ctrl+space>h" = "focus_pane:left";
       "ctrl+space>j" = "focus_pane:down";
       "ctrl+space>k" = "focus_pane:up";
@@ -66,6 +68,13 @@
     };
   };
   keyboardSettings = pkgs.writeText "tern-keyboard-settings.json" (builtins.toJSON keyboardConfig);
+  # Chords earlier builds managed; applySettings removes them when they still
+  # hold that action, so a rebind does not leave the old chord working.
+  retiredKeybinds = {
+    "ctrl+space>(" = "plugin.session-navigation.prev";
+    "ctrl+space>)" = "plugin.session-navigation.next";
+  };
+  retiredSettings = pkgs.writeText "tern-keyboard-retired.json" (builtins.toJSON retiredKeybinds);
   omp = import ../agents/omp/managed.nix;
   # Declared state this command was built from. Checkout hashes let it say when
   # later edits are not in the build yet; nothing here is persisted at runtime.
@@ -114,9 +123,13 @@
     trap 'rm -f "$tmp"' EXIT
     if [ -e "$target" ]; then
       ${pkgs.jq}/bin/jq -e -s '
-        if all(.[]; type == "object") then .[0] * .[1]
+        if all(.[]; type == "object") then
+          . as $all
+          | ($all[0] * $all[1])
+          | reduce ($all[2] | to_entries[]) as $r (.;
+              if .keybinds[$r.key] == $r.value then del(.keybinds[$r.key]) else . end)
         else error("Tern settings must be JSON objects") end
-      ' "$target" ${keyboardSettings} > "$tmp"
+      ' "$target" ${keyboardSettings} ${retiredSettings} > "$tmp"
     else
       cp ${keyboardSettings} "$tmp"
     fi

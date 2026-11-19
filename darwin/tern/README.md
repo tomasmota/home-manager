@@ -78,9 +78,15 @@ Native bindings beyond tabs and panes: `Ctrl+Space i` opens the inbox and
 `Ctrl+Space g` opens a new Git block.
 
 `Ctrl+Space Tab` toggles between the current and last-used
-session via the [`session-navigation`](session-navigation) window plugin; picker
-switches update the pair too. History starts fresh after a plugin reload.
-It switches by exact name to avoid Tern's numeric-ID truncation; keep session names unique.
+session via the [`session-navigation`](session-navigation) window plugin;
+`Ctrl+Space ]` and `Ctrl+Space [` cycle to the next and previous session
+on the current host (`]` shadows the preset's prefix paste; use `Cmd+V`).
+Picker switches update the pair too. History starts fresh after a plugin
+reload. It switches by exact name to avoid Tern's numeric-ID truncation;
+keep session names unique.
+
+Sessions are searchable natively: `Ctrl+Cmd+K` (**Switch session…**) lists
+every session most recently used first and filters as you type.
 `tern-settings-apply` links it into Tern's plugin directory; reload with
 `tern plugin reload`, without restarting the daemon.
 
